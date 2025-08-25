@@ -6,13 +6,15 @@ import type {
   StoreAdapter,
   StoreConfig
 } from '../types/index.js';
+import { EntityGetters } from './EntityGetters.js';
+import { EntityActions } from './EntityActions.js';
 
 /**
  * EntityStore - Main class of the agnostic ORM
  * Inspired by pinia-entity-store but adapted to be agnostic
  * 
  * This class provides a unified interface for managing entities regardless of the underlying state manager.
- * It delegates all operations to the provided adapter, making it completely agnostic.
+ * It uses EntityGetters and EntityActions internally while delegating state management to the adapter.
  * 
  * @template T - The entity type that extends the base Entity interface
  * 
@@ -36,6 +38,8 @@ import type {
 export class EntityStore<T extends Entity = Entity> {
   private adapter: StoreAdapter<T>;
   private config: StoreConfig;
+  private getters: EntityGetters<T>;
+  private actions: EntityActions<T>;
 
   /**
    * Creates a new EntityStore instance
@@ -48,6 +52,11 @@ export class EntityStore<T extends Entity = Entity> {
   constructor(config: StoreConfig, adapter: StoreAdapter<T>) {
     this.config = config;
     this.adapter = adapter;
+    
+    // Initialize getters and actions with the adapter's state
+    const initialState = adapter.getState();
+    this.getters = new EntityGetters(initialState);
+    this.actions = new EntityActions(initialState);
   }
 
   // ===== GETTERS =====
@@ -67,7 +76,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getOne(id: EntityId): T | null {
-    return this.adapter.getOne(id);
+    return this.getters.getOne(id);
   }
 
   /**
@@ -83,7 +92,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getMany(ids: EntityId[]): T[] {
-    return this.adapter.getMany(ids);
+    return this.getters.getMany(ids);
   }
 
   /**
@@ -98,7 +107,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getAll(): Record<EntityId, T> {
-    return this.adapter.getAll();
+    return this.getters.getAll();
   }
 
   /**
@@ -113,7 +122,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getAllArray(): T[] {
-    return this.adapter.getAllArray();
+    return this.getters.getAllArray();
   }
 
   /**
@@ -128,7 +137,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getAllIds(): EntityId[] {
-    return this.adapter.getAllIds();
+    return this.getters.getAllIds();
   }
 
   /**
@@ -145,7 +154,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getMissingIds(ids: EntityId[]): EntityId[] {
-    return this.adapter.getMissingIds(ids);
+    return this.getters.getMissingIds(ids);
   }
 
   /**
@@ -161,7 +170,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getMissingEntities(entities: T[]): T[] {
-    return this.adapter.getMissingEntities(entities);
+    return this.getters.getMissingEntities(entities);
   }
 
   /**
@@ -177,7 +186,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getWhere(filter: EntityFilter<T>): Record<EntityId, T> {
-    return this.adapter.getWhere(filter);
+    return this.getters.getWhere(filter);
   }
 
   /**
@@ -193,7 +202,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getWhereArray(filter: EntityFilter<T>): T[] {
-    return this.adapter.getWhereArray(filter);
+    return this.getters.getWhereArray(filter);
   }
 
   /**
@@ -209,7 +218,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getIsEmpty(): boolean {
-    return this.adapter.getIsEmpty();
+    return this.getters.getIsEmpty();
   }
 
   /**
@@ -225,7 +234,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getIsNotEmpty(): boolean {
-    return this.adapter.getIsNotEmpty();
+    return this.getters.getIsNotEmpty();
   }
 
   /**
@@ -242,7 +251,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getCurrent(): T | null {
-    return this.adapter.getCurrent();
+    return this.getters.getCurrent();
   }
 
   /**
@@ -258,7 +267,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getActive(): T[] {
-    return this.adapter.getActive();
+    return this.getters.getActive();
   }
 
   /**
@@ -275,7 +284,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getFirstActive(): T | null {
-    return this.adapter.getFirstActive();
+    return this.getters.getFirstActive();
   }
 
   /**
@@ -292,7 +301,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   isAlreadyInStore(id: EntityId): boolean {
-    return this.adapter.isAlreadyInStore(id);
+    return this.getters.isAlreadyInStore(id);
   }
 
   /**
@@ -309,7 +318,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   isAlreadyActive(id: EntityId): boolean {
-    return this.adapter.isAlreadyActive(id);
+    return this.getters.isAlreadyActive(id);
   }
 
   /**
@@ -326,7 +335,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   isDirty(id: EntityId): boolean {
-    return this.adapter.isDirty(id);
+    return this.getters.isDirty(id);
   }
 
   // ===== ACTIONS =====
@@ -348,7 +357,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   createOne(entity: Omit<T, 'id'>): T {
-    return this.adapter.createOne(entity);
+    const newEntity = this.actions.createOne(entity);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
+    return newEntity;
   }
 
   /**
@@ -366,7 +378,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   createMany(entities: Omit<T, 'id'>[]): T[] {
-    return this.adapter.createMany(entities);
+    const newEntities = this.actions.createMany(entities);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
+    return newEntities;
   }
 
   /**
@@ -382,7 +397,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   setCurrent(entity: T | null): void {
-    this.adapter.setCurrent(entity);
+    this.actions.setCurrent(entity);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -395,7 +412,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   removeCurrent(): void {
-    this.adapter.removeCurrent();
+    this.actions.removeCurrent();
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -414,7 +433,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   updateOne(entity: T): T {
-    return this.adapter.updateOne(entity);
+    const updatedEntity = this.actions.updateOne(entity);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
+    return updatedEntity;
   }
 
   /**
@@ -432,7 +454,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   updateMany(entities: T[]): T[] {
-    return this.adapter.updateMany(entities);
+    const updatedEntities = this.actions.updateMany(entities);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
+    return updatedEntities;
   }
 
   /**
@@ -451,7 +476,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   deleteOne(id: EntityId): boolean {
-    return this.adapter.deleteOne(id);
+    const result = this.actions.deleteOne(id);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
+    return result;
   }
 
   /**
@@ -469,7 +497,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   deleteMany(ids: EntityId[]): boolean {
-    return this.adapter.deleteMany(ids);
+    const result = this.actions.deleteMany(ids);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
+    return result;
   }
 
   /**
@@ -484,7 +515,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   setActive(id: EntityId): void {
-    this.adapter.setActive(id);
+    this.actions.setActive(id);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -497,7 +530,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   resetActive(): void {
-    this.adapter.resetActive();
+    this.actions.resetActive();
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -513,7 +548,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   setIsDirty(id: EntityId): void {
-    this.adapter.setIsDirty(id);
+    this.actions.setIsDirty(id);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -528,7 +565,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   setIsNotDirty(id: EntityId): void {
-    this.adapter.setIsNotDirty(id);
+    this.actions.setIsNotDirty(id);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -545,7 +584,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   updateField(id: EntityId, field: keyof T, value: any): void {
-    this.adapter.updateField(id, field, value);
+    this.actions.updateField(id, field, value);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   // ===== STATE MANAGEMENT =====
@@ -562,7 +603,7 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   getState(): EntityState<T> {
-    return this.adapter.getState();
+    return this.getters.getState();
   }
 
   /**
@@ -578,7 +619,10 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   setState(state: EntityState<T>): void {
-    this.adapter.setState(state);
+    this.getters.updateState(state);
+    this.actions.setState(state);
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   /**
@@ -591,7 +635,9 @@ export class EntityStore<T extends Entity = Entity> {
    * ```
    */
   resetState(): void {
-    this.adapter.resetState();
+    this.actions.resetState();
+    // Sync the state back to the adapter
+    this.syncStateToAdapter();
   }
 
   // ===== UTILITY METHODS =====
@@ -636,12 +682,23 @@ export class EntityStore<T extends Entity = Entity> {
    * ```typescript
    * if (store.isConfigured()) {
    *   console.log('Store is ready to use');
-   * } else {
+   * else {
    *   console.log('Store is not properly configured');
    * }
    * ```
    */
   isConfigured(): boolean {
     return this.config !== null && this.adapter !== null;
+  }
+
+  // ===== PRIVATE METHODS =====
+
+  /**
+   * Synchronizes the current state from getters and actions back to the adapter
+   * This ensures that the adapter's state is always up to date
+   */
+  private syncStateToAdapter(): void {
+    const currentState = this.getters.getState();
+    this.adapter.setState(currentState);
   }
 }

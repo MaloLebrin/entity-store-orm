@@ -5,14 +5,16 @@ import type {
   EntityState,
   StoreAdapter
 } from '../types/index.js';
+import { EntityGetters } from './EntityGetters.js';
+import { EntityActions } from './EntityActions.js';
 
 /**
  * BaseAdapter - Abstract base class for all store adapters
  * 
  * This class provides a default implementation of the StoreAdapter interface
  * that can be extended by specific adapters (Pinia, Redux, Zustand, etc.).
- * It handles the common logic for entity management while allowing adapters
- * to override specific behavior as needed.
+ * It uses EntityGetters and EntityActions internally while providing hooks
+ * for derived classes to customize behavior.
  * 
  * @template T - The entity type that extends the base Entity interface
  * 
@@ -41,7 +43,13 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
     }
   };
 
-  protected nextId: number = 1;
+  protected getters: EntityGetters<T>;
+  protected actions: EntityActions<T>;
+
+  constructor() {
+    this.getters = new EntityGetters(this.state);
+    this.actions = new EntityActions(this.state);
+  }
 
   // ===== GETTERS =====
 
@@ -52,7 +60,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns The entity if found, null otherwise
    */
   getOne(id: EntityId): T | null {
-    return this.state.entities.byId[id] || null;
+    return this.getters.getOne(id);
   }
 
   /**
@@ -62,7 +70,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of found entities (may be shorter than requested if some IDs don't exist)
    */
   getMany(ids: EntityId[]): T[] {
-    return ids.map(id => this.getOne(id)).filter(Boolean) as T[];
+    return this.getters.getMany(ids);
   }
 
   /**
@@ -71,7 +79,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Record where keys are entity IDs and values are the entities
    */
   getAll(): Record<EntityId, T> {
-    return this.state.entities.byId;
+    return this.getters.getAll();
   }
 
   /**
@@ -80,7 +88,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of all entities in the store
    */
   getAllArray(): T[] {
-    return Object.values(this.state.entities.byId);
+    return this.getters.getAllArray();
   }
 
   /**
@@ -89,7 +97,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of all entity IDs
    */
   getAllIds(): EntityId[] {
-    return this.state.entities.allIds;
+    return this.getters.getAllIds();
   }
 
   /**
@@ -100,7 +108,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of IDs that don't exist in the store
    */
   getMissingIds(ids: EntityId[]): EntityId[] {
-    return ids.filter(id => !this.isAlreadyInStore(id));
+    return this.getters.getMissingIds(ids);
   }
 
   /**
@@ -110,7 +118,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of entities that aren't in the store
    */
   getMissingEntities(entities: T[]): T[] {
-    return entities.filter(entity => !this.isAlreadyInStore(entity.id));
+    return this.getters.getMissingEntities(entities);
   }
 
   /**
@@ -120,13 +128,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Record of filtered entities indexed by ID
    */
   getWhere(filter: EntityFilter<T>): Record<EntityId, T> {
-    const result: Record<EntityId, T> = {};
-    Object.values(this.state.entities.byId).forEach(entity => {
-      if (filter(entity)) {
-        result[entity.id] = entity;
-      }
-    });
-    return result;
+    return this.getters.getWhere(filter);
   }
 
   /**
@@ -136,7 +138,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of filtered entities
    */
   getWhereArray(filter: EntityFilter<T>): T[] {
-    return Object.values(this.state.entities.byId).filter(filter);
+    return this.getters.getWhereArray(filter);
   }
 
   /**
@@ -145,7 +147,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if the store is empty, false otherwise
    */
   getIsEmpty(): boolean {
-    return this.state.entities.allIds.length === 0;
+    return this.getters.getIsEmpty();
   }
 
   /**
@@ -154,7 +156,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if the store is not empty, false otherwise
    */
   getIsNotEmpty(): boolean {
-    return this.state.entities.allIds.length > 0;
+    return this.getters.getIsNotEmpty();
   }
 
   /**
@@ -163,7 +165,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns The current entity or null if none is selected
    */
   getCurrent(): T | null {
-    return this.state.entities.current;
+    return this.getters.getCurrent();
   }
 
   /**
@@ -173,7 +175,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of active entities
    */
   getActive(): T[] {
-    return this.state.entities.active.map(id => this.getOne(id)).filter(Boolean) as T[];
+    return this.getters.getActive();
   }
 
   /**
@@ -182,7 +184,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns The first active entity or null if none are active
    */
   getFirstActive(): T | null {
-    return this.state.entities.active.length > 0 ? this.getOne(this.state.entities.active[0]!) : null;
+    return this.getters.getFirstActive();
   }
 
   /**
@@ -192,7 +194,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if the entity exists, false otherwise
    */
   isAlreadyInStore(id: EntityId): boolean {
-    return id in this.state.entities.byId;
+    return this.getters.isAlreadyInStore(id);
   }
 
   /**
@@ -202,7 +204,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if the entity is active, false otherwise
    */
   isAlreadyActive(id: EntityId): boolean {
-    return this.state.entities.active.includes(id);
+    return this.getters.isAlreadyActive(id);
   }
 
   /**
@@ -212,8 +214,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if the entity is dirty, false otherwise
    */
   isDirty(id: EntityId): boolean {
-    const entity = this.getOne(id);
-    return entity ? (entity as any).$isDirty === true : false;
+    return this.getters.isDirty(id);
   }
 
   // ===== ACTIONS =====
@@ -225,11 +226,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns The newly created entity with generated ID
    */
   createOne(entity: Omit<T, 'id'>): T {
-    const id = this.generateId();
-    const newEntity = { ...entity, id } as T;
-    
-    this.state.entities.byId[id] = newEntity;
-    this.state.entities.allIds.push(id);
+    const newEntity = this.actions.createOne(entity);
     
     // Notify derived classes about the creation
     this.onEntityCreated(newEntity);
@@ -244,7 +241,12 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of newly created entities with generated IDs
    */
   createMany(entities: Omit<T, 'id'>[]): T[] {
-    return entities.map(entity => this.createOne(entity));
+    const newEntities = this.actions.createMany(entities);
+    
+    // Notify derived classes about the creation
+    newEntities.forEach(entity => this.onEntityCreated(entity));
+    
+    return newEntities;
   }
 
   /**
@@ -253,7 +255,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @param entity - The entity to set as current, or null to clear selection
    */
   setCurrent(entity: T | null): void {
-    this.state.entities.current = entity;
+    this.actions.setCurrent(entity);
     this.onCurrentChanged(entity);
   }
 
@@ -261,7 +263,8 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * Removes the currently selected entity
    */
   removeCurrent(): void {
-    this.setCurrent(null);
+    this.actions.removeCurrent();
+    this.onCurrentChanged(null);
   }
 
   /**
@@ -271,16 +274,12 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns The updated entity
    */
   updateOne(entity: T): T {
-    if (!this.isAlreadyInStore(entity.id)) {
-      throw new Error(`Entity with id ${entity.id} not found`);
-    }
-    
-    this.state.entities.byId[entity.id] = entity;
+    const updatedEntity = this.actions.updateOne(entity);
     
     // Notify derived classes about the update
-    this.onEntityUpdated(entity);
+    this.onEntityUpdated(updatedEntity);
     
-    return entity;
+    return updatedEntity;
   }
 
   /**
@@ -290,7 +289,12 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns Array of updated entities
    */
   updateMany(entities: T[]): T[] {
-    return entities.map(entity => this.updateOne(entity));
+    const updatedEntities = this.actions.updateMany(entities);
+    
+    // Notify derived classes about the update
+    updatedEntities.forEach(entity => this.onEntityUpdated(entity));
+    
+    return updatedEntities;
   }
 
   /**
@@ -300,27 +304,14 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if the entity was deleted, false if it didn't exist
    */
   deleteOne(id: EntityId): boolean {
-    if (!this.isAlreadyInStore(id)) {
-      return false;
+    const result = this.actions.deleteOne(id);
+    
+    if (result) {
+      // Notify derived classes about the deletion
+      this.onEntityDeleted(id);
     }
     
-    delete this.state.entities.byId[id];
-    this.state.entities.allIds = this.state.entities.allIds.filter(storeId => storeId !== id);
-    
-    // Remove from active if it was active
-    if (this.isAlreadyActive(id)) {
-      this.state.entities.active = this.state.entities.active.filter(activeId => activeId !== id);
-    }
-    
-    // Remove from current if it was current
-    if (this.state.entities.current?.id === id) {
-      this.state.entities.current = null;
-    }
-    
-    // Notify derived classes about the deletion
-    this.onEntityDeleted(id);
-    
-    return true;
+    return result;
   }
 
   /**
@@ -330,7 +321,14 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns true if all entities were deleted, false if any failed
    */
   deleteMany(ids: EntityId[]): boolean {
-    return ids.every(id => this.deleteOne(id));
+    const result = this.actions.deleteMany(ids);
+    
+    if (result) {
+      // Notify derived classes about the deletion
+      ids.forEach(id => this.onEntityDeleted(id));
+    }
+    
+    return result;
   }
 
   /**
@@ -339,8 +337,10 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @param id - The entity ID to mark as active
    */
   setActive(id: EntityId): void {
-    if (!this.isAlreadyActive(id)) {
-      this.state.entities.active.push(id);
+    const wasActive = this.isAlreadyActive(id);
+    this.actions.setActive(id);
+    
+    if (!wasActive) {
       this.onEntityActivated(id);
     }
   }
@@ -349,7 +349,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * Clears all active entities
    */
   resetActive(): void {
-    this.state.entities.active = [];
+    this.actions.resetActive();
     this.onActiveReset();
   }
 
@@ -360,11 +360,8 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @param id - The entity ID to mark as dirty
    */
   setIsDirty(id: EntityId): void {
-    const entity = this.getOne(id);
-    if (entity) {
-      (entity as any).$isDirty = true;
-      this.onEntityDirtyChanged(id, true);
-    }
+    this.actions.setIsDirty(id);
+    this.onEntityDirtyChanged(id, true);
   }
 
   /**
@@ -373,11 +370,8 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @param id - The entity ID to mark as clean
    */
   setIsNotDirty(id: EntityId): void {
-    const entity = this.getOne(id);
-    if (entity) {
-      (entity as any).$isDirty = false;
-      this.onEntityDirtyChanged(id, false);
-    }
+    this.actions.setIsNotDirty(id);
+    this.onEntityDirtyChanged(id, false);
   }
 
   /**
@@ -388,11 +382,8 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @param value - The new value for the field
    */
   updateField(id: EntityId, field: keyof T, value: any): void {
-    const entity = this.getOne(id);
-    if (entity) {
-      (entity as any)[field] = value;
-      this.onEntityFieldUpdated(id, field, value);
-    }
+    this.actions.updateField(id, field, value);
+    this.onEntityFieldUpdated(id, field, value);
   }
 
   // ===== STATE MANAGEMENT =====
@@ -403,7 +394,7 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @returns The complete EntityState object
    */
   getState(): EntityState<T> {
-    return this.state;
+    return this.getters.getState();
   }
 
   /**
@@ -413,7 +404,8 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * @param state - The complete EntityState object to set
    */
   setState(state: EntityState<T>): void {
-    this.state = state;
+    this.getters.updateState(state);
+    this.actions.setState(state);
     this.onStateChanged(state);
   }
 
@@ -421,29 +413,11 @@ export abstract class BaseAdapter<T extends Entity = Entity> implements StoreAda
    * Resets the store to its initial empty state
    */
   resetState(): void {
-    this.state = {
-      entities: {
-        byId: {},
-        allIds: [],
-        current: null,
-        active: []
-      }
-    };
-    this.nextId = 1;
+    this.actions.resetState();
     this.onStateReset();
   }
 
   // ===== PROTECTED UTILITY METHODS =====
-
-  /**
-   * Generates a unique ID for new entities
-   * Can be overridden by derived classes to use different ID generation strategies
-   * 
-   * @returns A unique identifier
-   */
-  protected generateId(): EntityId {
-    return this.nextId++;
-  }
 
   /**
    * Validates entity data before creation/update

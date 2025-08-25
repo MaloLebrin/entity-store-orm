@@ -1,4 +1,4 @@
-import type { Entity, EntityState, EntityId, EntityFilter } from '../types/index.js';
+import type { Entity, EntityFilter, EntityId, EntityState } from '../types/index.js';
 
 /**
  * EntityGetters - Handles all entity retrieval logic

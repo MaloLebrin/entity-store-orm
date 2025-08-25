@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from 'vitest';
-import { EntityActions } from './EntityActions.js';
+import { beforeEach, describe, expect, test } from 'vitest';
 import type { Entity, EntityState } from '../types/index.js';
+import { EntityActions } from './EntityActions.js';
 
 // Test entity interface
 interface User extends Entity {
