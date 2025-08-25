@@ -7,7 +7,9 @@ export type {
 
 // Core classes
 export { EntityStore } from './core/EntityStore.js';
-// export { BaseAdapter } from './core/BaseAdapter.js';
+export { BaseAdapter } from './core/BaseAdapter.js';
+export { EntityGetters } from './core/EntityGetters.js';
+export { EntityActions } from './core/EntityActions.js';
 
 // Adapters (coming soon)
 // export { ReduxAdapter } from './adapters/ReduxAdapter.js';
