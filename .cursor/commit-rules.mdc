@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Commit Rules
+
+## Commit Message Format
+
+Each commit message should follow this format:
+
+```
+<emoji> <type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+## Commit Types
+
+- ✨ `feat`: A new feature
+- 🐛 `fix`: A bug fix
+- 📝 `docs`: Documentation only changes
+- 💄 `style`: Changes that do not affect the meaning of the code (formatting, etc.)
+- ♻️ `refactor`: A code change that neither fixes a bug nor adds a feature
+- ⚡️ `perf`: A code change that improves performance
+- ✅ `test`: Adding missing tests or correcting existing tests
+- 🔧 `chore`: Changes to the build process or auxiliary tools
+- 🚀 `deploy`: Deployment related changes
+- 🔒 `security`: Security related changes
+- 🎨 `design`: UI/UX related changes
+- 🚨 `breaking`: Breaking changes
+- 🏗️ `architecture`: Architecture related changes
+- 🧪 `experiment`: Experimental features or changes
+
+## Examples
+
+```
+✨ feat(auth): add OAuth2 authentication
+🐛 fix(api): resolve user data fetching issue
+📝 docs(readme): update installation instructions
+💄 style(ui): improve button hover effects
+♻️ refactor(store): simplify state management
+⚡️ perf(db): optimize database queries
+✅ test(api): add unit tests for user endpoints
+🔧 chore(deps): update dependencies
+🚀 deploy(ci): update deployment pipeline
+🔒 security(auth): fix JWT token validation
+🎨 design(ui): implement new dashboard layout
+🚨 breaking(api): remove deprecated endpoints
+🏗️ architecture(api): implement microservices pattern
+🧪 experiment(ai): test new ML model
+```
+
+## Best Practices
+
+1. **Keep it Short and Clear**: Keep the description concise and precise
+2. **Use Present Tense**: Write in present tense ("add" instead of "added")
+3. **Start with Lowercase**: Don't start with a capital letter
+4. **No Period at End**: Don't end with a period
+5. **Use Scope**: Use scope to indicate the part of the project affected
+6. **Reference Issues**: Reference issue numbers when applicable
+7. **Separate Concerns**: Make separate commits for separate concerns
+8. **Be Specific**: Clearly describe what and why, not how
+
+## Scope Examples
+
+Common scopes include:
+- `auth`: Authentication related changes
+- `api`: API related changes
+- `ui`: User interface changes
+- `db`: Database related changes
+- `test`: Testing related changes
+- `deps`: Dependency related changes
+- `ci`: Continuous Integration changes
+- `docs`: Documentation changes
+- `config`: Configuration changes
+
+## Commit Message Body
+
+When needed, add a body to provide more context:
+- Explain the "why" not the "how"
+- Include any breaking changes
+- Reference related issues or pull requests
+
+## Commit Message Footer
+
+Use the footer for:
+- Breaking changes (start with "BREAKING CHANGE:")
+- References to issues (e.g., "Fixes #123")
+- Related pull requests (e.g., "Related to #456")

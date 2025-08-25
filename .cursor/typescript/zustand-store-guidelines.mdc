@@ -1,0 +1,873 @@
+---
+globs: *.ts,*.tsx
+alwaysApply: false
+---
+
+# Guidelines pour l'utilisation de Zustand et des Stores
+
+## Vue d'ensemble
+
+Ces guidelines définissent les bonnes pratiques pour l'utilisation de Zustand dans notre application Gatsby. Elles garantissent la cohérence, la maintenabilité et la performance de notre gestion d'état globale.
+
+## Structure des Stores
+
+### 1. Organisation des fichiers
+
+Chaque store doit être organisé dans sa propre directory sous `src/stores/` :
+
+```
+stores/
+├── [feature]/
+│   ├── [feature]Store.ts
+│   ├── types.ts (optionnel)
+│   └── [feature]Store.test.ts
+├── utils/
+│   └── createSelector.ts
+└── index.ts
+```
+
+### 2. Structure d'un Store
+
+Chaque store doit suivre cette structure :
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { persist } from 'zustand/middleware' // si nécessaire
+import { createSelectors } from '../utils/createSelector'
+
+// Types pour l'état et les actions
+type [Feature]State = {
+  // Propriétés de l'état
+}
+
+type [Feature]Actions = {
+  // Actions du store
+}
+
+// État initial
+const initialState: [Feature]State = {
+  // Valeurs par défaut
+}
+
+// Export du store avec selectors
+export const use[Feature]Store = createSelectors(
+  create<[Feature]State & [Feature]Actions>()(
+    immer((set, get) => ({
+      ...initialState,
+      // Actions
+    })),
+  ),
+)
+```
+
+## Conventions de Nommage
+
+### 1. Types
+
+- `[Feature]State` : Type pour l'état du store
+- `[Feature]Actions` : Type pour les actions du store
+- `[Feature]Errors` : Type pour les erreurs (si applicable)
+
+### 2. Variables
+
+- `initialState` : État initial du store
+- `defaultState` : Alternative pour l'état par défaut
+- `use[Feature]Store` : Hook du store
+
+### 3. Actions
+
+- `set[Property]` : Pour définir une propriété
+- `update[Property]` : Pour mettre à jour une propriété
+- `reset[Feature]Store` : Pour réinitialiser le store
+- `get[Property]` : Pour récupérer une propriété calculée
+- `is[Property]` : Pour les propriétés booléennes
+
+## Patterns d'Implémentation
+
+### 1. Utilisation d'Immer
+
+Toujours utiliser Immer pour les mutations d'état :
+
+```typescript
+// ✅ Bon
+setApplications: (applications) =>
+  set((state) => {
+    state.applications = applications
+  }),
+
+// ❌ Mauvais
+setApplications: (applications) =>
+  set({ applications }),
+```
+
+### 2. Actions avec Paramètres
+
+Utiliser des objets pour les actions avec plusieurs paramètres :
+
+```typescript
+// ✅ Bon
+updateApplicationStatus: ({
+  applicationUuid,
+  status,
+}: {
+  applicationUuid: string
+  status: ApplicationStatus
+}) => void
+
+// ❌ Mauvais
+updateApplicationStatus: (applicationUuid: string, status: ApplicationStatus) => void
+```
+
+### 3. Validation et Gestion d'Erreurs
+
+Implémenter la validation dans les stores quand nécessaire :
+
+```typescript
+validateApplicant: () =>
+  set((state) => {
+    const { applicant } = state
+    if (!applicant) return
+
+    if (!applicant.firstName?.trim()) {
+      state.errors.firstName = 'Le prénom est requis'
+    }
+  }),
+
+isValid: () => Object.keys(get().errors).length === 0,
+```
+
+### 4. Actions Computées
+
+Utiliser `get()` pour les actions qui calculent des valeurs :
+
+```typescript
+getArchivedApplications: () =>
+  get().applications?.filter((app) => app.status === 'archived') || [],
+
+isLoading: () => Boolean(get().loadingMessage),
+```
+
+## Persistance des Données
+
+### 1. Quand utiliser la persistance
+
+- Données d'authentification
+- Préférences utilisateur
+- Données critiques qui doivent survivre au refresh
+
+### 2. Configuration de la persistance
+
+```typescript
+export const useAuthStore = createSelectors(
+  create<AuthState & AuthActions>()(
+    persist(
+      immer((set, get) => ({
+        // Actions
+      })),
+      {
+        name: 'auth-storage',
+        // Options supplémentaires si nécessaire
+      },
+    ),
+  ),
+)
+```
+
+## Utilisation des Selectors
+
+### 1. Import et Utilisation
+
+```typescript
+// Dans un composant
+import { useAuthStore } from '../stores/authStore'
+
+const MyComponent = () => {
+  const token = useAuthStore(useShallow((state) => state.getAuthToken()))
+
+  // Utilisation
+}
+```
+
+### 2. Sélecteurs Personnalisés
+
+Pour les sélecteurs complexes, créer des fonctions dédiées :
+
+```typescript
+// Dans le store
+getArchivedApplications: () =>
+  get().applications?.filter((app) => app.status === 'archived') || [],
+
+// Dans le composant
+const archivedApplications = useApplicantStore.getArchivedApplications()
+```
+
+## Tests
+
+### 1. Structure des Tests
+
+Chaque store doit avoir ses tests :
+
+```typescript
+import { renderHook, act } from '@testing-library/react'
+import { useApplicantStore } from './applicantStore'
+
+describe('useApplicantStore', () => {
+  beforeEach(() => {
+    useApplicantStore.getState().resetApplicantStore()
+  })
+
+  test('should set applications', () => {
+    const { result } = renderHook(() => useApplicantStore())
+
+    act(() => {
+      result.current.setApplications([mockApplication])
+    })
+
+    expect(result.current.applications).toHaveLength(1)
+  })
+})
+```
+
+### 2. Reset entre les Tests
+
+Toujours réinitialiser le store entre les tests :
+
+```typescript
+beforeEach(() => {
+  useApplicantStore.getState().resetApplicantStore()
+})
+```
+
+## Performance
+
+### 1. Optimisation des Re-renders
+
+Utiliser des sélecteurs spécifiques pour éviter les re-renders inutiles :
+
+```typescript
+// ✅ Bon - Sélecteur spécifique
+const applications = useApplicantStore.use.applications()
+
+// ❌ Mauvais - Sélecteur trop large
+const store = useApplicantStore()
+const applications = store.applications
+```
+
+### 2. Actions Optimisées
+
+Éviter les actions qui recréent des objets inutilement :
+
+```typescript
+// ✅ Bon - Mise à jour directe
+updateApplication: (application) =>
+  set((state) => {
+    const index = state.applications.findIndex(a => a.uuid === application.uuid)
+    if (index !== -1) {
+      state.applications[index] = application
+    }
+  }),
+
+// ❌ Mauvais - Recréation de l'array
+updateApplication: (application) =>
+  set((state) => {
+    state.applications = state.applications.map((a) => {
+      if (a.uuid === application.uuid) {
+        return application
+      }
+      return a
+    })
+  }),
+```
+
+## Gestion des Erreurs
+
+### 1. Types d'Erreurs
+
+Définir des types spécifiques pour les erreurs :
+
+```typescript
+type ApplicantErrors = Record<keyof UserWithApplicant['applicant'], string>
+```
+
+### 2. Actions de Gestion d'Erreurs
+
+```typescript
+clearErrors: () =>
+  set((state) => {
+    state.errors = {} as ApplicantErrors
+  }),
+
+isValid: () => Object.keys(get().errors).length === 0,
+```
+
+## Exemples Complets
+
+### Store Simple (UI)
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { createSelectors } from '../utils/createSelector'
+
+type UIState = {
+  isModalOpen: boolean
+  loadingMessage: string | null
+}
+
+type UIActions = {
+  toggleModal: () => void
+  setLoading: (message: string | null) => void
+  isLoading: () => boolean
+  resetState: () => void
+}
+
+const defaultState: UIState = {
+  isModalOpen: false,
+  loadingMessage: null,
+}
+
+export const useUIStore = createSelectors(
+  create<UIState & UIActions>()(
+    immer((set, get) => ({
+      ...defaultState,
+
+      toggleModal: () =>
+        set((state) => {
+          state.isModalOpen = !state.isModalOpen
+        }),
+
+      setLoading: (message: string | null) =>
+        set((state) => {
+          state.loadingMessage = message
+        }),
+
+      isLoading: () => Boolean(get().loadingMessage),
+
+      resetState: () => set(defaultState),
+    })),
+  ),
+)
+```
+
+### Store Complexe (avec Persistance)
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { persist } from 'zustand/middleware'
+import { createSelectors } from '../utils/createSelector'
+
+type AuthState = {
+  user: UserWithApplicant | null
+  token: string | null
+}
+
+type AuthActions = {
+  setUser: (user: UserWithApplicant | null) => void
+  setToken: (token: string | null) => void
+  logout: () => void
+  isAuthenticated: () => boolean
+}
+
+const defaultState: AuthState = {
+  user: null,
+  token: null,
+}
+
+export const useAuthStore = createSelectors(
+  create<AuthState & AuthActions>()(
+    persist(
+      immer((set, get) => ({
+        ...defaultState,
+
+        setUser: (user) =>
+          set((state) => {
+            state.user = user
+          }),
+
+        setToken: (token) =>
+          set((state) => {
+            state.token = token
+          }),
+
+        logout: () =>
+          set((state) => {
+            state.user = null
+            state.token = null
+          }),
+
+        isAuthenticated: () => Boolean(get().user && get().token),
+      })),
+      {
+        name: 'auth-storage',
+      },
+    ),
+  ),
+)
+```
+
+## Checklist de Création d'un Store
+
+- [ ] Structure de fichiers correcte
+- [ ] Types bien définis (State et Actions)
+- [ ] État initial défini
+- [ ] Utilisation d'Immer pour les mutations
+- [ ] Actions avec noms explicites
+- [ ] Utilisation de `createSelectors`
+- [ ] Tests unitaires
+- [ ] Gestion d'erreurs (si applicable)
+- [ ] Persistance configurée (si nécessaire)
+- [ ] Documentation des actions complexes
+
+## Anti-patterns à Éviter
+
+1. **Stores trop larges** : Un store ne doit gérer qu'un domaine métier
+2. **Actions sans paramètres nommés** : Utiliser des objets pour les actions complexes
+3. **Mutations directes** : Toujours utiliser Immer
+4. **Sélecteurs trop larges** : Préférer les sélecteurs spécifiques
+5. **Pas de reset** : Toujours fournir une action de reset
+6. **Pas de tests** : Chaque store doit être testé
+7. **Persistance inutile** : Ne persister que les données critiques
+
+## Maintenance
+
+- Réviser régulièrement les stores pour identifier les optimisations possibles
+- Maintenir la cohérence des patterns à travers tous les stores
+- Documenter les changements breaking dans les stores
+- Surveiller les performances avec les DevTools Zustand
+
+# Guidelines pour l'utilisation de Zustand et des Stores
+
+## Vue d'ensemble
+
+Ces guidelines définissent les bonnes pratiques pour l'utilisation de Zustand dans notre application Gatsby. Elles garantissent la cohérence, la maintenabilité et la performance de notre gestion d'état globale.
+
+## Structure des Stores
+
+### 1. Organisation des fichiers
+
+Chaque store doit être organisé dans sa propre directory sous `src/stores/` :
+
+```
+stores/
+├── [feature]/
+│   ├── [feature]Store.ts
+│   ├── types.ts (optionnel)
+│   └── [feature]Store.test.ts
+├── utils/
+│   └── createSelector.ts
+└── index.ts
+```
+
+### 2. Structure d'un Store
+
+Chaque store doit suivre cette structure :
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { persist } from 'zustand/middleware' // si nécessaire
+import { createSelectors } from '../utils/createSelector'
+
+// Types pour l'état et les actions
+type [Feature]State = {
+  // Propriétés de l'état
+}
+
+type [Feature]Actions = {
+  // Actions du store
+}
+
+// État initial
+const initialState: [Feature]State = {
+  // Valeurs par défaut
+}
+
+// Export du store avec selectors
+export const use[Feature]Store = createSelectors(
+  create<[Feature]State & [Feature]Actions>()(
+    immer((set, get) => ({
+      ...initialState,
+      // Actions
+    })),
+  ),
+)
+```
+
+## Conventions de Nommage
+
+### 1. Types
+
+- `[Feature]State` : Type pour l'état du store
+- `[Feature]Actions` : Type pour les actions du store
+- `[Feature]Errors` : Type pour les erreurs (si applicable)
+
+### 2. Variables
+
+- `initialState` : État initial du store
+- `defaultState` : Alternative pour l'état par défaut
+- `use[Feature]Store` : Hook du store
+
+### 3. Actions
+
+- `set[Property]` : Pour définir une propriété
+- `update[Property]` : Pour mettre à jour une propriété
+- `reset[Feature]Store` : Pour réinitialiser le store
+- `get[Property]` : Pour récupérer une propriété calculée
+- `is[Property]` : Pour les propriétés booléennes
+
+## Patterns d'Implémentation
+
+### 1. Utilisation d'Immer
+
+Toujours utiliser Immer pour les mutations d'état :
+
+```typescript
+// ✅ Bon
+setApplications: (applications) =>
+  set((state) => {
+    state.applications = applications
+  }),
+
+// ❌ Mauvais
+setApplications: (applications) =>
+  set({ applications }),
+```
+
+### 2. Actions avec Paramètres
+
+Utiliser des objets pour les actions avec plusieurs paramètres :
+
+```typescript
+// ✅ Bon
+updateApplicationStatus: ({
+  applicationUuid,
+  status,
+}: {
+  applicationUuid: string
+  status: ApplicationStatus
+}) => void
+
+// ❌ Mauvais
+updateApplicationStatus: (applicationUuid: string, status: ApplicationStatus) => void
+```
+
+### 3. Validation et Gestion d'Erreurs
+
+Implémenter la validation dans les stores quand nécessaire :
+
+```typescript
+validateApplicant: () =>
+  set((state) => {
+    const { applicant } = state
+    if (!applicant) return
+
+    if (!applicant.firstName?.trim()) {
+      state.errors.firstName = 'Le prénom est requis'
+    }
+  }),
+
+isValid: () => Object.keys(get().errors).length === 0,
+```
+
+### 4. Actions Computées
+
+Utiliser `get()` pour les actions qui calculent des valeurs :
+
+```typescript
+getArchivedApplications: () =>
+  get().applications?.filter((app) => app.status === 'archived') || [],
+
+isLoading: () => Boolean(get().loadingMessage),
+```
+
+## Persistance des Données
+
+### 1. Quand utiliser la persistance
+
+- Données d'authentification
+- Préférences utilisateur
+- Données critiques qui doivent survivre au refresh
+
+### 2. Configuration de la persistance
+
+```typescript
+export const useAuthStore = createSelectors(
+  create<AuthState & AuthActions>()(
+    persist(
+      immer((set, get) => ({
+        // Actions
+      })),
+      {
+        name: 'auth-storage',
+        // Options supplémentaires si nécessaire
+      },
+    ),
+  ),
+)
+```
+
+## Utilisation des Selectors
+
+### 1. Import et Utilisation
+
+```typescript
+// Dans un composant
+import { useApplicantStore } from '../stores/applicant/applicantStore'
+
+const MyComponent = () => {
+  const applications = useApplicantStore.use.applications()
+  const setApplications = useApplicantStore.setApplications
+
+  // Utilisation
+}
+```
+
+### 2. Sélecteurs Personnalisés
+
+Pour les sélecteurs complexes, créer des fonctions dédiées :
+
+```typescript
+// Dans le store
+getArchivedApplications: () =>
+  get().applications?.filter((app) => app.status === 'archived') || [],
+
+// Dans le composant
+const archivedApplications = useApplicantStore.getArchivedApplications()
+```
+
+## Tests
+
+### 1. Structure des Tests
+
+Chaque store doit avoir ses tests :
+
+```typescript
+import { renderHook, act } from '@testing-library/react'
+import { useApplicantStore } from './applicantStore'
+
+describe('useApplicantStore', () => {
+  beforeEach(() => {
+    useApplicantStore.getState().resetApplicantStore()
+  })
+
+  test('should set applications', () => {
+    const { result } = renderHook(() => useApplicantStore())
+
+    act(() => {
+      result.current.setApplications([mockApplication])
+    })
+
+    expect(result.current.applications).toHaveLength(1)
+  })
+})
+```
+
+### 2. Reset entre les Tests
+
+Toujours réinitialiser le store entre les tests :
+
+```typescript
+beforeEach(() => {
+  useApplicantStore.getState().resetApplicantStore()
+})
+```
+
+## Performance
+
+### 1. Optimisation des Re-renders
+
+Utiliser des sélecteurs spécifiques pour éviter les re-renders inutiles :
+
+```typescript
+// ✅ Bon - Sélecteur spécifique
+const applications = useApplicantStore.use.applications()
+
+// ❌ Mauvais - Sélecteur trop large
+const store = useApplicantStore()
+const applications = store.applications
+```
+
+### 2. Actions Optimisées
+
+Éviter les actions qui recréent des objets inutilement :
+
+```typescript
+// ✅ Bon - Mise à jour directe
+updateApplication: (application) =>
+  set((state) => {
+    const index = state.applications.findIndex(a => a.uuid === application.uuid)
+    if (index !== -1) {
+      state.applications[index] = application
+    }
+  }),
+
+// ❌ Mauvais - Recréation de l'array
+updateApplication: (application) =>
+  set((state) => {
+    state.applications = state.applications.map((a) => {
+      if (a.uuid === application.uuid) {
+        return application
+      }
+      return a
+    })
+  }),
+```
+
+## Gestion des Erreurs
+
+### 1. Types d'Erreurs
+
+Définir des types spécifiques pour les erreurs :
+
+```typescript
+type ApplicantErrors = Record<keyof UserWithApplicant['applicant'], string>
+```
+
+### 2. Actions de Gestion d'Erreurs
+
+```typescript
+clearErrors: () =>
+  set((state) => {
+    state.errors = {} as ApplicantErrors
+  }),
+
+isValid: () => Object.keys(get().errors).length === 0,
+```
+
+## Exemples Complets
+
+### Store Simple (UI)
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { createSelectors } from '../utils/createSelector'
+
+type UIState = {
+  isModalOpen: boolean
+  loadingMessage: string | null
+}
+
+type UIActions = {
+  toggleModal: () => void
+  setLoading: (message: string | null) => void
+  isLoading: () => boolean
+  resetState: () => void
+}
+
+const defaultState: UIState = {
+  isModalOpen: false,
+  loadingMessage: null,
+}
+
+export const useUIStore = createSelectors(
+  create<UIState & UIActions>()(
+    immer((set, get) => ({
+      ...defaultState,
+
+      toggleModal: () =>
+        set((state) => {
+          state.isModalOpen = !state.isModalOpen
+        }),
+
+      setLoading: (message: string | null) =>
+        set((state) => {
+          state.loadingMessage = message
+        }),
+
+      isLoading: () => Boolean(get().loadingMessage),
+
+      resetState: () => set(defaultState),
+    })),
+  ),
+)
+```
+
+### Store Complexe (avec Persistance)
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { persist } from 'zustand/middleware'
+import { createSelectors } from '../utils/createSelector'
+
+type AuthState = {
+  user: UserWithApplicant | null
+  token: string | null
+}
+
+type AuthActions = {
+  setUser: (user: UserWithApplicant | null) => void
+  setToken: (token: string | null) => void
+  logout: () => void
+  isAuthenticated: () => boolean
+}
+
+const defaultState: AuthState = {
+  user: null,
+  token: null,
+}
+
+export const useAuthStore = createSelectors(
+  create<AuthState & AuthActions>()(
+    persist(
+      immer((set, get) => ({
+        ...defaultState,
+
+        setUser: (user) =>
+          set((state) => {
+            state.user = user
+          }),
+
+        setToken: (token) =>
+          set((state) => {
+            state.token = token
+          }),
+
+        logout: () =>
+          set((state) => {
+            state.user = null
+            state.token = null
+          }),
+
+        isAuthenticated: () => Boolean(get().user && get().token),
+      })),
+      {
+        name: 'auth-storage',
+      },
+    ),
+  ),
+)
+```
+
+## Checklist de Création d'un Store
+
+- [ ] Structure de fichiers correcte
+- [ ] Types bien définis (State et Actions)
+- [ ] État initial défini
+- [ ] Utilisation d'Immer pour les mutations
+- [ ] Actions avec noms explicites
+- [ ] Utilisation de `createSelectors`
+- [ ] Tests unitaires
+- [ ] Gestion d'erreurs (si applicable)
+- [ ] Persistance configurée (si nécessaire)
+- [ ] Documentation des actions complexes
+
+## Anti-patterns à Éviter
+
+1. **Stores trop larges** : Un store ne doit gérer qu'un domaine métier
+2. **Actions sans paramètres nommés** : Utiliser des objets pour les actions complexes
+3. **Mutations directes** : Toujours utiliser Immer
+4. **Sélecteurs trop larges** : Préférer les sélecteurs spécifiques
+5. **Pas de reset** : Toujours fournir une action de reset
+6. **Pas de tests** : Chaque store doit être testé
+7. **Persistance inutile** : Ne persister que les données critiques
+
+## Maintenance
+
+- Réviser régulièrement les stores pour identifier les optimisations possibles
+- Maintenir la cohérence des patterns à travers tous les stores
+- Documenter les changements breaking dans les stores
+- Surveiller les performances avec les DevTools Zustand
