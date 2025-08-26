@@ -35,7 +35,7 @@ src/
 │   ├── zustand/    # Zustand adapter (coming soon)
 │   ├── jotai/      # Jotai adapter (coming soon)
 │   └── valtio/     # Valtio adapter (coming soon)
-└── utils/          # Utility functions (coming soon)
+└── utils/          # Utility functions
 ```
 
 ## 🎯 Core Concepts
