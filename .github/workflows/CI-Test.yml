@@ -71,4 +71,4 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: 🏗 Build
-        run: nr tsc
+        run: nr type-check
