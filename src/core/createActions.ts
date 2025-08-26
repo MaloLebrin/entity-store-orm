@@ -1,5 +1,5 @@
-import type { State } from './index'
-import type { Id, WithId } from '~/types/WithId'
+import type { State } from '../types/State.js'
+import type { Id, WithId } from '../types/WithId.js'
 
 export default function createActions<T extends WithId>(state: State<T>) {
   return {
@@ -48,8 +48,8 @@ export default function createActions<T extends WithId>(state: State<T>) {
         state.entities.byId[id] = {
           ...state.entities.byId[id],
           ...payload,
+          $isDirty: true,
         }
-        this.setIsDirty(id)
       }
       else {
         this.createOne(payload)
@@ -72,6 +72,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
     deleteOne(id: Id) {
       delete state.entities.byId[id]
       state.entities.allIds = state.entities.allIds.filter(entityId => entityId !== id)
+      state.entities.active = state.entities.active.filter(entityId => entityId !== id)
     },
 
     /**
@@ -94,7 +95,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
    * @param id of entity to set as active
    */
     setActive(id: Id) {
-      if (!state.entities.active.includes(id))
+      if (!state.entities.active.includes(id) && state.entities.byId[id])
         state.entities.active.push(id)
     },
 
@@ -105,7 +106,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
     setIsDirty(id: Id) {
       if (state.entities.byId[id]) {
         state.entities.byId[id] = {
-          ...state.entities.byId[id],
+          ...state.entities.byId[id]!,
           $isDirty: true,
         }
       }
@@ -118,7 +119,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
     setIsNotDirty(id: Id) {
       if (state.entities.byId[id]) {
         state.entities.byId[id] = {
-          ...state.entities.byId[id],
+          ...state.entities.byId[id]!,
           $isDirty: false,
         }
       }
@@ -131,7 +132,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
      */
     updateField<K extends keyof T>(field: K, value: (T & { $isDirty: boolean })[K], id: Id) {
       if (state.entities.byId[id]) {
-        state.entities.byId[id][field] = value
+        state.entities.byId[id]![field] = value
         this.setIsDirty(id)
       }
     },

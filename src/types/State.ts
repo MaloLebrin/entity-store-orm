@@ -1,6 +1,6 @@
-import type { Id } from './WithId'
+import type { Id, WithId } from './WithId'
 
-export interface State<T extends Id> {
+export interface State<T extends WithId> {
   entities: {
     byId: Record<Id, T & { $isDirty: boolean }>
     allIds: Id[]

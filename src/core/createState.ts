@@ -1,4 +1,5 @@
-import type { State, WithId } from './index'
+import type { State } from '../types/State.js'
+import type { WithId } from '../types/WithId.js'
 
 export default function<T extends WithId>(): State<T & { $isDirty: boolean }> {
   return {

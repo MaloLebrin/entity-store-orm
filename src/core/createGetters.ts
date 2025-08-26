@@ -1,6 +1,6 @@
-import { uniq } from '@antfu/utils'
-import type { State } from './index'
-import type { Id, WithId } from '~/types/WithId'
+
+import type { State } from '../types/State.js'
+import type { Id, WithId } from '../types/WithId.js'
 
 export default function createGetters<T extends WithId>(currentState: State<T>) {
   /**
@@ -51,7 +51,7 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
     return (ids: Id[], canHaveDuplicates?: boolean) => {
       const filteredIds = ids.filter(id => !state.entities.allIds.includes(id))
       if (!canHaveDuplicates)
-        return uniq(filteredIds)
+        return Array.from(new Set(filteredIds))
 
       return filteredIds
     }
@@ -75,13 +75,13 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @param filter - The filtering callback that will be used to filter the items.
    */
   function getWhere(state = currentState) {
-    return (filter: (arg: T) => boolean | null) => {
+    return (filter: (arg: T & { $isDirty: boolean }) => boolean | null) => {
       if (typeof filter !== 'function')
         return state.entities.byId
 
       return state.entities.allIds.reduce((acc: Record<Id, T & { $isDirty: boolean }>, id: Id) => {
         const item = state.entities.byId[id]
-        if (!filter(item))
+        if (!item || !filter(item))
           return acc
 
         acc[id] = item
@@ -95,13 +95,13 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @param filter - The filtering callback that will be used to filter the items.
    */
   function getWhereArray(state = currentState) {
-    return (filter: (arg: T) => boolean | null) => {
+    return (filter: (arg: T & { $isDirty: boolean }) => boolean | null) => {
       if (typeof filter !== 'function')
         return Object.values(state.entities.byId)
 
       return Object.values(state.entities.allIds.reduce((acc: Record<Id, T & { $isDirty: boolean }>, id: Id) => {
         const item = state.entities.byId[id]
-        if (!filter(item))
+        if (!item || !filter(item))
           return acc
 
         acc[id] = item
@@ -116,13 +116,13 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @returns The first item that passes the filter, or the first item in the state if no filter is provided.
    */
   function getFirstWhere(state = currentState) {
-    return (filter: (arg: T) => boolean | null) => {
+    return (filter: (arg: T & { $isDirty: boolean }) => boolean | null) => {
       if (typeof filter !== 'function')
         return Object.values(state.entities.byId)[0]
 
       return Object.values(state.entities.allIds.reduce((acc: Record<Id, T & { $isDirty: boolean }>, id: Id) => {
         const item = state.entities.byId[id]
-        if (!filter(item))
+        if (!item || !filter(item))
           return acc
 
         acc[id] = item
@@ -165,7 +165,7 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @param ids - ids of items
    */
   function getMany(state = currentState) {
-    return (ids: Id[]) => ids.map(id => state.entities.byId[id]).filter(id => id)
+    return (ids: Id[]) => ids.map(id => state.entities.byId[id]).filter((item): item is T & { $isDirty: boolean } => item !== undefined)
   }
 
   /**
@@ -206,7 +206,7 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    *  @return boolean
    */
   function isDirty(state = currentState) {
-    return (id: Id) => state.entities.byId[id].$isDirty
+    return (id: Id) => state.entities.byId[id]?.$isDirty || false
   }
 
   /**
