@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
+import type { WithId } from '../types/WithId.js';
 import createGetters from './createGetters.js';
 import createState from './createState.js';
-import type { WithId } from '../types/WithId.js';
 
 // Test entity interface
 interface User extends WithId {
@@ -10,13 +10,17 @@ interface User extends WithId {
   age: number;
 }
 
+type TemporaryState = ReturnType<typeof createState<User>> & ReturnType<typeof createGetters<User>>;
+
 describe('createGetters', () => {
-  let state: ReturnType<typeof createState<User>>;
-  let getters: ReturnType<typeof createGetters<User>>;
+  let state: TemporaryState;
 
   beforeEach(() => {
-    state = createState<User>();
-    getters = createGetters(state);
+    state = createState<User>() as TemporaryState;
+    state = {
+      ...state,
+      ...createGetters(state),
+    };
     
     // Add some test data
     const user1: User & { $isDirty: boolean } = { id: 1, name: 'John', email: 'john@example.com', age: 30, $isDirty: false };
@@ -34,7 +38,7 @@ describe('createGetters', () => {
 
   describe('findOneById (deprecated)', () => {
     test('should find entity by id', () => {
-      const findOne = getters.findOneById();
+      const findOne = state.findOneById();
       const user = findOne(1);
       
       expect(user).toBeDefined();
@@ -43,7 +47,7 @@ describe('createGetters', () => {
     });
 
     test('should return undefined for non-existent id', () => {
-      const findOne = getters.findOneById();
+      const findOne = state.findOneById();
       const user = findOne(999);
       
       expect(user).toBeUndefined();
@@ -52,7 +56,7 @@ describe('createGetters', () => {
 
   describe('findManyById (deprecated)', () => {
     test('should find multiple entities by ids', () => {
-      const findMany = getters.findManyById();
+      const findMany = state.findManyById();
       const users = findMany([1, 2]);
       
       expect(users).toHaveLength(2);
@@ -61,7 +65,7 @@ describe('createGetters', () => {
     });
 
     test('should filter out non-existent ids', () => {
-      const findMany = getters.findManyById();
+      const findMany = state.findManyById();
       const users = findMany([1, 999, 2]);
       
       expect(users).toHaveLength(2);
@@ -70,7 +74,7 @@ describe('createGetters', () => {
     });
 
     test('should return empty array for non-existent ids', () => {
-      const findMany = getters.findManyById();
+      const findMany = state.findManyById();
       const users = findMany([999, 888]);
       
       expect(users).toHaveLength(0);
@@ -79,7 +83,7 @@ describe('createGetters', () => {
 
   describe('getAll', () => {
     test('should return all entities as dictionary', () => {
-      const all = getters.getAll();
+      const all = state.getAll();
       
       expect(all).toBeDefined();
       expect(Object.keys(all)).toHaveLength(3);
@@ -99,7 +103,7 @@ describe('createGetters', () => {
 
   describe('getAllArray', () => {
     test('should return all entities as array', () => {
-      const all = getters.getAllArray();
+      const all = state.getAllArray();
       
       expect(Array.isArray(all)).toBe(true);
       expect(all).toHaveLength(3);
@@ -119,7 +123,7 @@ describe('createGetters', () => {
 
   describe('getAllIds', () => {
     test('should return all entity ids', () => {
-      const ids = getters.getAllIds();
+      const ids = state.getAllIds();
       
       expect(Array.isArray(ids)).toBe(true);
       expect(ids).toHaveLength(3);
@@ -139,7 +143,8 @@ describe('createGetters', () => {
 
   describe('getMissingIds', () => {
     test('should return missing ids', () => {
-      const missing = getters.getMissingIds([1, 2, 4, 5]);
+      const getMissing = state.getMissingIds();
+      const missing = getMissing([1, 2, 4, 5]);
       
       expect(missing).toHaveLength(2);
       expect(missing).toContain(4);
@@ -147,13 +152,15 @@ describe('createGetters', () => {
     });
 
     test('should return empty array when all ids exist', () => {
-      const missing = getters.getMissingIds([1, 2, 3]);
+      const getMissing = state.getMissingIds();
+      const missing = getMissing([1, 2, 3]);
       
       expect(missing).toHaveLength(0);
     });
 
     test('should handle duplicates when canHaveDuplicates is false', () => {
-      const missing = getters.getMissingIds([1, 2, 4, 4, 5], false);
+      const getMissing = state.getMissingIds();
+      const missing = getMissing([1, 2, 4, 4, 5], false);
       
       expect(missing).toHaveLength(2);
       expect(missing).toContain(4);
@@ -161,7 +168,8 @@ describe('createGetters', () => {
     });
 
     test('should handle duplicates when canHaveDuplicates is true', () => {
-      const missing = getters.getMissingIds([1, 2, 4, 4, 5], true);
+      const getMissing = state.getMissingIds();
+      const missing = getMissing([1, 2, 4, 4, 5], true);
       
       expect(missing).toHaveLength(3);
       expect(missing).toContain(4);
@@ -178,7 +186,8 @@ describe('createGetters', () => {
         { id: 5, name: 'Charlie', email: 'charlie@example.com', age: 32 }
       ];
       
-      const missing = getters.getMissingEntities(entities);
+      const getMissing = state.getMissingEntities();
+      const missing = getMissing(entities);
       
       expect(missing).toHaveLength(2);
       expect(missing[0]?.name).toBe('Alice');
@@ -191,19 +200,22 @@ describe('createGetters', () => {
         { id: 2, name: 'Jane', email: 'jane@example.com', age: 25 }
       ];
       
-      const missing = getters.getMissingEntities(entities);
+      const getMissing = state.getMissingEntities();
+      const missing = getMissing(entities);
       
       expect(missing).toHaveLength(0);
     });
 
     test('should handle empty array', () => {
-      const missing = getters.getMissingEntities([]);
+      const getMissing = state.getMissingEntities();
+      const missing = getMissing([]);
       
       expect(missing).toEqual([]);
     });
 
     test('should handle null/undefined array', () => {
-      const missing = getters.getMissingEntities(null as any);
+      const getMissing = state.getMissingEntities();
+      const missing = getMissing(null as any);
       
       expect(missing).toEqual([]);
     });
@@ -211,7 +223,8 @@ describe('createGetters', () => {
 
   describe('getWhere', () => {
     test('should filter entities by predicate', () => {
-      const adults = getters.getWhere(user => user.age >= 30);
+      const getWhere = state.getWhere();
+      const adults = getWhere(user => user.age >= 30);
       
       expect(Object.keys(adults)).toHaveLength(2);
       expect(adults[1]?.name).toBe('John');
@@ -219,13 +232,15 @@ describe('createGetters', () => {
     });
 
     test('should return all entities when filter is not a function', () => {
-      const all = getters.getWhere(null as any);
+      const getWhere = state.getWhere();
+      const all = getWhere(null as any);
       
       expect(Object.keys(all)).toHaveLength(3);
     });
 
     test('should return empty object when no entities match filter', () => {
-      const seniors = getters.getWhere(user => user.age >= 60);
+      const getWhere = state.getWhere();
+      const seniors = getWhere(user => user.age >= 60);
       
       expect(Object.keys(seniors)).toHaveLength(0);
     });
@@ -233,7 +248,8 @@ describe('createGetters', () => {
 
   describe('getWhereArray', () => {
     test('should filter entities by predicate and return array', () => {
-      const adults = getters.getWhereArray(user => user.age >= 30);
+      const getWhereArray = state.getWhereArray();
+      const adults = getWhereArray(user => user.age >= 30);
       
       expect(Array.isArray(adults)).toBe(true);
       expect(adults).toHaveLength(2);
@@ -242,14 +258,16 @@ describe('createGetters', () => {
     });
 
     test('should return all entities when filter is not a function', () => {
-      const all = getters.getWhereArray(null as any);
+      const getWhereArray = state.getWhereArray();
+      const all = getWhereArray(null as any);
       
       expect(Array.isArray(all)).toBe(true);
       expect(all).toHaveLength(3);
     });
 
     test('should return empty array when no entities match filter', () => {
-      const seniors = getters.getWhereArray(user => user.age >= 60);
+      const getWhereArray = state.getWhereArray();
+      const seniors = getWhereArray(user => user.age >= 60);
       
       expect(Array.isArray(seniors)).toBe(true);
       expect(seniors).toHaveLength(0);
@@ -258,7 +276,7 @@ describe('createGetters', () => {
 
   describe('getCurrent', () => {
     test('should return current entity', () => {
-      const current = getters.getCurrent();
+      const current = state.getCurrent();
       
       expect(current).toBeDefined();
       expect(current?.name).toBe('John');
@@ -267,22 +285,24 @@ describe('createGetters', () => {
 
     test('should return null when no current entity', () => {
       state.entities.current = null;
-      const current = getters.getCurrent();
+      const current = state.getCurrent();
       
       expect(current).toBeNull();
     });
   });
 
   describe('getCurrentById', () => {
-    test('should return current entity id', () => {
-      const currentId = getters.getCurrentById();
+    test('should return current entity', () => {
+      const currentEntity = state.getCurrentById();
       
-      expect(currentId).toBe(1);
+      expect(currentEntity).toBeDefined();
+      expect(currentEntity?.id).toBe(1);
+      expect(currentEntity?.name).toBe('John');
     });
 
     test('should return null when no current entity', () => {
       state.entities.currentById = null;
-      const currentId = getters.getCurrentById();
+      const currentId = state.getCurrentById();
       
       expect(currentId).toBeNull();
     });
@@ -290,17 +310,17 @@ describe('createGetters', () => {
 
   describe('getActive', () => {
     test('should return active entities', () => {
-      const active = getters.getActive();
+      const active = state.getActive();
       
       expect(Array.isArray(active)).toBe(true);
       expect(active).toHaveLength(2);
-      expect(active.map(u => u.name)).toContain('John');
-      expect(active.map(u => u.name)).toContain('Jane');
+      expect(active).toContain(1);
+      expect(active).toContain(2);
     });
 
     test('should return empty array when no active entities', () => {
       state.entities.active = [];
-      const active = getters.getActive();
+      const active = state.getActive();
       
       expect(active).toEqual([]);
     });
@@ -308,16 +328,15 @@ describe('createGetters', () => {
 
   describe('getFirstActive', () => {
     test('should return first active entity', () => {
-      const first = getters.getFirstActive();
+      const first = state.getFirstActive();
       
       expect(first).toBeDefined();
-      expect(first?.name).toBe('John');
-      expect(first?.id).toBe(1);
+      expect(first).toBe(1);
     });
 
     test('should return undefined when no active entities', () => {
       state.entities.active = [];
-      const first = getters.getFirstActive();
+      const first = state.getFirstActive();
       
       expect(first).toBeUndefined();
     });
@@ -325,66 +344,73 @@ describe('createGetters', () => {
 
   describe('isAlreadyInStore', () => {
     test('should return true for existing entity', () => {
-      expect(getters.isAlreadyInStore(1)).toBe(true);
-      expect(getters.isAlreadyInStore(2)).toBe(true);
-      expect(getters.isAlreadyInStore(3)).toBe(true);
+      const isInStore = state.isAlreadyInStore();
+      expect(isInStore(1)).toBe(true);
+      expect(isInStore(2)).toBe(true);
+      expect(isInStore(3)).toBe(true);
     });
 
     test('should return false for non-existent entity', () => {
-      expect(getters.isAlreadyInStore(999)).toBe(false);
+      const isInStore = state.isAlreadyInStore();
+      expect(isInStore(999)).toBe(false);
     });
   });
 
   describe('isAlreadyActive', () => {
     test('should return true for active entity', () => {
-      expect(getters.isAlreadyActive(1)).toBe(true);
-      expect(getters.isAlreadyActive(2)).toBe(true);
+      const isActive = state.isAlreadyActive();
+      expect(isActive(1)).toBe(true);
+      expect(isActive(2)).toBe(true);
     });
 
     test('should return false for non-active entity', () => {
-      expect(getters.isAlreadyActive(3)).toBe(false);
+      const isActive = state.isAlreadyActive();
+      expect(isActive(3)).toBe(false);
     });
 
     test('should return false for non-existent entity', () => {
-      expect(getters.isAlreadyActive(999)).toBe(false);
+      const isActive = state.isAlreadyActive();
+      expect(isActive(999)).toBe(false);
     });
   });
 
   describe('isDirty', () => {
     test('should return dirty status of entity', () => {
-      expect(getters.isDirty(1)).toBe(false);
-      expect(getters.isDirty(2)).toBe(false);
-      expect(getters.isDirty(3)).toBe(true);
+      const isDirty = state.isDirty();
+      expect(isDirty(1)).toBe(false);
+      expect(isDirty(2)).toBe(false);
+      expect(isDirty(3)).toBe(true);
     });
 
     test('should return false for non-existent entity', () => {
-      expect(getters.isDirty(999)).toBe(false);
+      const isDirty = state.isDirty();
+      expect(isDirty(999)).toBe(false);
     });
   });
 
   describe('isEmpty', () => {
     test('should return false when entities exist', () => {
-      expect(getters.isEmpty()).toBe(false);
+      expect(state.getIsEmpty()).toBe(false);
     });
 
     test('should return true when no entities exist', () => {
       const emptyState = createState<User>();
       const emptyGetters = createGetters(emptyState);
       
-      expect(emptyGetters.isEmpty()).toBe(true);
+      expect(emptyGetters.getIsEmpty()).toBe(true);
     });
   });
 
   describe('isNotEmpty', () => {
     test('should return true when entities exist', () => {
-      expect(getters.isNotEmpty()).toBe(true);
+      expect(state.getIsNotEmpty()).toBe(true);
     });
 
     test('should return false when no entities exist', () => {
       const emptyState = createState<User>();
       const emptyGetters = createGetters(emptyState);
       
-      expect(emptyGetters.isNotEmpty()).toBe(false);
+      expect(emptyGetters.getIsNotEmpty()).toBe(false);
     });
   });
 });
