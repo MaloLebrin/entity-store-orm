@@ -12,8 +12,7 @@ export { default as createGetters } from './core/createGetters.js';
 export { default as createActions } from './core/createActions.js';
 
 // Adapters
-export { createPiniaEntityStore } from './adapters/pinia/index.js';
-// export { createZustandStore } from './adapters/zustand/index.js';
+export * from './adapters/index.js';
 
 // Utilities (coming soon)
 // export * from './utils/index.js';
