@@ -12,7 +12,6 @@ pnpm add entity-store
 
 ```typescript
 import { createPiniaEntityStore } from 'entity-store/adapters/pinia'
-import type { WithId } from 'entity-store/types'
 
 interface Todo {
   id: number
@@ -49,18 +48,6 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
     getCompletedCount: (store) => () => {
       const getWhere = store.getWhere()
       return Object.keys(getWhere(todo => todo.completed)).length
-    },
-    
-    // Getter personnalisé : obtenir les todos par tag
-    getTodosByTag: (store) => (tag: string) => {
-      const getWhere = store.getWhere()
-      return getWhere(todo => todo.tags.includes(tag))
-    },
-    
-    // Getter personnalisé : obtenir les todos haute priorité
-    getHighPriorityTodos: (store) => () => {
-      const getWhere = store.getWhere()
-      return getWhere(todo => todo.priority === 'high')
     }
   }
 })
@@ -78,32 +65,6 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
         const updatedTodo = {
           ...current,
           completed: !current.completed,
-          updatedAt: new Date()
-        }
-        store.updateOne(id, updatedTodo)
-      }
-    },
-    
-    // Action personnalisée : ajouter un tag à un todo
-    addTag: (store) => (id: number, tag: string) => {
-      const current = store.getOne()(id)
-      if (current && !current.tags.includes(tag)) {
-        const updatedTodo = {
-          ...current,
-          tags: [...current.tags, tag],
-          updatedAt: new Date()
-        }
-        store.updateOne(id, updatedTodo)
-      }
-    },
-    
-    // Action personnalisée : supprimer un tag d'un todo
-    removeTag: (store) => (id: number, tag: string) => {
-      const current = store.getOne()(id)
-      if (current) {
-        const updatedTodo = {
-          ...current,
-          tags: current.tags.filter(t => t !== tag),
           updatedAt: new Date()
         }
         store.updateOne(id, updatedTodo)
@@ -131,18 +92,13 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
     // État UI personnalisé
     ui: {
       isLoading: false,
-      error: null as string | null,
-      selectedTags: [] as string[],
-      sortBy: 'createdAt' as 'createdAt' | 'updatedAt' | 'priority' | 'title',
-      sortOrder: 'desc' as 'asc' | 'desc'
+      error: null as string | null
     },
     
     // Filtres personnalisés
     filters: {
       showCompleted: true,
-      showIncomplete: true,
-      priorityFilter: null as 'low' | 'medium' | 'high' | null,
-      tagFilter: null as string | null
+      priorityFilter: null as 'low' | 'medium' | 'high' | null
     }
   }
 })
@@ -402,11 +358,62 @@ onMounted(() => {
 </script>
 ```
 
+## Améliorations de typage TypeScript
+
+L'adaptateur utilise maintenant des types Pinia natifs au lieu de `any`, offrant une meilleure sécurité des types :
+
+### Types exportés
+
+```typescript
+import { 
+  createPiniaEntityStore, 
+  type BaseEntityStore,
+  type PiniaEntityStore 
+} from 'entity-store/adapters/pinia'
+
+// BaseEntityStore<T> - Type de base avec toutes les méthodes d'entités
+// PiniaEntityStore<T> - Type du store instancié
+```
+
+### Typage des getters et actions personnalisés
+
+```typescript
+// Les getters et actions reçoivent le store typé
+getTodosByPriority: (store: BaseEntityStore<Todo>) => (priority: Todo['priority']) => {
+  // store est entièrement typé avec toutes les méthodes d'entités
+  const getWhere = store.getWhere()
+  return getWhere(todo => todo.priority === priority)
+}
+```
+
+### Typage de l'état personnalisé
+
+```typescript
+// L'état personnalisé est fusionné avec l'état des entités
+state: {
+  ui: {
+    isLoading: false,
+    error: null as string | null
+  } as TodoUIState
+}
+
+// TypeScript sait que store.entities.ui existe et est typé
+store.entities.ui.isLoading = true // ✅ TypeScript accepte boolean
+```
+
+### Avantages du nouveau système de types
+
+1. **Sécurité des types** : Plus de `any`, tous les types sont vérifiés
+2. **Autocomplétion** : IntelliSense complet pour toutes les méthodes
+3. **Vérification d'erreurs** : TypeScript détecte les erreurs à la compilation
+4. **Types Pinia natifs** : Compatibilité parfaite avec l'écosystème Pinia
+5. **Extensibilité** : Types génériques pour tous les cas d'usage
+
 ## Avantages
 
 1. **Flexibilité maximale** : Étendez vos stores comme dans un store Pinia classique
 2. **Gestion automatique des entités** : Toutes les méthodes de base sont incluses
-3. **Type safety** : Support TypeScript complet
+3. **Type safety avancé** : Support TypeScript complet avec types Pinia natifs
 4. **Performance** : Utilise la réactivité native de Pinia
 5. **Extensibilité** : Ajoutez facilement des getters, actions et état personnalisés
 6. **Compatibilité** : Fonctionne avec tous les plugins Pinia existants
@@ -418,9 +425,9 @@ onMounted(() => {
 
 ```typescript
 interface PiniaEntityStoreOptions<T extends WithId> {
-  getters?: Record<string, (store: any) => any>
-  actions?: Record<string, (store: any) => any>
-  state?: Record<string, any>
+  getters?: Record<string, (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown>
+  actions?: Record<string, (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown>
+  state?: Record<string, unknown>
   storeName?: string
 }
 ```
@@ -451,6 +458,7 @@ interface State<T extends WithId> {
 3. **État personnalisé** : Utilisez-le pour l'état UI, les filtres et la configuration
 4. **Type safety** : Définissez des interfaces claires pour vos entités et extensions
 5. **Réactivité** : Profitez de la réactivité automatique de Pinia pour vos extensions
+6. **Types stricts** : Utilisez des types union et des assertions de type pour plus de sécurité
 
 ## Cas d'usage avancés
 
