@@ -2,13 +2,13 @@
 
 Un adaptateur Pinia pour le système de gestion d'entités agnostique, permettant de créer des stores avec gestion complète des entités tout en conservant la flexibilité de Pinia.
 
-## Installation
+## 📦 Installation
 
 ```bash
 pnpm add entity-store
 ```
 
-## Utilisation de base
+## 🚀 Utilisation de base
 
 ```typescript
 import { createPiniaEntityStore } from 'entity-store/adapters/pinia'
@@ -23,7 +23,7 @@ interface Todo {
 export const useTodoStore = createPiniaEntityStore<Todo>('todos')
 ```
 
-## Fonctionnalités
+## ✨ Fonctionnalités
 
 ### Gestion automatique des entités
 
@@ -233,7 +233,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
 })
 ```
 
-## Utilisation dans un composant Vue
+## 🎯 Utilisation dans un composant Vue
 
 ```vue
 <template>
@@ -358,7 +358,7 @@ onMounted(() => {
 </script>
 ```
 
-## Améliorations de typage TypeScript
+## 🔧 Améliorations de typage TypeScript
 
 L'adaptateur utilise maintenant des types Pinia natifs au lieu de `any`, offrant une meilleure sécurité des types :
 
@@ -409,7 +409,7 @@ store.entities.ui.isLoading = true // ✅ TypeScript accepte boolean
 4. **Types Pinia natifs** : Compatibilité parfaite avec l'écosystème Pinia
 5. **Extensibilité** : Types génériques pour tous les cas d'usage
 
-## Avantages
+## ✨ Avantages
 
 1. **Flexibilité maximale** : Étendez vos stores comme dans un store Pinia classique
 2. **Gestion automatique des entités** : Toutes les méthodes de base sont incluses
@@ -419,7 +419,7 @@ store.entities.ui.isLoading = true // ✅ TypeScript accepte boolean
 6. **Compatibilité** : Fonctionne avec tous les plugins Pinia existants
 7. **Simplicité** : Une seule fonction avec des options intégrées
 
-## API complète
+## 📚 API complète
 
 ### Options de configuration
 
@@ -451,7 +451,7 @@ interface State<T extends WithId> {
 }
 ```
 
-## Bonnes pratiques
+## 🎯 Bonnes pratiques
 
 1. **Getters personnalisés** : Utilisez-les pour la logique de filtrage, tri et calculs
 2. **Actions personnalisées** : Utilisez-les pour les opérations métier complexes
@@ -460,7 +460,7 @@ interface State<T extends WithId> {
 5. **Réactivité** : Profitez de la réactivité automatique de Pinia pour vos extensions
 6. **Types stricts** : Utilisez des types union et des assertions de type pour plus de sécurité
 
-## Cas d'usage avancés
+## 🚀 Cas d'usage avancés
 
 - **Gestion des formulaires** : État de validation, erreurs, soumission
 - **Filtrage et recherche** : Filtres complexes, recherche en temps réel

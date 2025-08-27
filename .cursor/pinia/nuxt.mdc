@@ -1,31 +1,40 @@
----
-description:
-globs:
-alwaysApply: true
----
-Nuxt
-Master this and much more with the official video course by the author of Pinia
+# Nuxt
+
+Master this and much more with the official video course by the author of Pinia.
+
 Using Pinia with Nuxt is easier since Nuxt takes care of a lot of things when it comes to server side rendering. For instance, you don't need to care about serialization nor XSS attacks. Pinia supports Nuxt 3 and 4.
 
-✨
-Vibe code Vue apps with confidence
-RuleKit
-Installation
+✨ Vibe code Vue apps with confidence
 
+## 📦 Installation
+
+```bash
 npx nuxi@latest module add pinia
-This will add both @pinia/nuxt and pinia to your project. If you notice that pinia is not installed, please install it manually with your package manager: npm i pinia.
+```
 
-TIP
+This will add both `@pinia/nuxt` and `pinia` to your project. If you notice that pinia is not installed, please install it manually with your package manager:
 
-If you're using npm, you might encounter an ERESOLVE unable to resolve dependency tree error. In that case, add the following to your package.json:
+```bash
+npm i pinia
+```
 
+### ⚠️ TIP
 
-"overrides": {
-  "vue": "latest"
+If you're using npm, you might encounter an ERESOLVE unable to resolve dependency tree error. In that case, add the following to your `package.json`:
+
+```json
+{
+  "overrides": {
+    "vue": "latest"
+  }
 }
-We supply a module to handle everything for you, you only need to add it to modules in your nuxt.config.js file:
+```
 
+## 🚀 Configuration
 
+We supply a module to handle everything for you, you only need to add it to modules in your `nuxt.config.js` file:
+
+```javascript
 // nuxt.config.js
 export default defineNuxtConfig({
   // ... other options
@@ -34,51 +43,73 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 })
+```
+
 And that's it, use your store as usual!
 
-Awaiting for actions in pages
-As with onServerPrefetch(), you can call a store action within the callOnce() composable. This will allow Nuxt to run the action only once and avoids refetching data that is already present.
+## 🔄 Awaiting for actions in pages
 
+As with `onServerPrefetch()`, you can call a store action within the `callOnce()` composable. This will allow Nuxt to run the action only once and avoids refetching data that is already present.
 
+### Basic usage
+
+```vue
 <script setup>
 const store = useStore()
 // we could also extract the data, but it's already present in the store
 await callOnce('user', () => store.fetchUser())
 </script>
-Depending on your requirements, you can choose to run the action only once on the client, or on every navigation (which is closer to data fetching behavior of useFetch()/useAsyncData())
+```
 
+### Navigation mode
 
+Depending on your requirements, you can choose to run the action only once on the client, or on every navigation (which is closer to data fetching behavior of `useFetch()`/`useAsyncData()`):
+
+```vue
 <script setup>
 const store = useStore()
 await callOnce('user', () => store.fetchUser(), { mode: 'navigation' })
 </script>
-TIP
+```
 
-If you want to use a store outside of setup() or an injection aware context (e.g. Navigation guards, other stores, Nuxt Middlewares, etc), remember to pass the pinia instance to useStore(), for the reasons alluded to here. Retrieving the pinia instance might vary.
+### ⚠️ TIP
 
+If you want to use a store outside of `setup()` or an injection aware context (e.g. Navigation guards, other stores, Nuxt Middlewares, etc), remember to pass the pinia instance to `useStore()`, for the reasons alluded to here. Retrieving the pinia instance might vary.
 
+```typescript
 import { useStore } from '~/stores/myStore'
 
 // this line is usually inside a function that is able to retrieve
 // the pinia instance
 const store = useStore(pinia)
+```
+
 Fortunately, most of the time you don't need to go through this hassle.
 
-Auto imports
-By default @pinia/nuxt exposes a few auto imports:
+## 🔌 Auto imports
 
-usePinia(), which is similar to getActivePinia() but works better with Nuxt.
-defineStore() to define stores
-storeToRefs() when you need to extract individual refs from a store
-acceptHMRUpdate() for hot module replacement
-It also automatically imports all stores defined within your stores folder. It doesn't lookup for nested stores though. You can customize this behavior by setting the storesDirs option:
+By default `@pinia/nuxt` exposes a few auto imports:
 
+- `usePinia()`, which is similar to `getActivePinia()` but works better with Nuxt
+- `defineStore()` to define stores
+- `storeToRefs()` when you need to extract individual refs from a store
+- `acceptHMRUpdate()` for hot module replacement
 
+It also automatically imports all stores defined within your `stores` folder. It doesn't lookup for nested stores though. You can customize this behavior by setting the `storesDirs` option:
+
+```typescript
 // nuxt.config.ts
 export default defineNuxtConfig({
   // ... other options
   modules: ['@pinia/nuxt'],
   pinia: {
+    storesDirs: ['./stores/**', './custom-folder/stores/**'],
+  },
+})
+```
+
+Note the folders are relative to the root of your project. If you change the `srcDir` option, you need to adapt the paths accordingly.
+
     storesDirs: ['./stores/**', './custom-folder/stores/**'],
   },
 })

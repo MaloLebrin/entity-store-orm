@@ -1,23 +1,28 @@
----
-description: 
-globs: *.tsx,*ts
-alwaysApply: false
----
-Think carefully before implementing code that throws errors.
+# Error Handling Guidelines
+
+## 🤔 Think Carefully Before Throwing
+
+**Think carefully before implementing code that throws errors.**
+
+## ✅ When Throwing is Appropriate
 
 If a thrown error produces a desirable outcome in the system, go for it. For instance, throwing a custom error inside a backend framework's request handler.
 
-However, for code that you would need a manual try catch for, consider using a result type instead:
+## 🚫 Consider Result Types Instead
 
-```ts
+However, for code that you would need a manual try-catch for, consider using a result type instead:
+
+```typescript
 type Result<T, E extends Error> =
   | { ok: true; value: T }
   | { ok: false; error: E };
 ```
 
+## 📝 Example: JSON Parsing
+
 For example, when parsing JSON:
 
-```ts
+```typescript
 const parseJson = (
   input: string,
 ): Result<unknown, Error> => {
@@ -29,13 +34,28 @@ const parseJson = (
 };
 ```
 
+## 🔄 Using Result Types
+
 This way you can handle the error in the caller:
 
-```ts
+```typescript
 const result = parseJson('{"name": "John"}');
 
 if (result.ok) {
   console.log(result.value);
+} else {
+  console.error(result.error);
+}
+```
+
+## 🎯 Benefits of Result Types
+
+- **Type safety**: Compile-time error handling
+- **No try-catch**: Cleaner code flow
+- **Explicit error handling**: Forces developers to handle errors
+- **Better testing**: Easier to test error scenarios
+- **Functional programming**: Aligns with functional programming principles
+
 } else {
   console.error(result.error);
 }

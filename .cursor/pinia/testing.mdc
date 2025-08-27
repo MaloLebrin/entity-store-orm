@@ -1,25 +1,22 @@
----
-description:
-globs:
-alwaysApply: true
----
-Testing stores
+# Testing Stores
 
-Master this and much more with a free video from Mastering Pinia
+Master this and much more with a free video from Mastering Pinia.
+
 Stores will, by design, be used at many places and can make testing much harder than it should be. Fortunately, this doesn't have to be the case. We need to take care of three things when testing stores:
 
-The pinia instance: Stores cannot work without it
-actions: most of the time, they contain the most complex logic of our stores. Wouldn't it be nice if they were mocked by default?
-Plugins: If you rely on plugins, you will have to install them for tests too
+1. **The pinia instance**: Stores cannot work without it
+2. **Actions**: most of the time, they contain the most complex logic of our stores. Wouldn't it be nice if they were mocked by default?
+3. **Plugins**: If you rely on plugins, you will have to install them for tests too
+
 Depending on what or how you are testing, we need to take care of these three things differently.
 
-✨
-Vibe code Vue apps with confidence
-RuleKit
-Unit testing a store
+✨ Vibe code Vue apps with confidence
+
+## 🧪 Unit Testing a Store
+
 To unit test a store, the most important part is creating a pinia instance:
 
-
+```typescript
 // stores/counter.spec.ts
 import { setActivePinia, createPinia } from 'pinia'
 import { useCounterStore } from '../src/stores/counter'
@@ -45,9 +42,13 @@ describe('Counter Store', () => {
     expect(counter.n).toBe(10)
   })
 })
+```
+
+### Testing with Plugins
+
 If you have any store plugins, there is one important thing to know: plugins won't be used until pinia is installed in an App. This can be solved by creating an empty App or a fake one:
 
-
+```typescript
 import { setActivePinia, createPinia } from 'pinia'
 import { createApp } from 'vue'
 import { somePlugin } from '../src/stores/plugin'
@@ -61,16 +62,25 @@ beforeEach(() => {
   app.use(pinia)
   setActivePinia(pinia)
 })
-Unit testing components
-This can be achieved with createTestingPinia(), which returns a pinia instance designed to help unit tests components.
+```
 
-Start by installing @pinia/testing:
+## 🎯 Unit Testing Components
 
+This can be achieved with `createTestingPinia()`, which returns a pinia instance designed to help unit tests components.
 
+### Installation
+
+Start by installing `@pinia/testing`:
+
+```bash
 npm i -D @pinia/testing
+```
+
+### Basic Usage
+
 And make sure to create a testing pinia in your tests when mounting a component:
 
-
+```typescript
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 // import any store you want to interact with in tests
@@ -96,19 +106,30 @@ store.someAction()
 
 expect(store.someAction).toHaveBeenCalledTimes(1)
 expect(store.someAction).toHaveBeenLastCalledWith()
-Initial State
-You can set the initial state of all of your stores when creating a testing pinia by passing an initialState object. This object will be used by the testing pinia to patch stores when they are created. Let's say you want to initialize the state of this store:
+```
 
+## 🚀 Initial State
 
+You can set the initial state of all of your stores when creating a testing pinia by passing an `initialState` object. This object will be used by the testing pinia to patch stores when they are created.
+
+### Example Store
+
+Let's say you want to initialize the state of this store:
+
+```typescript
 import { defineStore } from 'pinia'
 
 const useCounterStore = defineStore('counter', {
   state: () => ({ n: 0 }),
   // ...
 })
-Since the store is named "counter", you need to add a matching object to initialState:
+```
 
+### Setting Initial State
 
+Since the store is named "counter", you need to add a matching object to `initialState`:
+
+```typescript
 // somewhere in your test
 const wrapper = mount(Counter, {
   global: {
@@ -124,12 +145,17 @@ const wrapper = mount(Counter, {
 
 const store = useSomeStore() // uses the testing pinia!
 store.n // 20
-Customizing behavior of actions
-createTestingPinia stubs out all store actions unless told otherwise. This allows you to test your components and stores separately.
+```
 
-If you want to revert this behavior and normally execute your actions during tests, specify stubActions: false when calling createTestingPinia:
+## ⚙️ Customizing Behavior of Actions
 
+`createTestingPinia` stubs out all store actions unless told otherwise. This allows you to test your components and stores separately.
 
+### Enabling Real Actions
+
+If you want to revert this behavior and normally execute your actions during tests, specify `stubActions: false` when calling `createTestingPinia`:
+
+```typescript
 const wrapper = mount(Counter, {
   global: {
     plugins: [createTestingPinia({ stubActions: false })],
@@ -143,10 +169,17 @@ store.someAction()
 
 // ...but it's still wrapped with a spy, so you can inspect calls
 expect(store.someAction).toHaveBeenCalledTimes(1)
-Mocking the returned value of an action
-Actions are automatically spied but type-wise, they are still the regular actions. In order to get the correct type, we must implement a custom type-wrapper that applies the Mock type to each action. This type depends on the testing framework you are using. Here is an example with Vitest:
+```
 
+## 🎭 Mocking the Returned Value of an Action
 
+Actions are automatically spied but type-wise, they are still the regular actions. In order to get the correct type, we must implement a custom type-wrapper that applies the `Mock` type to each action. This type depends on the testing framework you are using.
+
+### Example with Vitest
+
+Here is an example with Vitest:
+
+```typescript
 import type { Mock } from 'vitest'
 import type { UnwrapRef } from 'vue'
 import type { Store, StoreDefinition } from 'pinia'
@@ -175,37 +208,53 @@ function mockedStore<TStoreDef extends () => unknown>(
   : ReturnType<TStoreDef> {
   return useStore() as any
 }
+```
+
 This can be used in tests to get a correctly typed store:
 
-
+```typescript
 import { mockedStore } from './mockedStore'
 import { useSomeStore } from '@/stores/myStore'
 
 const store = mockedStore(useSomeStore)
 // typed!
 store.someAction.mockResolvedValue('some value')
+```
+
 If you are interesting in learning more tricks like this, you should check out the Testing lessons on Mastering Pinia.
 
-Specifying the createSpy function
-When using Jest, or vitest with globals: true, createTestingPinia automatically stubs actions using the spy function based on the existing test framework (jest.fn or vitest.fn). If you are not using globals: true or using a different framework, you'll need to provide a createSpy option:
+## 🔍 Specifying the createSpy Function
 
+When using Jest, or vitest with `globals: true`, `createTestingPinia` automatically stubs actions using the spy function based on the existing test framework (`jest.fn` or `vitest.fn`). If you are not using `globals: true` or using a different framework, you'll need to provide a `createSpy` option:
 
-vitest
+### Vitest
 
-sinon
-
+```typescript
 // NOTE: not needed with `globals: true`
 import { vi } from 'vitest'
 
 createTestingPinia({
   createSpy: vi.fn,
 })
+```
+
+### Sinon
+
+```typescript
+import sinon from 'sinon'
+
+createTestingPinia({
+  createSpy: sinon.spy,
+})
+```
+
 You can find more examples in the tests of the testing package.
 
-Mocking getters
+## 🎯 Mocking Getters
+
 By default, any getter will be computed like regular usage but you can manually force a value by setting the getter to anything you want:
 
-
+```typescript
 import { defineStore } from 'pinia'
 import { createTestingPinia } from '@pinia/testing'
 
@@ -225,10 +274,13 @@ counter.double = 3 // 🪄 getters are writable only in tests
 // @ts-expect-error: usually it's a number
 counter.double = undefined
 counter.double // 2 (=1 x 2)
-Pinia Plugins
-If you have any pinia plugins, make sure to pass them when calling createTestingPinia() so they are properly applied. Do not add them with testingPinia.use(MyPlugin) like you would do with a regular pinia:
+```
 
+## 🔌 Pinia Plugins
 
+If you have any pinia plugins, make sure to pass them when calling `createTestingPinia()` so they are properly applied. Do not add them with `testingPinia.use(MyPlugin)` like you would do with a regular pinia:
+
+```typescript
 import { createTestingPinia } from '@pinia/testing'
 import { somePlugin } from '../src/stores/plugin'
 
@@ -242,6 +294,14 @@ const wrapper = mount(Counter, {
       }),
     ],
   },
+})
+```
+
+## 🌐 E2E Tests
+
+When it comes to Pinia, you don't need to change anything for E2E tests, that's the whole point of these tests! You could maybe test HTTP requests, but that's way beyond the scope of this guide 😄.
+
+
 })
 E2E tests
 When it comes to Pinia, you don't need to change anything for E2E tests, that's the whole point of these tests! You could maybe test HTTP requests, but that's way beyond the scope of this guide 😄.

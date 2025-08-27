@@ -1,13 +1,14 @@
----
-description: 
-globs: *.tsx,*ts
-alwaysApply: false
----
-Do not introduce new enums into the codebase. Retain existing enums.
+# TypeScript Enums Guidelines
+
+## 🚫 Do Not Introduce New Enums
+
+**Do not introduce new enums into the codebase. Retain existing enums.**
+
+## ✅ Use `as const` Objects Instead
 
 If you require enum-like behaviour, use an `as const` object:
 
-```ts
+```typescript
 const backendToFrontendEnum = {
   xs: "EXTRA_SMALL",
   sm: "SMALL",
@@ -16,13 +17,17 @@ const backendToFrontendEnum = {
 
 type LowerCaseEnum = keyof typeof backendToFrontendEnum; // "xs" | "sm" | "md"
 
-type UpperCaseEnum =
+type UpperCaseEnum = 
   (typeof backendToFrontendEnum)[LowerCaseEnum]; // "EXTRA_SMALL" | "SMALL" | "MEDIUM"
 ```
 
+## ⚠️ Why Avoid Enums?
+
+### Numeric Enum Issues
+
 Remember that numeric enums behave differently to string enums. Numeric enums produce a reverse mapping:
 
-```ts
+```typescript
 enum Direction {
   Up,
   Down,
@@ -34,14 +39,33 @@ const direction = Direction.Up; // 0
 const directionName = Direction[0]; // "Up"
 ```
 
-This means that the enum `Direction` above will have eight keys instead of four.
+This means that the enum `Direction` above will have eight keys instead of four:
 
-```ts
+```typescript
 enum Direction {
   Up,
   Down,
   Left,
   Right,
+}
+
+Object.keys(Direction).length; // 8
+```
+
+### Problems with Numeric Enums
+
+- **Reverse mapping**: Creates unexpected keys
+- **Bundle size**: Increases JavaScript bundle size
+- **Tree-shaking**: Difficult to tree-shake unused values
+- **Type safety**: Less type-safe than `as const` objects
+
+## 🎯 Best Practices
+
+1. **Use `as const` objects** for enum-like behavior
+2. **Keep existing enums** if they're already in the codebase
+3. **Prefer union types** when possible
+4. **Consider const assertions** for better type inference
+
 }
 
 Object.keys(Direction).length; // 8

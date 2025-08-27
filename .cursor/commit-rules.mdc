@@ -1,11 +1,6 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # Cursor Commit Rules
 
-## Commit Message Format
+## 📝 Commit Message Format
 
 Each commit message should follow this format:
 
@@ -17,7 +12,7 @@ Each commit message should follow this format:
 [optional footer]
 ```
 
-## Commit Types
+## 🎯 Commit Types
 
 - ✨ `feat`: A new feature
 - 🐛 `fix`: A bug fix
@@ -34,7 +29,7 @@ Each commit message should follow this format:
 - 🏗️ `architecture`: Architecture related changes
 - 🧪 `experiment`: Experimental features or changes
 
-## Examples
+## 📋 Examples
 
 ```
 ✨ feat(auth): add OAuth2 authentication
@@ -53,7 +48,7 @@ Each commit message should follow this format:
 🧪 experiment(ai): test new ML model
 ```
 
-## Best Practices
+## ✅ Best Practices
 
 1. **Keep it Short and Clear**: Keep the description concise and precise
 2. **Use Present Tense**: Write in present tense ("add" instead of "added")
@@ -64,7 +59,7 @@ Each commit message should follow this format:
 7. **Separate Concerns**: Make separate commits for separate concerns
 8. **Be Specific**: Clearly describe what and why, not how
 
-## Scope Examples
+## 🎯 Scope Examples
 
 Common scopes include:
 - `auth`: Authentication related changes
@@ -77,14 +72,19 @@ Common scopes include:
 - `docs`: Documentation changes
 - `config`: Configuration changes
 
-## Commit Message Body
+## 📄 Commit Message Body
 
 When needed, add a body to provide more context:
 - Explain the "why" not the "how"
 - Include any breaking changes
 - Reference related issues or pull requests
 
-## Commit Message Footer
+## 🔗 Commit Message Footer
+
+Use the footer for:
+- Breaking changes (start with "BREAKING CHANGE:")
+- References to issues (e.g., "Fixes #123")
+- Related pull requests (e.g., "Related to #456")
 
 Use the footer for:
 - Breaking changes (start with "BREAKING CHANGE:")
