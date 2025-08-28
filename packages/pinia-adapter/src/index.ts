@@ -1,8 +1,5 @@
+import { createActions, createGetters, createState, type WithId } from '@entity-store/core'
 import { defineStore } from 'pinia'
-import createActions from './core/createActions.js'
-import createGetters from './core/createGetters.js'
-import createState from './core/createState.js'
-import type { WithId } from './types/WithId.js'
 
 /**
  * Base store type with entity management capabilities
@@ -52,7 +49,7 @@ export interface PiniaEntityStoreOptions<T extends WithId> {
 export function createPiniaEntityStore<T extends WithId>(
   storeName: string,
   options: PiniaEntityStoreOptions<T> = {}
-) {
+): any {
   return defineStore(options.storeName || storeName, () => {
     // Create the base state using our core function
     const baseState = createState<T>()
