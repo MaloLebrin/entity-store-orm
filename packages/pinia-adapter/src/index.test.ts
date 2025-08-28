@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, test } from 'vitest'
-import type { WithId } from '../../types/WithId.js'
+import type { WithId } from '@entity-store/types'
 import { createPiniaEntityStore } from './index.js'
 
 // Test entity interface
