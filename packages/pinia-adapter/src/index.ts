@@ -107,4 +107,11 @@ export function createPiniaEntityStore<T extends WithId>(
 export type PiniaEntityStore<T extends WithId> = ReturnType<ReturnType<typeof createPiniaEntityStore<T>>>
 
 // Export du plugin Pinia
-export * from './plugin'
+export { entityStorePlugin, installEntityStorePlugin } from './plugin'
+
+// Export des types du plugin
+export type {
+  EntityPluginContext,
+  EntityPluginOptions, EntityStorePlugin
+} from './plugin'
+

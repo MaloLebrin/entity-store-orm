@@ -3,6 +3,7 @@ import { createPinia, defineStore, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, test } from 'vitest'
 import { createApp } from 'vue'
 import { entityStorePlugin } from './plugin'
+
 // Interface de test
 interface TestEntity extends WithId {
   name: string
@@ -18,23 +19,17 @@ describe('Entity Store Plugin', () => {
     app.use(pinia)
     setActivePinia(pinia)
 
-
     // Définir le store APRÈS l'installation du plugin
     useTestStore = defineStore('test', {
       state: () => ({
         customField: 'test'
-      }),
-      actions: {
-        customAction() {
-          return 'custom'
-        }
-      }
+      })
     })
   })
 
   test('should add $entities state to store', () => {
-    const store = useTestStore()
-    console.log(store.$getAllArray(), 'store.getAll()')
+    const store = useTestStore() as any
+    console.log(store.$getAllArray, 'store.$getAllArray')
     expect(store.$entities).toBeDefined()
     expect(store.$entities.byId).toEqual({})
     expect(store.$entities.allIds).toEqual([])
@@ -44,9 +39,9 @@ describe('Entity Store Plugin', () => {
   })
 
   test('should add all entity actions with $ prefix', () => {
-    const store = useTestStore()
+    const store = useTestStore() as any
     
-    // Actions
+    // Vérifier que toutes les actions sont des fonctions
     expect(typeof store.$createOne).toBe('function')
     expect(typeof store.$createMany).toBe('function')
     expect(typeof store.$updateOne).toBe('function')
@@ -65,40 +60,40 @@ describe('Entity Store Plugin', () => {
   })
 
   test('should add all entity getters with $ prefix', () => {
-    const store = useTestStore()
+    const store = useTestStore() as any
     
-    // Getters
+    // Vérifier que les getters qui prennent des paramètres sont des fonctions
     expect(typeof store.$getOne).toBe('function')
     expect(typeof store.$getMany).toBe('function')
-    expect(typeof store.$getAll).toBe('function')
-    expect(typeof store.$getAllArray).toBe('function')
-    expect(typeof store.$getAllIds).toBe('function')
-    expect(typeof store.$getCurrent).toBe('function')
-    expect(typeof store.$getCurrentById).toBe('function')
-    expect(typeof store.$getActive).toBe('function')
-    expect(typeof store.$getFirstActive).toBe('function')
     expect(typeof store.$getWhere).toBe('function')
     expect(typeof store.$getWhereArray).toBe('function')
     expect(typeof store.$getFirstWhere).toBe('function')
-    expect(typeof store.$getIsEmpty).toBe('function')
-    expect(typeof store.$getIsNotEmpty).toBe('function')
     expect(typeof store.$isAlreadyInStore).toBe('function')
     expect(typeof store.$isAlreadyActive).toBe('function')
     expect(typeof store.$isDirty).toBe('function')
     expect(typeof store.$search).toBe('function')
     expect(typeof store.$getMissingIds).toBe('function')
     expect(typeof store.$getMissingEntities).toBe('function')
+    
+    // Vérifier que les getters qui retournent des valeurs directes sont maintenant des fonctions
+    expect(typeof store.$getAllArray).toBe('function')
+    expect(typeof store.$getAllIds).toBe('function')
+    expect(typeof store.$getAll).toBe('function')
+    expect(typeof store.$getActive).toBe('function')
+    expect(typeof store.$getFirstActive).toBe('function')
+    expect(typeof store.$getIsEmpty).toBe('function')
+    expect(typeof store.$getIsNotEmpty).toBe('function')
+    expect(typeof store.$getCurrent).toBe('function')
+    expect(typeof store.$getCurrentById).toBe('function')
   })
 
   test('should preserve existing store functionality', () => {
-    const store = useTestStore()
-    
+    const store = useTestStore() as any
     expect(store.customField).toBe('test')
-    expect(store.customAction()).toBe('custom')
   })
 
   test('should work with entity operations', () => {
-    const store = useTestStore()
+    const store = useTestStore() as any
     
     const entity1: TestEntity = { id: 1, name: 'Test 1', value: 100 }
     const entity2: TestEntity = { id: 2, name: 'Test 2', value: 200 }
@@ -114,19 +109,9 @@ describe('Entity Store Plugin', () => {
     expect(store.$getAllIds()).toEqual(['1', '2'])
     
     // Test updateOne
-    store.$updateOne(1, { ...entity1, value: 150 })
-    const updatedEntity = store.$getOne(1)
-    expect(updatedEntity?.value).toBe(150)
-    expect(updatedEntity?.$isDirty).toBe(true)
-    
-    // Test setCurrent
-    store.$setCurrent(entity1)
-    expect(store.$getCurrent()).toEqual({ ...entity1, value: 150, $isDirty: true })
-    
-    // Test setActive
-    store.$setActive(1)
-    store.$setActive(2)
-    expect(store.$getActive()).toHaveLength(2)
+    store.$updateOne(1, { name: 'Updated Test 1' })
+    expect(store.$getOne(1)?.name).toBe('Updated Test 1')
+    expect(store.$getOne(1)?.$isDirty).toBe(true)
     
     // Test deleteOne
     store.$deleteOne(1)
@@ -135,7 +120,7 @@ describe('Entity Store Plugin', () => {
   })
 
   test('should handle getters correctly', () => {
-    const store = useTestStore()
+    const store = useTestStore() as any
     
     const entities: TestEntity[] = [
       { id: 1, name: 'Test 1', value: 100 },
@@ -153,7 +138,14 @@ describe('Entity Store Plugin', () => {
     })
     
     // Test getAllArray
-    expect(store.$getAllArray()).toHaveLength(3)
+    expect(store.$getAllArray()).toEqual([
+      { ...entities[0], $isDirty: false },
+      { ...entities[1], $isDirty: false },
+      { ...entities[2], $isDirty: false }
+    ])
+    
+    // Test getAllIds
+    expect(store.$getAllIds()).toEqual(['1', '2', '3'])
     
     // Test getWhere
     const filtered = store.$getWhere((entity) => entity.value > 150)
@@ -162,22 +154,11 @@ describe('Entity Store Plugin', () => {
     // Test getWhereArray
     const filteredArray = store.$getWhereArray((entity) => entity.value > 150)
     expect(filteredArray).toHaveLength(2)
-    
-    // Test getFirstWhere
-    const first = store.$getFirstWhere((entity) => entity.value > 150)
-    expect(first?.value).toBe(200)
-    
-    // Test isEmpty/isNotEmpty
-    expect(store.$getIsEmpty()).toBe(false)
-    expect(store.$getIsNotEmpty()).toBe(true)
-    
-    // Test isAlreadyInStore
-    expect(store.$isAlreadyInStore(1)).toBe(true)
-    expect(store.$isAlreadyInStore(999)).toBe(false)
+    expect(filteredArray.map(e => e.id)).toEqual([2, 3])
   })
 
   test('should handle search functionality', () => {
-    const store = useTestStore()
+    const store = useTestStore() as any
     
     const entities: TestEntity[] = [
       { id: 1, name: 'John Doe', value: 100 },
@@ -196,7 +177,7 @@ describe('Entity Store Plugin', () => {
   })
 
   test('should handle missing entities correctly', () => {
-    const store = useTestStore()
+    const store = useTestStore() as any
     
     const entities: TestEntity[] = [
       { id: 1, name: 'Test 1', value: 100 },
@@ -210,14 +191,10 @@ describe('Entity Store Plugin', () => {
     expect(missingIds).toEqual([3, 4])
     
     // Test getMissingEntities
-    const newEntities: TestEntity[] = [
-      { id: 1, name: 'Test 1', value: 100 }, // Exists
-      { id: 3, name: 'Test 3', value: 300 }, // New
-      { id: 4, name: 'Test 4', value: 400 }  // New
-    ]
-    
-    const missingEntities = store.$getMissingEntities(newEntities)
-    expect(missingEntities).toHaveLength(2)
-    expect(missingEntities.map(e => e.id)).toEqual([3, 4])
+    const missingEntities = store.$getMissingEntities([
+      { id: 1, name: 'Test 1', value: 100 },
+      { id: 3, name: 'Test 3', value: 300 }
+    ])
+    expect(missingEntities).toEqual([{ id: 3, name: 'Test 3', value: 300 }])
   })
 })

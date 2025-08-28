@@ -9,127 +9,110 @@ import { ref, toRef } from 'vue'
  */
 export function entityStorePlugin(ctx: PiniaPluginContext) {
   const store = ctx.store
-    // Créer l'état des entités en utilisant le core
-    const baseState = createState<WithId>()
-    
-    // Créer les actions et getters avec l'état
-    const actions = createActions(baseState)
-    const getters = createGetters(baseState)
-    
-      // to correctly handle SSR, we need to make sure we are not overriding an
-  // existing value
+  
+  // Créer l'état des entités en utilisant le core
+  const baseState = createState<WithId>()
+  
+  // Créer les actions et getters avec l'état
+  const actions = createActions(baseState)
+  const getters = createGetters(baseState)
+  
+  // Pour gérer correctement SSR, nous devons ajouter l'état dans deux endroits
   if (!store.$state.hasOwnProperty('$entities')) {
-    // hasError is defined within the plugin, so each store has their individual
-    // state property
+    // Créer une ref réactive pour l'état des entités
     const entities = ref(baseState.entities)
-    // setting the variable on `$state`, allows it be serialized during SSR
+    // Ajouter à $state pour la sérialisation SSR
     store.$state.$entities = entities
   }
-  // we need to transfer the ref from the state to the store, this way
-  // both accesses: store.hasError and store.$state.hasError will work
-  // and share the same variable
-  // See https://vuejs.org/api/reactivity-utilities.html#toref
-  store.$entities = toRef(store.$state, '$entities')
-
+  
+  // Transférer la ref du state au store pour l'accès direct
+  ;(store as any).$entities = toRef(store.$state, '$entities')
+  
+  // Créer un objet d'actions lié au store pour que this.createOne fonctionne
+  const boundActions: any = {}
   for (const key in actions) {
+    boundActions[key] = (actions as any)[key]
+  }
+  
+  // Lier le contexte this au store pour toutes les actions
+  Object.keys(boundActions).forEach(key => {
+    const action = boundActions[key]
+    if (typeof action === 'function') {
+      boundActions[key] = action.bind(boundActions)
+    }
+  })
+  
+  // Ajouter toutes les actions préfixées au store
+  for (const key in boundActions) {
     if (!store.$state.hasOwnProperty(`$${key}`)) {
-      store[`$${key}`] = actions[key]
+      ;(store as any)[`$${key}`] = boundActions[key]
     }
   }
+  
+  // Ajouter tous les getters préfixés en les traitant selon leur type
   for (const key in getters) {
     if (!store.$state.hasOwnProperty(`$${key}`)) {
-      store[`$${key}`] = getters[key]
+      const getter = (getters as any)[key]
+      
+      if (typeof getter === 'function') {
+        const result = getter(baseState)
+        
+        // Certains getters retournent directement des valeurs
+        if (key === 'getAllArray' || key === 'getAllIds' || key === 'getAll' || key === 'getActive' || key === 'getFirstActive' || key === 'getIsEmpty' || key === 'getIsNotEmpty' || key === 'getCurrent' || key === 'getCurrentById') {
+          // Créer une fonction qui retourne la valeur actuelle de l'état
+          ;(store as any)[`$${key}`] = () => {
+            const currentState = createState<WithId>()
+            // Copier l'état actuel du store
+            currentState.entities.byId = { ...store.$state.$entities.byId }
+            currentState.entities.allIds = [...store.$state.$entities.allIds]
+            currentState.entities.current = store.$state.$entities.current
+            currentState.entities.currentById = store.$state.$entities.currentById
+            currentState.entities.active = [...store.$state.$entities.active]
+            
+            const currentGetters = createGetters(currentState)
+            const currentGetter = (currentGetters as any)[key]
+            const value = currentGetter(currentState)
+            
+            // Convertir les IDs en chaînes pour getAllIds
+            if (key === 'getAllIds') {
+              return value.map((id: any) => String(id))
+            }
+            
+            return value
+          }
+        } else {
+          // D'autres retournent des fonctions qui prennent des paramètres
+          ;(store as any)[`$${key}`] = result
+        }
+      } else {
+        ;(store as any)[`$${key}`] = getter
+      }
     }
   }
+  
+  // Ajouter les propriétés personnalisées pour les devtools
+  if (process.env.NODE_ENV === 'development') {
+    store._customProperties.add('$entities')
+    
+    // Ajouter toutes les actions et getters aux propriétés personnalisées
+    Object.keys(actions).forEach(key => {
+      store._customProperties.add(`$${key}`)
+    })
+    
+    Object.keys(getters).forEach(key => {
+      store._customProperties.add(`$${key}`)
+    })
+  }
+  
+  // Retourner un objet vide car nous modifions directement le store
+  // Cela permet aux devtools de tracker les propriétés
+  return {}
+}
 
-  // in this case it's better not to return `hasError` since it
-  // will be displayed in the `state` section in the devtools
-  // anyway and if we return it, devtools will display it twice.
-    
-    // // Ajouter l'état des entités au store principal (pour l'accès direct)
-    // store.$entities = baseState.entities
-    
-    // // Ajouter toutes les actions préfixées
-    // store.$createOne = actions.createOne
-    // store.$createMany = actions.createMany
-    // store.$updateOne = actions.updateOne
-    // store.$updateMany = actions.updateMany
-    // store.$deleteOne = actions.deleteOne
-    // store.$deleteMany = actions.deleteMany
-    // store.$setCurrent = actions.setCurrent
-    // store.$setCurrentById = actions.setCurrentById
-    // store.$removeCurrent = actions.removeCurrent
-    // store.$removeCurrentById = actions.removeCurrentById
-    // store.$setActive = actions.setActive
-    // store.$resetActive = actions.resetActive
-    // store.$setIsDirty = actions.setIsDirty
-    // store.$setIsNotDirty = actions.setIsNotDirty
-    // store.$updateField = actions.updateField
-    
-    // // Ajouter tous les getters préfixés
-    // store.$getOne = getters.getOne
-    // store.$getMany = getters.getMany
-    // store.$getAll = getters.getAll
-    // store.$getAllArray = getters.getAllArray
-    // store.$getAllIds = getters.getAllIds
-    // store.$getCurrent = getters.getCurrent
-    // store.$getCurrentById = getters.getCurrentById
-    // store.$getActive = getters.getActive
-    // store.$getFirstActive = getters.getFirstActive
-    // store.$getWhere = getters.getWhere
-    // store.$getWhereArray = getters.getWhereArray
-    // store.$getFirstWhere = getters.getFirstWhere
-    // store.$getIsEmpty = getters.getIsEmpty
-    // store.$getIsNotEmpty = getters.getIsNotEmpty
-    // store.$isAlreadyInStore = getters.isAlreadyInStore
-    // store.$isAlreadyActive = getters.isAlreadyActive
-    // store.$isDirty = getters.isDirty
-    // store.$search = getters.search
-    // store.$getMissingIds = getters.getMissingIds
-    // store.$getMissingEntities = getters.getMissingEntities
-    
-    // Ajouter les propriétés personnalisées pour les devtools
-    if (process.env.NODE_ENV === 'development') {
-      store._customProperties.add('$entities')
-      store._customProperties.add('$createOne')
-      store._customProperties.add('$createMany')
-      store._customProperties.add('$updateOne')
-      store._customProperties.add('$updateMany')
-      store._customProperties.add('$deleteOne')
-      store._customProperties.add('$deleteMany')
-      store._customProperties.add('$setCurrent')
-      store._customProperties.add('$setCurrentById')
-      store._customProperties.add('$removeCurrent')
-      store._customProperties.add('$removeCurrentById')
-      store._customProperties.add('$setActive')
-      store._customProperties.add('$resetActive')
-      store._customProperties.add('$setIsDirty')
-      store._customProperties.add('$setIsNotDirty')
-      store._customProperties.add('$updateField')
-      store._customProperties.add('$getOne')
-      store._customProperties.add('$getMany')
-      store._customProperties.add('$getAll')
-      store._customProperties.add('$getAllArray')
-      store._customProperties.add('$getAllIds')
-      store._customProperties.add('$getCurrent')
-      store._customProperties.add('$getCurrentById')
-      store._customProperties.add('$getActive')
-      store._customProperties.add('$getFirstActive')
-      store._customProperties.add('$getWhere')
-      store._customProperties.add('$getWhereArray')
-      store._customProperties.add('$getFirstWhere')
-      store._customProperties.add('$getIsEmpty')
-      store._customProperties.add('$getIsNotEmpty')
-      store._customProperties.add('$isAlreadyInStore')
-      store._customProperties.add('$isAlreadyActive')
-      store._customProperties.add('$isDirty')
-      store._customProperties.add('$search')
-      store._customProperties.add('$getMissingIds')
-      store._customProperties.add('$getMissingEntities')
-    }
-    
-    // Retourner un objet vide car nous modifions directement le store
-    // Cela permet aux devtools de tracker les propriétés
-    return {}
-  }
+/**
+ * Fonction helper pour installer le plugin
+ */
+export function installEntityStorePlugin(pinia: any) {
+  pinia.use(entityStorePlugin)
+}
 
