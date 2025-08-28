@@ -1,211 +1,169 @@
 # Entity Store
 
-A lightweight, ORM-agnostic entity management system with adapters for popular state managers.
-
-## 🚀 Features
-
-- **ORM Agnostic**: Works with any data structure that has an `id` field
-- **TypeScript First**: Fully typed with excellent IntelliSense support
-- **Multiple Adapters**: Support for Pinia, Redux, Zustand, Jotai, and Valtio (Pinia ready, others coming soon)
-- **Comprehensive API**: Rich set of getters and actions for entity management
-- **Dirty State Tracking**: Built-in support for tracking modified entities
-- **Active Entity Management**: Support for current and active entity selection
-- **Fully Tested**: Comprehensive test coverage for all core functionality
-
-## 📦 Installation
-
-```bash
-pnpm add entity-store
-```
+ORM-agnostic entity management system with adapters for different state managers, organized as a monorepo for better modularity and performance.
 
 ## 🏗️ Architecture
 
-The package is built with a modular architecture:
+The project is organized in separate packages to enable targeted usage and optimal tree-shaking:
 
 ```
-src/
-├── core/           # Core entity management functions
-│   ├── createState.ts    # State initialization
-│   ├── createGetters.ts  # Query and retrieval functions
-│   └── createActions.ts  # Mutation and update functions
-├── types/          # TypeScript type definitions
-├── adapters/       # State manager adapters
-│   ├── pinia/      # Pinia adapter (ready)
-│   ├── redux/      # Redux adapter (coming soon)
-│   ├── zustand/    # Zustand adapter (coming soon)
-│   ├── jotai/      # Jotai adapter (coming soon)
-│   └── valtio/     # Valtio adapter (coming soon)
-└── utils/          # Utility functions
+entity-store/
+├── packages/
+│   ├── core/           # Pure business logic, 0 dependencies
+│   ├── types/          # Shared types
+│   ├── pinia-adapter/  # Pinia adapter
+│   └── main/           # Main package with conditional exports
 ```
 
-## 🎯 Core Concepts
+## 📦 Available Packages
 
-### Entity State Structure
+### @entity-store/core
+Agnostic package containing entity management business logic.
+
+```bash
+npm install @entity-store/core
+```
+
+**Features:**
+- `createState()` : Initial state creation
+- `createActions()` : CRUD actions for entities
+- `createGetters()` : Getters for retrieving and filtering data
+
+### @entity-store/types
+Shared types and interfaces.
+
+```bash
+npm install @entity-store/types
+```
+
+**Types:**
+- `WithId` : Base interface for all entities
+- `State` : Entity state structure
+- `FilterFn` : Types for filtering functions
+
+### @entity-store/pinia-adapter
+Pinia adapter with all core functionality.
+
+```bash
+npm install @entity-store/pinia-adapter pinia
+```
+
+**Features:**
+- Complete Pinia store with entity management
+- Customizable extensions (state, getters, actions)
+- Native integration with Vue ecosystem
+
+### entity-store (main package)
+Main package that exports everything, for simple usage.
+
+```bash
+npm install entity-store
+```
+
+## 🚀 Quick Start
+
+### With Pinia (recommended)
 
 ```typescript
-interface State<T extends WithId> {
-  entities: {
-    byId: Record<Id, T & { $isDirty: boolean }>
-    allIds: Id[]
-    current: (T & { $isDirty: boolean }) | null
-    currentById: Id | null
-    active: Id[]
-  }
-}
-```
+import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
+import type { WithId } from '@entity-store/types'
 
-### Key Features
-
-- **`byId`**: Dictionary of entities indexed by their ID
-- **`allIds`**: Array of all entity IDs for iteration
-- **`current`**: Currently selected entity
-- **`currentById`**: ID of the currently selected entity
-- **`active`**: Array of active entity IDs
-- **`$isDirty`**: Flag indicating if an entity has been modified
-
-## 🔧 Usage
-
-### Core Functions
-
-```typescript
-import { createState, createGetters, createActions } from 'entity-store'
-
-// Create state
-const state = createState<User>()
-
-// Create getters and actions
-const getters = createGetters<User>(state)
-const actions = createActions<User>(state)
-
-// Use them
-actions.createOne({ id: 1, name: 'John', email: 'john@example.com' })
-const user = getters.getOne()(1)
-```
-
-### Pinia Adapter (Ready)
-
-```typescript
-import { createPiniaEntityStore } from 'entity-store/adapters/pinia'
-
-interface User {
-  id: number
+interface User extends WithId {
   name: string
   email: string
 }
 
-// Create the store
 const useUserStore = createPiniaEntityStore<User>('users')
 
-// Use in your component
-export default defineComponent({
-  setup() {
-    const userStore = useUserStore()
-    
-    // CRUD operations
-    userStore.createOne({ id: 1, name: 'John', email: 'john@example.com' })
-    userStore.updateOne(1, { name: 'John Updated' })
-    userStore.deleteOne(1)
-    
-    // Querying
-    const allUsers = userStore.getAllArray()
-    const currentUser = userStore.getCurrent()
-    const activeUsers = userStore.getActive()
-    
-    return { userStore, allUsers, currentUser, activeUsers }
-  }
-})
+// In a Vue component
+const userStore = useUserStore()
+userStore.createOne({ id: 1, name: 'John', email: 'john@example.com' })
 ```
 
-## 📚 API Reference
+### With Core (agnostic)
 
-### Core Getters
+```typescript
+import { createState, createActions, createGetters } from '@entity-store/core'
+import type { WithId } from '@entity-store/types'
 
-- **`getAll()`**: Get all entities as dictionary
-- **`getAllArray()`**: Get all entities as array
-- **`getAllIds()`**: Get array of all entity IDs
-- **`getOne(id)`**: Get single entity by ID
-- **`getMany(ids)`**: Get multiple entities by IDs
-- **`getCurrent()`**: Get currently selected entity
-- **`getCurrentById()`**: Get entity by current ID
-- **`getActive()`**: Get array of active entity IDs
-- **`getWhere(filter)`**: Filter entities by predicate
-- **`getMissingIds(ids)`**: Find IDs not in store
-- **`getMissingEntities(entities)`**: Find entities not in store
+interface User extends WithId {
+  name: string
+  email: string
+}
 
-### Core Actions
+const state = createState<User>()
+const actions = createActions<User>(state)
+const getters = createGetters<User>(state)
 
-- **`createOne(entity)`**: Create single entity
-- **`createMany(entities)`**: Create multiple entities
-- **`updateOne(id, updates)`**: Update entity by ID
-- **`updateMany(entities)`**: Update multiple entities
-- **`deleteOne(id)`**: Delete entity by ID
-- **`deleteMany(ids)`**: Delete multiple entities
-- **`setCurrent(entity)`**: Set current entity
-- **`setCurrentById(id)`**: Set current entity by ID
-- **`setActive(id)`**: Set entity as active
-- **`resetActive()`**: Clear all active entities
-- **`setIsDirty(id)`**: Mark entity as modified
-- **`setIsNotDirty(id)`**: Mark entity as unmodified
+// Usage
+actions.createOne({ id: 1, name: 'John', email: 'john@example.com' })
+const user = getters.getOne()(1)
+```
 
-## 🧪 Testing
+## 🎯 Benefits of this Architecture
+
+### **Optimal Tree-shaking**
+- Import only what you need
+- Minimal bundle size for production
+
+### **Isolated Dependencies**
+- Each package manages its own dependencies
+- No conflicts between state managers
+
+### **Scalability**
+- Easy addition of new adapters
+- Simplified maintenance per package
+
+### **Usage Flexibility**
+- Use core alone for an agnostic solution
+- Or a specific adapter for native integration
+
+## 🔧 Development
+
+### Install dependencies
 
 ```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests with coverage
-pnpm test:coverage
-
-# Type checking
-pnpm type-check
+pnpm install
 ```
 
-## 📖 Examples
+### Build all packages
 
-See the `examples/` directory for complete usage examples:
+```bash
+pnpm build
+```
 
-- **`examples/pinia-usage.ts`**: Complete Pinia adapter demonstration
-- **`src/adapters/pinia/example.ts`**: Pinia adapter usage patterns
+### Tests
 
-## 🔮 Roadmap
+```bash
+pnpm test
+```
 
-### Phase 1: Core & Pinia ✅
-- [x] Core entity management functions
-- [x] Comprehensive test coverage
-- [x] Pinia adapter
-- [x] TypeScript support
-- [x] Documentation
+### Development in watch mode
 
-### Phase 2: Additional Adapters 🚧
-- [ ] Redux adapter
-- [ ] Zustand adapter
-- [ ] Jotai adapter
-- [ ] Valtio adapter
+```bash
+pnpm dev
+```
 
-### Phase 3: Advanced Features 📋
-- [ ] Pagination support
-- [ ] Relationship management
-- [ ] Caching strategies
-- [ ] Performance optimizations
+## 📚 Documentation
+
+- [Core Documentation](./packages/core/README.md)
+- [Types Documentation](./packages/types/README.md)
+- [Pinia Adapter Documentation](./packages/pinia-adapter/README.md)
+
+## 🚧 Roadmap
+
+- [ ] Zustand Adapter
+- [ ] Redux Toolkit Adapter
+- [ ] Jotai Adapter
+- [ ] Valtio Adapter
+- [ ] Pinia Plugin
+- [ ] Migration tools
+- [ ] Integration examples
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Each package can be developed and tested independently.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Inspired by modern state management patterns
-- Built with TypeScript and modern JavaScript features
-- Comprehensive testing with Vitest
-- Clean architecture principles
+MIT
