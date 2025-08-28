@@ -1,0 +1,57 @@
+{
+  "name": "entity-store",
+  "version": "1.0.0",
+  "description": "ORM agnostique avec des adaptateurs pour différents state managers",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "../core/dist/index.d.ts",
+      "import": "../core/dist/index.js"
+    },
+    "./types": {
+      "types": "../types/dist/index.d.ts",
+      "import": "../types/dist/index.js"
+    },
+    "./pinia": {
+      "types": "../pinia-adapter/dist/index.d.ts",
+      "import": "../pinia-adapter/dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r dev",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean",
+    "prepublishOnly": "pnpm clean && pnpm build"
+  },
+  "keywords": [
+    "orm",
+    "state-management",
+    "typescript",
+    "agnostic",
+    "entity-store",
+    "pinia",
+    "zustand",
+    "redux"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@entity-store/core": "workspace:*",
+    "@entity-store/types": "workspace:*",
+    "@entity-store/pinia-adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}
