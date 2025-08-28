@@ -66,6 +66,9 @@ importers:
       '@entity-store/types':
         specifier: workspace:*
         version: link:../types
+      vue:
+        specifier: ^3.5.20
+        version: 3.5.20(typescript@5.9.2)
     devDependencies:
       '@types/node':
         specifier: ^24.3.0

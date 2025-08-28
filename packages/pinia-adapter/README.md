@@ -14,7 +14,94 @@ yarn add @entity-store/pinia-adapter pinia
 
 **Note**: `pinia` is a peer dependency, you must install it separately.
 
-## Usage
+## 🚀 Two Approaches
+
+This package provides two different ways to use entity management with Pinia:
+
+### 1. **Plugin Approach** (Recommended for existing stores)
+Automatically adds entity management capabilities to ALL your existing Pinia stores:
+
+```typescript
+import { createPinia } from 'pinia'
+import { entityStorePlugin } from '@entity-store/pinia-adapter'
+
+const pinia = createPinia()
+pinia.use(entityStorePlugin())
+
+// Now ALL your stores automatically have entity management!
+// All methods are prefixed with $ to avoid conflicts
+```
+
+**Features:**
+- ✅ Non-intrusive: Works with existing stores
+- ✅ Automatic: Applies to all stores after installation
+- ✅ Prefixed: All methods use `$` prefix (e.g., `$createOne`, `$getOne`)
+- ✅ Type-safe: Full TypeScript support
+- ✅ Devtools: Complete Pinia devtools integration
+
+### 2. **Adapter Approach** (For new stores)
+Creates specialized stores with entity management built-in:
+
+```typescript
+import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
+
+const useUserStore = createPiniaEntityStore<User>('users')
+```
+
+**Features:**
+- ✅ Specialized: Stores designed specifically for entities
+- ✅ Integrated: Entity methods are part of the store interface
+- ✅ Flexible: Easy to extend with custom state, getters, and actions
+
+## 📖 Plugin Usage
+
+### Installation
+
+```typescript
+import { createPinia } from 'pinia'
+import { entityStorePlugin } from '@entity-store/pinia-adapter'
+
+const pinia = createPinia()
+pinia.use(entityStorePlugin())
+```
+
+### Using with existing stores
+
+```typescript
+import { defineStore } from 'pinia'
+
+// Your existing store - plugin automatically adds entity capabilities
+export const useUserStore = defineStore('users', {
+  state: () => ({
+    isLoading: false,
+    error: null,
+    // Plugin automatically adds $entities
+  }),
+  
+  actions: {
+    async fetchUsers() {
+      // Use plugin methods (prefixed with $)
+      const users = await api.getUsers()
+      this.$createMany(users)
+    }
+  }
+})
+
+// In your component
+const userStore = useUserStore()
+userStore.$createOne({ id: 1, name: 'John', email: 'john@example.com' })
+const user = userStore.$getOne(1)
+```
+
+**All plugin methods are prefixed with `$`:**
+- `$createOne`, `$createMany`
+- `$getOne`, `$getAll`, `$getWhere`
+- `$updateOne`, `$deleteOne`
+- And many more...
+
+For complete plugin documentation, see [Plugin README](./src/plugin/README.md).
+
+## 🔧 Adapter Usage
 
 ### Basic import
 
