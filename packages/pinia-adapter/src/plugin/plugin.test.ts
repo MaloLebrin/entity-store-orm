@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test } from 'vitest'
 import { createApp } from 'vue'
 import { entityStorePlugin } from './plugin'
 
-// Interface de test
+// Test interface
 interface TestEntity extends WithId {
   name: string
   value: number
@@ -19,7 +19,7 @@ describe('Entity Store Plugin', () => {
     app.use(pinia)
     setActivePinia(pinia)
 
-    // Définir le store APRÈS l'installation du plugin
+    // Define the store AFTER plugin installation
     useTestStore = defineStore('test', {
       state: () => ({
         customField: 'test'
@@ -41,7 +41,7 @@ describe('Entity Store Plugin', () => {
   test('should add all entity actions with $ prefix', () => {
     const store = useTestStore() as any
     
-    // Vérifier que toutes les actions sont des fonctions
+    // Check that all actions are functions
     expect(typeof store.$createOne).toBe('function')
     expect(typeof store.$createMany).toBe('function')
     expect(typeof store.$updateOne).toBe('function')
@@ -62,7 +62,7 @@ describe('Entity Store Plugin', () => {
   test('should add all entity getters with $ prefix', () => {
     const store = useTestStore() as any
     
-    // Vérifier que les getters qui prennent des paramètres sont des fonctions
+    // Check that getters that take parameters are functions
     expect(typeof store.$getOne).toBe('function')
     expect(typeof store.$getMany).toBe('function')
     expect(typeof store.$getWhere).toBe('function')
@@ -75,7 +75,7 @@ describe('Entity Store Plugin', () => {
     expect(typeof store.$getMissingIds).toBe('function')
     expect(typeof store.$getMissingEntities).toBe('function')
     
-    // Vérifier que les getters qui retournent des valeurs directes sont maintenant des fonctions
+    // Check that getters that return direct values are now functions
     expect(typeof store.$getAllArray).toBe('function')
     expect(typeof store.$getAllIds).toBe('function')
     expect(typeof store.$getAll).toBe('function')

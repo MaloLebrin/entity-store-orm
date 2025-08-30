@@ -3,7 +3,7 @@ import { createActions, createGetters, createState } from '@entity-store/core'
 import type { PiniaPluginContext } from 'pinia'
 import { ref, toRef } from 'vue'
 
-// Types pour améliorer la maintenabilité
+// Types to improve maintainability
 interface EntityStore {
   $state: {
     $entities: any
@@ -24,7 +24,7 @@ interface Getters {
   [key: string]: Function | any
 }
 
-// Constantes pour les getters qui retournent des valeurs directes
+// Constants for getters that return direct values
 const VALUE_GETTERS = [
   'getAllArray',
   'getAllIds', 
@@ -40,7 +40,7 @@ const VALUE_GETTERS = [
 type ValueGetterKey = typeof VALUE_GETTERS[number]
 
 /**
- * Crée un état copié à partir de l'état actuel du store
+ * Creates a copied state from the current store state
  */
 function createCurrentState(store: EntityStore) {
   const currentState = createState<WithId>()
@@ -53,7 +53,7 @@ function createCurrentState(store: EntityStore) {
 }
 
 /**
- * Crée un getter qui retourne la valeur actuelle de l'état
+ * Creates a getter that returns the current state value
  */
 function createValueGetter(store: EntityStore, key: string, baseState: any) {
   return () => {
@@ -62,7 +62,7 @@ function createValueGetter(store: EntityStore, key: string, baseState: any) {
     const currentGetter = (currentGetters as any)[key]
     const value = currentGetter(currentState)
     
-    // Convertir les IDs en chaînes pour getAllIds
+    // Convert IDs to strings for getAllIds
     if (key === 'getAllIds') {
       return value.map((id: any) => String(id))
     }
@@ -72,10 +72,10 @@ function createValueGetter(store: EntityStore, key: string, baseState: any) {
 }
 
 /**
- * Ajoute les actions au store
+ * Adds actions to the store
  */
 function addActionsToStore(store: EntityStore, actions: Actions, baseState: any) {
-  // Créer un objet d'actions lié au store
+  // Create an actions object bound to the store
   const boundActions: Actions = {}
   for (const key in actions) {
     const action = actions[key]
@@ -84,7 +84,7 @@ function addActionsToStore(store: EntityStore, actions: Actions, baseState: any)
     }
   }
   
-  // Lier le contexte this au store pour toutes les actions
+  // Bind the this context to the store for all actions
   Object.keys(boundActions).forEach(key => {
     const action = boundActions[key]
     if (typeof action === 'function') {
@@ -92,7 +92,7 @@ function addActionsToStore(store: EntityStore, actions: Actions, baseState: any)
     }
   })
   
-  // Ajouter toutes les actions préfixées au store
+  // Add all prefixed actions to the store
   for (const key in boundActions) {
     if (!store.$state.hasOwnProperty(`$${key}`)) {
       store[`$${key}`] = boundActions[key]
@@ -101,7 +101,7 @@ function addActionsToStore(store: EntityStore, actions: Actions, baseState: any)
 }
 
 /**
- * Ajoute les getters au store
+ * Adds getters to the store
  */
 function addGettersToStore(store: EntityStore, getters: Getters, baseState: any) {
   for (const key in getters) {
@@ -111,11 +111,11 @@ function addGettersToStore(store: EntityStore, getters: Getters, baseState: any)
       if (typeof getter === 'function') {
         const result = getter(baseState)
         
-        // Vérifier si c'est un getter qui retourne une valeur directe
+        // Check if it's a getter that returns a direct value
         if (VALUE_GETTERS.includes(key as ValueGetterKey)) {
           store[`$${key}`] = createValueGetter(store, key, baseState)
         } else {
-          // D'autres retournent des fonctions qui prennent des paramètres
+          // Others return functions that take parameters
           store[`$${key}`] = result
         }
       } else {
@@ -126,13 +126,13 @@ function addGettersToStore(store: EntityStore, getters: Getters, baseState: any)
 }
 
 /**
- * Ajoute les propriétés personnalisées pour les devtools
+ * Adds custom properties for devtools
  */
 function addCustomProperties(store: EntityStore, actions: Actions, getters: Getters) {
   if (process.env.NODE_ENV === 'development') {
     store._customProperties?.add('$entities')
     
-    // Ajouter toutes les actions et getters aux propriétés personnalisées
+    // Add all actions and getters to custom properties
     Object.keys(actions).forEach(key => {
       store._customProperties?.add(`$${key}`)
     })
@@ -144,46 +144,46 @@ function addCustomProperties(store: EntityStore, actions: Actions, getters: Gett
 }
 
 /**
- * Plugin Pinia qui ajoute automatiquement la gestion d'entités à tous les stores
- * Toutes les propriétés ajoutées sont préfixées avec $ pour éviter les conflits
+ * Pinia plugin that automatically adds entity management to all stores
+ * All added properties are prefixed with $ to avoid conflicts
  */
 export function entityStorePlugin(ctx: PiniaPluginContext) {
   const store = ctx.store
   
-  // Créer l'état des entités en utilisant le core
+  // Create entity state using the core
   const baseState = createState<WithId>()
   
-  // Créer les actions et getters avec l'état
+  // Create actions and getters with the state
   const actions = createActions(baseState)
   const getters = createGetters(baseState)
   
-  // Pour gérer correctement SSR, nous devons ajouter l'état dans deux endroits
+  // To properly handle SSR, we need to add state in two places
   if (!store.$state.hasOwnProperty('$entities')) {
-    // Créer une ref réactive pour l'état des entités
+    // Create a reactive ref for entity state
     const entities = ref(baseState.entities)
-    // Ajouter à $state pour la sérialisation SSR
+    // Add to $state for SSR serialization
     store.$state.$entities = entities
   }
   
-  // Transférer la ref du state au store pour l'accès direct
+  // Transfer the state ref to the store for direct access
   ;(store as any).$entities = toRef(store.$state, '$entities')
   
-  // Ajouter les actions au store
+  // Add actions to the store
   addActionsToStore(store as unknown as EntityStore, actions, baseState)
   
-  // Ajouter les getters au store
+  // Add getters to the store
   addGettersToStore(store as unknown as EntityStore, getters, baseState)
   
-  // Ajouter les propriétés personnalisées pour les devtools
+  // Add custom properties for devtools
   addCustomProperties(store as unknown as EntityStore, actions, getters)
   
-  // Retourner un objet vide car nous modifions directement le store
-  // Cela permet aux devtools de tracker les propriétés
+  // Return an empty object as we modify the store directly
+  // This allows devtools to track properties
   return {}
 }
 
 /**
- * Fonction helper pour installer le plugin
+ * Helper function to install the plugin
  */
 export function installEntityStorePlugin(pinia: any) {
   pinia.use(entityStorePlugin)

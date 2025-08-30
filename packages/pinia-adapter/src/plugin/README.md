@@ -1,6 +1,6 @@
-# Entity Store Plugin pour Pinia
+# Entity Store Plugin for Pinia
 
-Ce plugin Pinia ajoute automatiquement la gestion d'entités à tous vos stores Pinia existants, sans modifier leur structure actuelle.
+This Pinia plugin automatically adds entity management to all your existing Pinia stores without modifying their current structure.
 
 ## 🚀 Installation
 
@@ -12,59 +12,59 @@ const pinia = createPinia().use(entityStorePlugin)
 app.use(pinia)
 ```
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-Le plugin ajoute automatiquement à tous vos stores :
+The plugin automatically adds to all your stores:
 
-### 🔧 **State étendu**
-- `$entities.byId` : Record des entités par ID
-- `$entities.allIds` : Liste des IDs
-- `$entities.current` : Entité actuellement sélectionnée
-- `$entities.currentById` : ID de l'entité actuelle
-- `$entities.active` : Liste des IDs actifs
+### 🔧 **Extended State**
+- `$entities.byId` : Record of entities by ID
+- `$entities.allIds` : List of IDs
+- `$entities.current` : Currently selected entity
+- `$entities.currentById` : ID of the current entity
+- `$entities.active` : List of active IDs
 
-### 🎯 **Actions préfixées**
-- `$createOne(entity)` : Créer une entité
-- `$createMany(entities)` : Créer plusieurs entités
-- `$updateOne(id, entity)` : Mettre à jour une entité
-- `$updateMany(entities)` : Mettre à jour plusieurs entités
-- `$deleteOne(id)` : Supprimer une entité
-- `$deleteMany(ids)` : Supprimer plusieurs entités
-- `$setCurrent(entity)` : Définir l'entité courante
-- `$setCurrentById(id)` : Définir l'entité courante par ID
-- `$removeCurrent()` : Supprimer l'entité courante
-- `$removeCurrentById()` : Supprimer l'entité courante par ID
-- `$setActive(id)` : Marquer une entité comme active
-- `$resetActive()` : Réinitialiser les entités actives
-- `$setIsDirty(id)` : Marquer une entité comme modifiée
-- `$setIsNotDirty(id)` : Marquer une entité comme non modifiée
-- `$updateField(field, value, id)` : Mettre à jour un champ spécifique
+### 🎯 **Prefixed Actions**
+- `$createOne(entity)` : Create an entity
+- `$createMany(entities)` : Create multiple entities
+- `$updateOne(id, entity)` : Update an entity
+- `$updateMany(entities)` : Update multiple entities
+- `$deleteOne(id)` : Delete an entity
+- `$deleteMany(ids)` : Delete multiple entities
+- `$setCurrent(entity)` : Set the current entity
+- `$setCurrentById(id)` : Set the current entity by ID
+- `$removeCurrent()` : Remove the current entity
+- `$removeCurrentById()` : Remove the current entity by ID
+- `$setActive(id)` : Mark an entity as active
+- `$resetActive()` : Reset active entities
+- `$setIsDirty(id)` : Mark an entity as modified
+- `$setIsNotDirty(id)` : Mark an entity as not modified
+- `$updateField(field, value, id)` : Update a specific field
 
-### 🔍 **Getters préfixés**
-- `$getOne(id)` : Obtenir une entité par ID
-- `$getMany(ids)` : Obtenir plusieurs entités par IDs
-- `$getAll()` : Obtenir toutes les entités
-- `$getAllArray()` : Obtenir toutes les entités sous forme de tableau
-- `$getAllIds()` : Obtenir tous les IDs
-- `$getCurrent()` : Obtenir l'entité courante
-- `$getCurrentById()` : Obtenir l'entité courante par ID
-- `$getActive()` : Obtenir les entités actives
-- `$getFirstActive()` : Obtenir la première entité active
-- `$getWhere(filter)` : Filtrer les entités
-- `$getWhereArray(filter)` : Filtrer les entités sous forme de tableau
-- `$getFirstWhere(filter)` : Obtenir la première entité filtrée
-- `$getIsEmpty()` : Vérifier si le store est vide
-- `$getIsNotEmpty()` : Vérifier si le store n'est pas vide
-- `$isAlreadyInStore(id)` : Vérifier si une entité existe
-- `$isAlreadyActive(id)` : Vérifier si une entité est active
-- `$isDirty(id)` : Vérifier si une entité a été modifiée
-- `$search(field)` : Rechercher dans les entités
-- `$getMissingIds(ids)` : Obtenir les IDs manquants
-- `$getMissingEntities(entities)` : Obtenir les entités manquantes
+### 🔍 **Prefixed Getters**
+- `$getOne(id)` : Get an entity by ID
+- `$getMany(ids)` : Get multiple entities by IDs
+- `$getAll()` : Get all entities
+- `$getAllArray()` : Get all entities as an array
+- `$getAllIds()` : Get all IDs
+- `$getCurrent()` : Get the current entity
+- `$getCurrentById()` : Get the current entity by ID
+- `$getActive()` : Get active entities
+- `$getFirstActive()` : Get the first active entity
+- `$getWhere(filter)` : Filter entities
+- `$getWhereArray(filter)` : Filter entities as an array
+- `$getFirstWhere(filter)` : Get the first filtered entity
+- `$getIsEmpty()` : Check if the store is empty
+- `$getIsNotEmpty()` : Check if the store is not empty
+- `$isAlreadyInStore(id)` : Check if an entity exists
+- `$isAlreadyActive(id)` : Check if an entity is active
+- `$isDirty(id)` : Check if an entity has been modified
+- `$search(field)` : Search in entities
+- `$getMissingIds(ids)` : Get missing IDs
+- `$getMissingEntities(entities)` : Get missing entities
 
-## 📖 Exemples d'utilisation
+## 📖 Usage Examples
 
-### Store simple avec plugin
+### Simple Store with Plugin
 
 ```typescript
 import { defineStore } from 'pinia'
@@ -76,22 +76,22 @@ interface User extends WithId {
   age: number
 }
 
-// Créer un store normal - le plugin ajoute automatiquement les fonctionnalités d'entités
+// Create a normal store - the plugin automatically adds entity functionality
 export const useUserStore = defineStore('users', {
   state: () => ({
-    // Votre state personnalisé
+    // Your custom state
     isLoading: false,
     error: null,
-    // Le plugin ajoute automatiquement $entities
+    // The plugin automatically adds $entities
   }),
   
   actions: {
-    // Vos actions personnalisées
+    // Your custom actions
     async fetchUsers() {
       this.isLoading = true
       try {
         const users: User[] = await api.getUsers()
-        // Utilisation des méthodes du plugin
+        // Using plugin methods
         this.$createMany(users)
       } catch (error) {
         this.error = error.message
@@ -100,30 +100,30 @@ export const useUserStore = defineStore('users', {
       }
     },
     
-    // Vous pouvez toujours utiliser vos actions personnalisées
+    // You can still use your custom actions
     customAction() {
-      // Accès aux entités via le plugin
+      // Access entities via the plugin
       const allUsers = this.$getAllArray()
       console.log('Total users:', allUsers.length)
     }
   },
   
   getters: {
-    // Vos getters personnalisés
+    // Your custom getters
     getUsersByAge: (state) => (minAge: number) => {
-      // Utilisation des getters du plugin
+      // Using plugin getters
       return state.$getWhereArray((user) => user.age >= minAge)
     },
     
     getActiveUsersCount: (state) => () => {
-      // Utilisation des getters du plugin
+      // Using plugin getters
       return state.$getActive().length
     }
   }
 })
 ```
 
-### Utilisation dans un composant
+### Usage in a Component
 
 ```typescript
 import { useUserStore } from '@/stores/users'
@@ -132,7 +132,7 @@ export default {
   setup() {
     const userStore = useUserStore()
     
-    // Utilisation des méthodes du plugin
+    // Using plugin methods
     const createUser = (user: User) => {
       userStore.$createOne(user)
     }
@@ -165,12 +165,12 @@ export default {
     }
     
     return {
-      // État
+      // State
       users: userStore.$entities,
       isLoading: userStore.isLoading,
       error: userStore.error,
       
-      // Méthodes du plugin
+      // Plugin methods
       createUser,
       getUser,
       getAllUsers,
@@ -179,7 +179,7 @@ export default {
       setCurrentUser,
       getCurrentUser,
       
-      // Méthodes personnalisées
+      // Custom methods
       fetchUsers: userStore.fetchUsers,
       getUsersByAge: userStore.getUsersByAge,
     }
@@ -187,28 +187,28 @@ export default {
 }
 ```
 
-## 🔄 Coexistence avec l'Adaptateur
+## 🔄 Coexistence with the Adapter
 
-Ce plugin coexiste parfaitement avec l'adaptateur existant :
+This plugin coexists perfectly with the existing adapter:
 
-- **Plugin** : Ajoute des fonctionnalités à TOUS les stores (préfixées avec `$`)
-- **Adaptateur** : Crée des stores spécialisés avec toutes les fonctionnalités intégrées
+- **Plugin**: Adds functionality to ALL stores (prefixed with `$`)
+- **Adapter**: Creates specialized stores with all functionality integrated
 
-Vous pouvez utiliser les deux approches dans le même projet sans conflit.
+You can use both approaches in the same project without conflicts.
 
-## 🎯 Avantages du Plugin
+## 🎯 Plugin Advantages
 
-1. **Non-intrusif** : N'affecte pas vos stores existants
-2. **Automatique** : S'applique à tous les stores créés après l'installation
-3. **Préfixé** : Toutes les propriétés ajoutées ont le préfixe `$` pour éviter les conflits
-4. **Type-safe** : Support complet de TypeScript
-5. **Performant** : Utilise le core existant pour la logique métier
-6. **Devtools** : Intégration complète avec les outils de développement Pinia
+1. **Non-intrusive**: Doesn't affect your existing stores
+2. **Automatic**: Applies to all stores created after installation
+3. **Prefixed**: All added properties have the `$` prefix to avoid conflicts
+4. **Type-safe**: Complete TypeScript support
+5. **Performant**: Uses the existing core for business logic
+6. **Devtools**: Complete integration with Pinia development tools
 
 ## 🧪 Tests
 
 ```bash
-# Lancer les tests du plugin
+# Run plugin tests
 pnpm test plugin/plugin.test.ts
 ```
 

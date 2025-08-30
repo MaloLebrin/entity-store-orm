@@ -1,78 +1,78 @@
 # @entity-store/pinia-adapter
 
-Ce package fournit deux approches différentes pour utiliser la gestion d'entités avec Pinia :
+This package provides two different approaches for using entity management with Pinia:
 
-## 🚀 Deux Approches
+## 🚀 Two Approaches
 
-### 1. **Plugin Approach** (Recommandé pour les stores existants)
+### 1. **Plugin Approach** (Recommended for existing stores)
 
-Le plugin Pinia ajoute automatiquement la gestion d'entités à **tous** vos stores existants sans modification de code.
+The Pinia plugin automatically adds entity management to **all** your existing stores without code modification.
 
 #### Installation
 
 ```bash
 npm install @entity-store/pinia-adapter
-# ou
+# or
 pnpm add @entity-store/pinia-adapter
-# ou
+# or
 yarn add @entity-store/pinia-adapter
 ```
 
-#### Utilisation
+#### Usage
 
 ```typescript
 import { createPinia } from 'pinia'
 import { entityStorePlugin } from '@entity-store/pinia-adapter'
 
-// Créer une instance Pinia
+// Create a Pinia instance
 const pinia = createPinia()
 
-// Installer le plugin
+// Install the plugin
 pinia.use(entityStorePlugin)
 
-// Utiliser Pinia dans votre app Vue
+// Use Pinia in your Vue app
 app.use(pinia)
 ```
 
-#### Fonctionnalités ajoutées automatiquement
+#### Automatically added features
 
-Toutes les propriétés sont préfixées avec `$` pour éviter les conflits :
+All properties are prefixed with `$` to avoid conflicts:
 
-**État :**
-- `$entities` - État complet des entités (byId, allIds, current, active, etc.)
+**State:**
+- `$entities` - Complete entity state (byId, allIds, current, active, etc.)
 
-**Actions :**
-- `$createOne(entity)` - Créer une entité
-- `$createMany(entities)` - Créer plusieurs entités
-- `$updateOne(id, updates)` - Mettre à jour une entité
-- `$updateMany(updates)` - Mettre à jour plusieurs entités
-- `$deleteOne(id)` - Supprimer une entité
-- `$deleteMany(ids)` - Supprimer plusieurs entités
-- `$setCurrent(entity)` - Définir l'entité courante
-- `$setActive(id)` - Marquer une entité comme active
-- `$resetActive()` - Réinitialiser les entités actives
-- `$setIsDirty(id)` - Marquer une entité comme modifiée
-- `$updateField(field, value, id)` - Mettre à jour un champ spécifique
+**Actions:**
+- `$createOne(entity)` - Create an entity
+- `$createMany(entities)` - Create multiple entities
+- `$updateOne(id, updates)` - Update an entity
+- `$updateMany(updates)` - Update multiple entities
+- `$deleteOne(id)` - Delete an entity
+- `$deleteMany(ids)` - Delete multiple entities
+- `$setCurrent(entity)` - Set the current entity
+- `$setActive(id)` - Mark an entity as active
+- `$resetActive()` - Reset active entities
+- `$setIsDirty(id)` - Mark an entity as modified
+- `$updateField(field, value, id)` - Update a specific field
 
-**Getters :**
-- `$getOne(id)` - Récupérer une entité par ID
-- `$getMany(ids)` - Récupérer plusieurs entités par IDs
-- `$getAll()` - Récupérer toutes les entités
-- `$getAllArray()` - Récupérer toutes les entités en tableau
-- `$getAllIds()` - Récupérer tous les IDs
-- `$getCurrent()` - Récupérer l'entité courante
-- `$getActive()` - Récupérer les entités actives
-- `$getWhere(filter)` - Filtrer les entités
-- `$search(query)` - Rechercher dans les entités
-- `$isAlreadyInStore(id)` - Vérifier si une entité existe
-- `$isDirty(id)` - Vérifier si une entité est modifiée
+**Getters:**
+- `$getOne(id)` - Get an entity by ID
+- `$getMany(ids)` - Get multiple entities by IDs
+- `$getAll()` - Get all entities
+- `$getAllArray()` - Get all entities as array
+- `$getAllIds()` - Get all IDs
+- `$getCurrent()` - Get the current entity
+- `$getActive()` - Get active entities
+- `$getWhere(filter)` - Filter entities
+- `$search(query)` - Search in entities
+- `$isAlreadyInStore(id)` - Check if an entity exists
+- `$isDirty(id)` - Check if an entity is modified
 
-#### Exemple complet
+#### Complete example
 
 ```typescript
 import { defineStore } from 'pinia'
 
-// Définir un store normal
+// Define a normal store
 const useUserStore = defineStore('users', {
   state: () => ({
     customField: 'users'
@@ -84,26 +84,26 @@ const useUserStore = defineStore('users', {
   }
 })
 
-// Utiliser le store
+// Use the store
 const userStore = useUserStore()
 
-// La gestion d'entités est automatiquement disponible !
+// Entity management is automatically available!
 const user = { id: 1, name: 'John Doe', email: 'john@example.com' }
 
 userStore.$createOne(user)
 console.log(userStore.$getOne(1)) // { id: 1, name: 'John Doe', email: 'john@example.com', $isDirty: false }
 console.log(userStore.$getAllIds()) // ['1']
 
-// Le store conserve ses fonctionnalités personnalisées
+// The store retains its custom functionality
 console.log(userStore.customField) // 'users'
 console.log(userStore.customAction()) // 'custom user action'
 ```
 
-### 2. **Adapter Approach** (Pour les nouveaux stores)
+### 2. **Adapter Approach** (For new stores)
 
-L'approche adaptateur crée des stores spécialisés avec la gestion d'entités intégrée.
+The adapter approach creates specialized stores with integrated entity management.
 
-#### Utilisation
+#### Usage
 
 ```typescript
 import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
@@ -128,48 +128,48 @@ const useUserStore = createPiniaEntityStore<User>('users', {
 
 ## 🔧 Configuration
 
-### Options du plugin
+### Plugin options
 
 ```typescript
 import { entityStorePlugin } from '@entity-store/pinia-adapter'
 
-// Le plugin accepte des options (actuellement aucune option requise)
+// The plugin accepts options (currently no options required)
 pinia.use(entityStorePlugin())
 ```
 
-### Fonction helper
+### Helper function
 
 ```typescript
 import { installEntityStorePlugin } from '@entity-store/pinia-adapter'
 
-// Alternative à pinia.use(entityStorePlugin())
+// Alternative to pinia.use(entityStorePlugin())
 installEntityStorePlugin(pinia)
 ```
 
-## 🎯 Cas d'usage
+## 🎯 Use Cases
 
-### Plugin Approach - Idéal pour :
-- **Stores existants** que vous ne voulez pas modifier
-- **Migration progressive** vers la gestion d'entités
-- **Applications avec beaucoup de stores** différents
-- **Réutilisabilité** maximale
+### Plugin Approach - Ideal for:
+- **Existing stores** that you don't want to modify
+- **Progressive migration** to entity management
+- **Applications with many different stores**
+- **Maximum reusability**
 
-### Adapter Approach - Idéal pour :
-- **Nouveaux stores** conçus spécifiquement pour les entités
-- **Type safety** maximale avec TypeScript
-- **Contrôle total** sur la structure du store
-- **Performance** optimisée pour les entités
+### Adapter Approach - Ideal for:
+- **New stores** specifically designed for entities
+- **Maximum type safety** with TypeScript
+- **Total control** over store structure
+- **Optimized performance** for entities
 
-## 🚀 Avantages du Plugin
+## 🚀 Plugin Advantages
 
-1. **Zéro modification de code** - Ajoute la gestion d'entités à tous vos stores existants
-2. **Préfixage automatique** - Toutes les propriétés sont préfixées avec `$` pour éviter les conflits
-3. **Intégration transparente** - Fonctionne avec tous vos stores Pinia existants
-4. **SSR compatible** - Gestion correcte de l'état pour le rendu côté serveur
-5. **DevTools intégrés** - Toutes les propriétés sont visibles dans les Pinia DevTools
-6. **Performance optimisée** - Utilise le core `@entity-store/core` pour une gestion efficace
+1. **Zero code modification** - Adds entity management to all your existing stores
+2. **Automatic prefixing** - All properties are prefixed with `$` to avoid conflicts
+3. **Transparent integration** - Works with all your existing Pinia stores
+4. **SSR compatible** - Proper state management for server-side rendering
+5. **Integrated DevTools** - All properties are visible in Pinia DevTools
+6. **Optimized performance** - Uses the `@entity-store/core` for efficient management
 
-## 📚 API Référence
+## 📚 API Reference
 
 ### Plugin
 
@@ -177,7 +177,7 @@ installEntityStorePlugin(pinia)
 // Installation
 pinia.use(entityStorePlugin)
 
-// Fonction helper
+// Helper function
 installEntityStorePlugin(pinia)
 ```
 
@@ -187,11 +187,11 @@ installEntityStorePlugin(pinia)
 import type { EntityStorePlugin, EntityPluginContext, EntityPluginOptions } from '@entity-store/pinia-adapter'
 ```
 
-## 🔍 Dépannage
+## 🔍 Troubleshooting
 
-### Les propriétés ne sont pas ajoutées
+### Properties are not added
 
-Assurez-vous que le plugin est installé **avant** de définir vos stores :
+Make sure the plugin is installed **before** defining your stores:
 
 ```typescript
 // ✅ Correct
@@ -204,12 +204,12 @@ const store = defineStore('test', { ... })
 pinia.use(entityStorePlugin)
 ```
 
-### Conflits de noms
+### Name conflicts
 
-Toutes les propriétés sont préfixées avec `$`. Si vous avez des propriétés commençant par `$` dans vos stores, elles ne seront pas écrasées.
+All properties are prefixed with `$`. If you have properties starting with `$` in your stores, they will not be overwritten.
 
 ## 🎉 Conclusion
 
-Le plugin Pinia offre une solution élégante et non-intrusive pour ajouter la gestion d'entités à tous vos stores existants. Il vous permet de bénéficier de toutes les fonctionnalités de `@entity-store/core` sans modifier votre code existant.
+The Pinia plugin offers an elegant and non-intrusive solution for adding entity management to all your existing stores. It allows you to benefit from all the features of `@entity-store/core` without modifying your existing code.
 
-**Recommandation :** Commencez avec le plugin pour vos stores existants, et utilisez l'adaptateur pour les nouveaux stores qui nécessitent une gestion d'entités spécialisée.
+**Recommendation:** Start with the plugin for your existing stores, and use the adapter for new stores that require specialized entity management.

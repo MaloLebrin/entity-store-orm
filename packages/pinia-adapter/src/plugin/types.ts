@@ -2,11 +2,11 @@ import type { WithId } from '@entity-store/core'
 import type { PiniaPluginContext } from 'pinia'
 
 /**
- * Interface pour étendre les stores Pinia avec les fonctionnalités d'entités
- * Toutes les propriétés ajoutées par le plugin sont préfixées avec $
+ * Interface to extend Pinia stores with entity management functionality
+ * All properties added by the plugin are prefixed with $
  */
 export interface EntityStorePlugin<T extends WithId = any> {
-  // State préfixé
+  // Prefixed state
   $entities: {
     byId: Record<string, T & { $isDirty: boolean }>
     allIds: string[]
@@ -15,7 +15,7 @@ export interface EntityStorePlugin<T extends WithId = any> {
     active: string[]
   }
   
-  // Actions préfixées
+  // Prefixed actions
   $createOne: (payload: T) => void
   $createMany: (payload: T[]) => void
   $updateOne: (id: string | number, payload: T) => void
@@ -32,7 +32,7 @@ export interface EntityStorePlugin<T extends WithId = any> {
   $setIsNotDirty: (id: string | number) => void
   $updateField: (field: string, value: any, id: string | number) => void
   
-  // Getters préfixés
+  // Prefixed getters
   $getOne: (id: string | number) => (T & { $isDirty: boolean }) | undefined
   $getMany: (ids: (string | number)[]) => (T & { $isDirty: boolean })[]
   $getAll: () => Record<string, T & { $isDirty: boolean }>
@@ -56,25 +56,25 @@ export interface EntityStorePlugin<T extends WithId = any> {
 }
 
 /**
- * Type pour le contexte du plugin avec les entités
+ * Type for plugin context with entities
  */
 export interface EntityPluginContext<T extends WithId = any> extends PiniaPluginContext {
   store: EntityStorePlugin<T>
 }
 
 /**
- * Options de configuration du plugin (pour l'instant vides, mais extensibles)
+ * Plugin configuration options (empty for now, but extensible)
  */
 export interface EntityPluginOptions {
-  // Options futures pour la configuration globale
+  // Future options for global configuration
 }
 
 /**
- * Type pour étendre l'interface PiniaCustomProperties
+ * Type to extend the PiniaCustomProperties interface
  */
 declare module 'pinia' {
   export interface PiniaCustomProperties {
-    // State préfixé
+    // Prefixed state
     $entities: {
       byId: Record<string, any & { $isDirty: boolean }>
       allIds: string[]
@@ -83,7 +83,7 @@ declare module 'pinia' {
       active: string[]
     }
     
-    // Actions préfixées
+    // Prefixed actions
     $createOne: (payload: any) => void
     $createMany: (payload: any[]) => void
     $updateOne: (id: string | number, payload: any) => void
@@ -100,7 +100,7 @@ declare module 'pinia' {
     $setIsNotDirty: (id: string | number) => void
     $updateField: (field: string, value: any, id: string | number) => void
     
-    // Getters préfixés
+    // Prefixed getters
     $getOne: (id: string | number) => (any & { $isDirty: boolean }) | undefined
     $getMany: (ids: (string | number)[]) => (any & { $isDirty: boolean })[]
     $getAll: () => Record<string, any & { $isDirty: boolean }>
