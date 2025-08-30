@@ -1,7 +1,7 @@
 {
   "name": "entity-store",
   "version": "1.0.0",
-  "description": "ORM agnostique avec des adaptateurs pour différents state managers",
+  "description": "Agnostic ORM with adapters for different state managers",
   "type": "module",
   "private": true,
   "scripts": {

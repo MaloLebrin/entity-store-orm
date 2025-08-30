@@ -1,6 +1,6 @@
 # Pinia Entity Store Adapter
 
-Un adaptateur Pinia pour le système de gestion d'entités agnostique, permettant de créer des stores avec gestion complète des entités tout en conservant la flexibilité de Pinia.
+A Pinia adapter for the agnostic entity management system, allowing you to create stores with complete entity management while maintaining Pinia's flexibility.
 
 ## 📦 Installation
 
@@ -8,7 +8,7 @@ Un adaptateur Pinia pour le système de gestion d'entités agnostique, permettan
 pnpm add entity-store
 ```
 
-## 🚀 Utilisation de base
+## 🚀 Basic Usage
 
 ```typescript
 import { createPiniaEntityStore } from 'entity-store/adapters/pinia'
@@ -19,32 +19,32 @@ interface Todo {
   completed: boolean
 }
 
-// Créer un store basique
+// Create a basic store
 export const useTodoStore = createPiniaEntityStore<Todo>('todos')
 ```
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-### Gestion automatique des entités
+### Automatic Entity Management
 
-Le store inclut automatiquement toutes les méthodes de gestion d'entités :
+The store automatically includes all entity management methods:
 
-- **Getters** : `getOne`, `getAll`, `getAllArray`, `getAllIds`, `getCurrent`, `getActive`, etc.
-- **Actions** : `createOne`, `createMany`, `updateOne`, `deleteOne`, `setCurrent`, `setActive`, etc.
-- **État** : `byId`, `allIds`, `current`, `currentById`, `active`, `$isDirty`
+- **Getters**: `getOne`, `getAll`, `getAllArray`, `getAllIds`, `getCurrent`, `getActive`, etc.
+- **Actions**: `createOne`, `createMany`, `updateOne`, `deleteOne`, `setCurrent`, `setActive`, etc.
+- **State**: `byId`, `allIds`, `current`, `currentById`, `active`, `$isDirty`
 
-### Extension avec des getters personnalisés
+### Extension with Custom Getters
 
 ```typescript
 export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
   getters: {
-    // Getter personnalisé : obtenir les todos par priorité
+    // Custom getter: get todos by priority
     getTodosByPriority: (store) => (priority: 'low' | 'medium' | 'high') => {
       const getWhere = store.getWhere()
       return getWhere(todo => todo.priority === priority)
     },
     
-    // Getter personnalisé : compter les todos complétés
+    // Custom getter: count completed todos
     getCompletedCount: (store) => () => {
       const getWhere = store.getWhere()
       return Object.keys(getWhere(todo => todo.completed)).length
@@ -53,12 +53,12 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
 })
 ```
 
-### Extension avec des actions personnalisées
+### Extension with Custom Actions
 
 ```typescript
 export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
   actions: {
-    // Action personnalisée : basculer la completion d'un todo
+    // Custom action: toggle todo completion
     toggleTodo: (store) => (id: number) => {
       const current = store.getOne()(id)
       if (current) {
@@ -71,7 +71,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
       }
     },
     
-    // Action personnalisée : compléter tous les todos
+    // Custom action: complete all todos
     completeAll: (store) => () => {
       const allTodos = store.getAllArray()
       allTodos.forEach(todo => {
@@ -84,18 +84,18 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
 })
 ```
 
-### Extension avec un état personnalisé
+### Extension with Custom State
 
 ```typescript
 export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
   state: {
-    // État UI personnalisé
+    // Custom UI state
     ui: {
       isLoading: false,
       error: null as string | null
     },
     
-    // Filtres personnalisés
+    // Custom filters
     filters: {
       showCompleted: true,
       priorityFilter: null as 'low' | 'medium' | 'high' | null
@@ -104,7 +104,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
 })
 ```
 
-### Extension complète (état + getters + actions)
+### Complete Extension (state + getters + actions)
 
 ```typescript
 export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
@@ -125,11 +125,11 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
   },
   
   getters: {
-    // Getter personnalisé : obtenir les todos filtrés et triés
+    // Custom getter: get filtered and sorted todos
     getFilteredTodos: (store) => () => {
       let todos = store.getAllArray()
       
-      // Appliquer les filtres
+      // Apply filters
       if (!store.entities.filters.showCompleted) {
         todos = todos.filter(todo => !todo.completed)
       }
@@ -143,7 +143,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
         todos = todos.filter(todo => todo.tags.includes(store.entities.filters.tagFilter!))
       }
       
-      // Appliquer le tri
+      // Apply sorting
       todos.sort((a, b) => {
         let aValue: any
         let bValue: any
@@ -180,7 +180,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
       return todos
     },
     
-    // Getter personnalisé : obtenir tous les tags disponibles
+    // Custom getter: get all available tags
     getAvailableTags: (store) => () => {
       const allTags = new Set<string>()
       store.getAllArray().forEach(todo => {
@@ -191,7 +191,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
   },
   
   actions: {
-    // Actions personnalisées pour l'UI
+    // Custom actions for UI
     setLoading: (store) => (loading: boolean) => {
       store.entities.ui.isLoading = loading
     },
@@ -208,7 +208,7 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
       store.entities.ui.sortOrder = sortOrder
     },
     
-    // Actions personnalisées pour les filtres
+    // Custom actions for filters
     toggleFilter: (store) => (filterType: keyof typeof store.entities.filters) => {
       if (filterType === 'showCompleted' || filterType === 'showIncomplete') {
         store.entities.filters[filterType] = !store.entities.filters[filterType]
@@ -233,47 +233,47 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
 })
 ```
 
-## 🎯 Utilisation dans un composant Vue
+## 🎯 Usage in a Vue Component
 
 ```vue
 <template>
   <div>
-    <!-- État UI -->
-    <div v-if="todoStore.entities.ui.isLoading">Chargement...</div>
+    <!-- UI State -->
+    <div v-if="todoStore.entities.ui.isLoading">Loading...</div>
     <div v-if="todoStore.entities.ui.error" class="error">{{ todoStore.entities.ui.error }}</div>
     
-    <!-- Contrôles de tri -->
+    <!-- Sort Controls -->
     <select v-model="todoStore.entities.ui.sortBy">
-      <option value="createdAt">Date de création</option>
-      <option value="updatedAt">Date de modification</option>
-      <option value="priority">Priorité</option>
-      <option value="title">Titre</option>
+      <option value="createdAt">Creation Date</option>
+      <option value="updatedAt">Modification Date</option>
+      <option value="priority">Priority</option>
+      <option value="title">Title</option>
     </select>
     
     <button @click="todoStore.setSortOrder(todoStore.entities.ui.sortOrder === 'asc' ? 'desc' : 'asc')">
       {{ todoStore.entities.ui.sortOrder === 'asc' ? '↑' : '↓' }}
     </button>
     
-    <!-- Filtres -->
+    <!-- Filters -->
     <label>
       <input 
         type="checkbox" 
         v-model="todoStore.entities.filters.showCompleted"
         @change="todoStore.toggleFilter('showCompleted')"
       />
-      Afficher les complétés
+      Show completed
     </label>
     
     <select v-model="todoStore.entities.filters.priorityFilter">
-      <option value="">Toutes les priorités</option>
-      <option value="high">Haute</option>
-      <option value="medium">Moyenne</option>
-      <option value="low">Basse</option>
+      <option value="">All priorities</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
     </select>
     
-    <button @click="todoStore.clearFilters()">Réinitialiser les filtres</button>
+    <button @click="todoStore.clearFilters()">Reset filters</button>
     
-    <!-- Liste des todos -->
+    <!-- Todo list -->
     <div v-for="todo in filteredTodos" :key="todo.id">
       <input 
         type="checkbox" 
@@ -292,14 +292,14 @@ export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
       <button @click="addTag(todo.id)">+ Tag</button>
     </div>
     
-    <!-- Actions en lot -->
-    <button @click="todoStore.completeAll()">Tout compléter</button>
+    <!-- Batch actions -->
+    <button @click="todoStore.completeAll()">Complete all</button>
     
-    <!-- Statistiques -->
+    <!-- Statistics -->
     <div>
       Total: {{ todoStore.getAllIds().length }} |
-      Complétés: {{ todoStore.getCompletedCount() }} |
-      Haute priorité: {{ Object.keys(todoStore.getHighPriorityTodos()).length }}
+      Completed: {{ todoStore.getCompletedCount() }} |
+      High priority: {{ Object.keys(todoStore.getHighPriorityTodos()).length }}
     </div>
   </div>
 </template>
@@ -310,25 +310,25 @@ import { useTodoStore } from './stores/todoStore'
 
 const todoStore = useTodoStore()
 
-// Utiliser le getter personnalisé
+// Use custom getter
 const filteredTodos = computed(() => todoStore.getFilteredTodos())
 
-// Fonction pour ajouter un tag
+// Function to add a tag
 const addTag = (id: number) => {
-  const tag = prompt('Entrez un tag:')
+  const tag = prompt('Enter a tag:')
   if (tag) {
     todoStore.addTag(id, tag)
   }
 }
 
-// Initialiser avec des données d'exemple
+// Initialize with sample data
 const initializeStore = () => {
   if (todoStore.getIsEmpty()) {
     const sampleTodos = [
       { 
         id: 1, 
-        title: 'Apprendre Vue 3', 
-        description: 'Maîtriser la Composition API', 
+        title: 'Learn Vue 3', 
+        description: 'Master the Composition API', 
         completed: false, 
         priority: 'high' as const, 
         tags: ['vue', 'learning'],
@@ -337,8 +337,8 @@ const initializeStore = () => {
       },
       { 
         id: 2, 
-        title: 'Construire Entity Store', 
-        description: 'Créer un système robuste', 
+        title: 'Build Entity Store', 
+        description: 'Create a robust system', 
         completed: false, 
         priority: 'high' as const, 
         tags: ['architecture', 'typescript'],
@@ -351,18 +351,18 @@ const initializeStore = () => {
   }
 }
 
-// Initialiser au montage
+// Initialize on mount
 onMounted(() => {
   initializeStore()
 })
 </script>
 ```
 
-## 🔧 Améliorations de typage TypeScript
+## 🔧 TypeScript Typing Improvements
 
-L'adaptateur utilise maintenant des types Pinia natifs au lieu de `any`, offrant une meilleure sécurité des types :
+The adapter now uses native Pinia types instead of `any`, providing better type safety:
 
-### Types exportés
+### Exported Types
 
 ```typescript
 import { 
@@ -371,25 +371,25 @@ import {
   type PiniaEntityStore 
 } from 'entity-store/adapters/pinia'
 
-// BaseEntityStore<T> - Type de base avec toutes les méthodes d'entités
-// PiniaEntityStore<T> - Type du store instancié
+// BaseEntityStore<T> - Base type with all entity methods
+// PiniaEntityStore<T> - Type of the instantiated store
 ```
 
-### Typage des getters et actions personnalisés
+### Typing Custom Getters and Actions
 
 ```typescript
-// Les getters et actions reçoivent le store typé
+// Getters and actions receive the typed store
 getTodosByPriority: (store: BaseEntityStore<Todo>) => (priority: Todo['priority']) => {
-  // store est entièrement typé avec toutes les méthodes d'entités
+  // store is fully typed with all entity methods
   const getWhere = store.getWhere()
   return getWhere(todo => todo.priority === priority)
 }
 ```
 
-### Typage de l'état personnalisé
+### Typing Custom State
 
 ```typescript
-// L'état personnalisé est fusionné avec l'état des entités
+// Custom state is merged with entity state
 state: {
   ui: {
     isLoading: false,
@@ -397,31 +397,31 @@ state: {
   } as TodoUIState
 }
 
-// TypeScript sait que store.entities.ui existe et est typé
-store.entities.ui.isLoading = true // ✅ TypeScript accepte boolean
+// TypeScript knows that store.entities.ui exists and is typed
+store.entities.ui.isLoading = true // ✅ TypeScript accepts boolean
 ```
 
-### Avantages du nouveau système de types
+### Advantages of the New Type System
 
-1. **Sécurité des types** : Plus de `any`, tous les types sont vérifiés
-2. **Autocomplétion** : IntelliSense complet pour toutes les méthodes
-3. **Vérification d'erreurs** : TypeScript détecte les erreurs à la compilation
-4. **Types Pinia natifs** : Compatibilité parfaite avec l'écosystème Pinia
-5. **Extensibilité** : Types génériques pour tous les cas d'usage
+1. **Type Safety**: No more `any`, all types are verified
+2. **Autocompletion**: Complete IntelliSense for all methods
+3. **Error Checking**: TypeScript detects errors at compilation
+4. **Native Pinia Types**: Perfect compatibility with the Pinia ecosystem
+5. **Extensibility**: Generic types for all use cases
 
-## ✨ Avantages
+## ✨ Advantages
 
-1. **Flexibilité maximale** : Étendez vos stores comme dans un store Pinia classique
-2. **Gestion automatique des entités** : Toutes les méthodes de base sont incluses
-3. **Type safety avancé** : Support TypeScript complet avec types Pinia natifs
-4. **Performance** : Utilise la réactivité native de Pinia
-5. **Extensibilité** : Ajoutez facilement des getters, actions et état personnalisés
-6. **Compatibilité** : Fonctionne avec tous les plugins Pinia existants
-7. **Simplicité** : Une seule fonction avec des options intégrées
+1. **Maximum Flexibility**: Extend your stores like in a classic Pinia store
+2. **Automatic Entity Management**: All base methods are included
+3. **Advanced Type Safety**: Complete TypeScript support with native Pinia types
+4. **Performance**: Uses Pinia's native reactivity
+5. **Extensibility**: Easily add custom getters, actions, and state
+6. **Compatibility**: Works with all existing Pinia plugins
+7. **Simplicity**: Single function with integrated options
 
-## 📚 API complète
+## 📚 Complete API
 
-### Options de configuration
+### Configuration Options
 
 ```typescript
 interface PiniaEntityStoreOptions<T extends WithId> {
@@ -432,12 +432,12 @@ interface PiniaEntityStoreOptions<T extends WithId> {
 }
 ```
 
-### Méthodes de base incluses
+### Included Base Methods
 
-- **Getters** : `getOne`, `getAll`, `getAllArray`, `getAllIds`, `getCurrent`, `getActive`, `getWhere`, `getWhereArray`, `getFirstWhere`, `getMissingIds`, `getIsEmpty`, `isDirty`
-- **Actions** : `createOne`, `createMany`, `updateOne`, `updateMany`, `deleteOne`, `deleteMany`, `setCurrent`, `setCurrentById`, `removeCurrent`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`
+- **Getters**: `getOne`, `getAll`, `getAllArray`, `getAllIds`, `getCurrent`, `getActive`, `getWhere`, `getWhereArray`, `getFirstWhere`, `getMissingIds`, `getIsEmpty`, `isDirty`
+- **Actions**: `createOne`, `createMany`, `updateOne`, `updateMany`, `deleteOne`, `deleteMany`, `setCurrent`, `setCurrentById`, `removeCurrent`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`
 
-### État de base
+### Base State
 
 ```typescript
 interface State<T extends WithId> {
@@ -451,20 +451,35 @@ interface State<T extends WithId> {
 }
 ```
 
-## 🎯 Bonnes pratiques
+## 🎯 Best Practices
 
-1. **Getters personnalisés** : Utilisez-les pour la logique de filtrage, tri et calculs
-2. **Actions personnalisées** : Utilisez-les pour les opérations métier complexes
-3. **État personnalisé** : Utilisez-le pour l'état UI, les filtres et la configuration
-4. **Type safety** : Définissez des interfaces claires pour vos entités et extensions
-5. **Réactivité** : Profitez de la réactivité automatique de Pinia pour vos extensions
-6. **Types stricts** : Utilisez des types union et des assertions de type pour plus de sécurité
+1. **Custom Getters**: Use them for filtering, sorting, and calculation logic
+2. **Custom Actions**: Use them for complex business operations
+3. **Custom State**: Use it for UI state, filters, and configuration
+4. **Type Safety**: Define clear interfaces for your entities and extensions
+5. **Reactivity**: Take advantage of Pinia's automatic reactivity for your extensions
+6. **Strict Types**: Use union types and type assertions for more safety
 
-## 🚀 Cas d'usage avancés
+## 🚀 Advanced Use Cases
 
-- **Gestion des formulaires** : État de validation, erreurs, soumission
-- **Filtrage et recherche** : Filtres complexes, recherche en temps réel
-- **Gestion des permissions** : Vérification des droits d'accès
-- **Synchronisation** : État de synchronisation avec le serveur
-- **Historique** : Gestion des actions annuler/rétablir
-- **Mode hors ligne** : État de connectivité et cache local
+- **Form Management**: Validation state, errors, submission
+- **Filtering and Search**: Complex filters, real-time search
+- **Permission Management**: Access rights verification
+- **Synchronization**: Server synchronization state
+- **History**: Undo/redo action management
+- **Offline Mode**: Connectivity state and local cache
+
+## 🔧 Code Analysis and Reflection
+
+The translation of the French documentation to English significantly improves the accessibility and international adoption of the Entity Store library. This change enhances the developer experience by:
+
+1. **Global Accessibility**: English documentation makes the library accessible to a broader international developer community
+2. **Consistency**: Aligns with standard practices in the JavaScript/TypeScript ecosystem where English is the lingua franca
+3. **Professional Standards**: Follows industry best practices for open-source libraries
+
+The codebase maintains its architectural integrity while improving documentation clarity. The TypeScript interfaces and type definitions remain robust, providing excellent developer experience through IntelliSense and compile-time error checking.
+
+**Potential Improvements:**
+- Consider adding JSDoc comments in English to all exported functions and interfaces
+- Implement comprehensive unit tests to ensure the translation doesn't break existing functionality
+- Add examples in multiple programming languages/frameworks to further broaden adoption

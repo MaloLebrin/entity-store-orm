@@ -36,7 +36,8 @@
   },
   "dependencies": {
     "@entity-store/core": "workspace:*",
-    "@entity-store/types": "workspace:*"
+    "@entity-store/types": "workspace:*",
+    "vue": "^3.5.20"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
