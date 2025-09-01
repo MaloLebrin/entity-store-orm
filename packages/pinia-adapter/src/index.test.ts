@@ -1,6 +1,6 @@
+import type { WithId } from '@entity-store/types'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, test } from 'vitest'
-import type { WithId } from '@entity-store/types'
 import { createPiniaEntityStore } from './index.js'
 
 // Test entity interface
@@ -248,7 +248,7 @@ describe('Pinia Adapter', () => {
       // Test getters
       expect(store.getIsEmpty()).toBe(false)
       expect(store.getAllIds()).toHaveLength(3)
-      expect(store.getOne()(1)?.name).toBe('John Updated')
+      expect(store.getOne(1)?.name).toBe('John Updated')
       
       // Test filtering
       const getWhere = store.getWhere()

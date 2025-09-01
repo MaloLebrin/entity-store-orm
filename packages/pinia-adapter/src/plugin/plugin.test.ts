@@ -201,6 +201,15 @@ describe('Entity Store Plugin', () => {
     const filteredArray = store.$getWhereArray((entity) => entity.value > 150)
     expect(filteredArray).toHaveLength(2)
     expect(filteredArray.map(e => e.id)).toEqual([2, 3])
+    
+    // Test getWhereArray with sorting options
+    const sortedArray = store.$getWhereArray(
+      (entity) => entity.value > 150,
+      { orderBy: 'value', sortBy: 'desc' }
+    )
+    expect(sortedArray).toHaveLength(2)
+    expect(sortedArray[0].value).toBe(300) // Bob Johnson
+    expect(sortedArray[1].value).toBe(200) // Jane Smith
   })
 
   test('should handle search functionality', () => {

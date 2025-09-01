@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { WithId } from '../types/WithId.js';
-import createActions from './createActions.js';
+import createActions from './actions/index.js';
 import createState from './createState.js';
 
 // Test entity interface
