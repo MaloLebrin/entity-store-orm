@@ -102,8 +102,9 @@ export function advancedSortingExample() {
   
   // Use with other getters
   const activeUsers = getters.getActive()
+  const activeUserSet = new Set(activeUsers)
   const sortedActiveUsers = getters.getWhereArray()(
-    user => activeUsers.includes(user.id), // filter active users
+    user => activeUserSet.has(user.id), // filter active users
     { orderBy: 'age', sortBy: 'desc' } // sort by age descending
   )
 }
