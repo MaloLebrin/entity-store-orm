@@ -1,6 +1,9 @@
 
+import type { EntityWithMeta } from './types/EntityMeta.js'
+import type { SortOptions } from './types/SortOptions.js'
 import type { State } from './types/State.js'
 import type { Id, WithId } from './types/WithId.js'
+import { sortEntities } from './utils/sortEntities.js'
 
 export default function createGetters<T extends WithId>(currentState: State<T>) {
   /**
@@ -73,40 +76,57 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
   /**
    * Get all the items that pass the given filter callback as a dictionnary of values.
    * @param filter - The filtering callback that will be used to filter the items.
+   * Note: Sorting options are ignored for getWhere as dictionaries don't maintain order.
+   * Use getWhereArray with sorting options instead.
    */
   function getWhere(state = currentState) {
-    return (filter: (arg: T & { $isDirty: boolean }) => boolean | null) => {
+    return (filter: (arg: EntityWithMeta<T>) => boolean | null, options?: SortOptions<T>) => {
       if (typeof filter !== 'function')
         return state.entities.byId
 
-      return state.entities.allIds.reduce((acc: Record<Id, T & { $isDirty: boolean }>, id: Id) => {
+      const filtered = state.entities.allIds.reduce((acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
         const item = state.entities.byId[id]
         if (!item || !filter(item))
           return acc
 
         acc[id] = item
         return acc
-      }, {} as Record<Id, T & { $isDirty: boolean }>)
+      }, {} as Record<Id, EntityWithMeta<T>>)
+
+      // Sorting is ignored for dictionaries as they don't maintain order
+      // Use getWhereArray with sorting options instead
+      return filtered
     }
   }
 
   /**
    * Get all the items that pass the given filter callback as an array of values.
    * @param filter - The filtering callback that will be used to filter the items.
+   * @param options - Optional sorting options (orderBy and sortBy)
    */
   function getWhereArray(state = currentState) {
-    return (filter: (arg: T & { $isDirty: boolean }) => boolean | null) => {
+    return (filter: (arg: EntityWithMeta<T>) => boolean | null, options?: SortOptions<T>) => {
       if (typeof filter !== 'function')
         return Object.values(state.entities.byId)
 
-      return Object.values(state.entities.allIds.reduce((acc: Record<Id, T & { $isDirty: boolean }>, id: Id) => {
+      const filtered = state.entities.allIds.reduce((acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
         const item = state.entities.byId[id]
         if (!item || !filter(item))
           return acc
 
         acc[id] = item
         return acc
-      }, {} as Record<Id, T & { $isDirty: boolean }>))
+      }, {} as Record<Id, EntityWithMeta<T>>)
+
+      const filteredArray = Object.values(filtered)
+      
+      // If no sorting options, return filtered results as is
+      if (!options?.orderBy) {
+        return filteredArray
+      }
+
+      // Sort the filtered array
+      return sortEntities(filteredArray, options)
     }
   }
 
@@ -116,18 +136,18 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @returns The first item that passes the filter, or the first item in the state if no filter is provided.
    */
   function getFirstWhere(state = currentState) {
-    return (filter: (arg: T & { $isDirty: boolean }) => boolean | null) => {
+    return (filter: (arg: EntityWithMeta<T>) => boolean | null) => {
       if (typeof filter !== 'function')
         return Object.values(state.entities.byId)[0]
 
-      return Object.values(state.entities.allIds.reduce((acc: Record<Id, T & { $isDirty: boolean }>, id: Id) => {
+      return Object.values(state.entities.allIds.reduce((acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
         const item = state.entities.byId[id]
         if (!item || !filter(item))
           return acc
 
         acc[id] = item
         return acc
-      }, {} as Record<Id, T & { $isDirty: boolean }>))[0]
+      }, {} as Record<Id, EntityWithMeta<T>>))[0]
     }
   }
 
@@ -165,7 +185,7 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @param ids - ids of items
    */
   function getMany(state = currentState) {
-    return (ids: Id[]) => ids.map(id => state.entities.byId[id]).filter((item): item is T & { $isDirty: boolean } => item !== undefined)
+    return (ids: Id[]) => ids.map(id => state.entities.byId[id]).filter((item): item is EntityWithMeta<T> => item !== undefined)
   }
 
   /**

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { WithId } from '../types/WithId.js';
 import createGetters from './createGetters.js';
 import createState from './createState.js';
+import type { EntityWithMeta } from './types/EntityMeta.js';
+import type { WithId } from './types/WithId.js';
 
 // Test entity interface
 interface User extends WithId {
@@ -23,9 +24,42 @@ describe('createGetters', () => {
     };
     
     // Add some test data
-    const user1: User & { $isDirty: boolean } = { id: 1, name: 'John', email: 'john@example.com', age: 30, $isDirty: false };
-    const user2: User & { $isDirty: boolean } = { id: 2, name: 'Jane', email: 'jane@example.com', age: 25, $isDirty: false };
-    const user3: User & { $isDirty: boolean } = { id: 3, name: 'Bob', email: 'bob@example.com', age: 35, $isDirty: true };
+    const user1: EntityWithMeta<User> = { 
+      id: 1, 
+      name: 'John', 
+      email: 'john@example.com', 
+      age: 30, 
+      $isDirty: false,
+      $meta: {
+        changedFields: new Set(),
+        createdAt: Date.now(),
+        updatedAt: null
+      }
+    };
+    const user2: EntityWithMeta<User> = { 
+      id: 2, 
+      name: 'Jane', 
+      email: 'jane@example.com', 
+      age: 25, 
+      $isDirty: false,
+      $meta: {
+        changedFields: new Set(),
+        createdAt: Date.now(),
+        updatedAt: null
+      }
+    };
+    const user3: EntityWithMeta<User> = { 
+      id: 3, 
+      name: 'Bob', 
+      email: 'bob@example.com', 
+      age: 35, 
+      $isDirty: true,
+      $meta: {
+        changedFields: new Set(),
+        createdAt: Date.now(),
+        updatedAt: null
+      }
+    };
     
     state.entities.byId[1] = user1;
     state.entities.byId[2] = user2;
@@ -244,6 +278,20 @@ describe('createGetters', () => {
       
       expect(Object.keys(seniors)).toHaveLength(0);
     });
+
+    test('should ignore sorting options (dictionaries do not maintain order)', () => {
+      const getWhere = state.getWhere();
+      const filtered = getWhere(user => user.age >= 25, { orderBy: 'name', sortBy: 'asc' });
+      
+      // Should still filter correctly
+      expect(Object.keys(filtered)).toHaveLength(3);
+      expect(filtered[1]?.name).toBe('John');
+      expect(filtered[2]?.name).toBe('Jane');
+      expect(filtered[3]?.name).toBe('Bob');
+      
+      // But sorting is ignored for dictionaries
+      // Use getWhereArray with sorting options instead
+    });
   });
 
   describe('getWhereArray', () => {
@@ -271,6 +319,52 @@ describe('createGetters', () => {
       
       expect(Array.isArray(seniors)).toBe(true);
       expect(seniors).toHaveLength(0);
+    });
+
+    test('should sort entities by field in ascending order', () => {
+      const getWhereArray = state.getWhereArray();
+      const sortedByName = getWhereArray(user => user.age >= 25, { orderBy: 'name', sortBy: 'asc' });
+      
+      expect(Array.isArray(sortedByName)).toBe(true);
+      expect(sortedByName).toHaveLength(3);
+      expect(sortedByName[0]?.name).toBe('Bob');
+      expect(sortedByName[1]?.name).toBe('Jane');
+      expect(sortedByName[2]?.name).toBe('John');
+    });
+
+    test('should sort entities by field in descending order', () => {
+      const getWhereArray = state.getWhereArray();
+      const sortedByAge = getWhereArray(user => user.age >= 25, { orderBy: 'age', sortBy: 'desc' });
+      
+      expect(Array.isArray(sortedByAge)).toBe(true);
+      expect(sortedByAge).toHaveLength(3);
+      expect(sortedByAge[0]?.age).toBe(35);
+      expect(sortedByAge[1]?.age).toBe(30);
+      expect(sortedByAge[2]?.age).toBe(25);
+    });
+
+    test('should sort entities using custom sort function', () => {
+      const getWhereArray = state.getWhereArray();
+      const sortedByCustom = getWhereArray(user => user.age >= 25, { 
+        orderBy: (user) => user.name.length, 
+        sortBy: 'asc' 
+      });
+      
+      expect(Array.isArray(sortedByCustom)).toBe(true);
+      expect(sortedByCustom).toHaveLength(3);
+      
+      // First entity should have shortest name (3 letters)
+      expect(sortedByCustom[0]?.name).toBe('Bob'); // 3 letters
+      
+      // Next two entities should have 4 letters each, but order may vary
+      expect(sortedByCustom[1]?.name.length).toBe(4);
+      expect(sortedByCustom[2]?.name.length).toBe(4);
+      
+      // Verify all names are present
+      const names = sortedByCustom.map(u => u.name);
+      expect(names).toContain('Bob');
+      expect(names).toContain('Jane');
+      expect(names).toContain('John');
     });
   });
 
