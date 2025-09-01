@@ -2,7 +2,6 @@
 export { default as createActions } from './createActions.js';
 export { default as createGetters } from './createGetters.js';
 export { default as createState } from './createState.js';
-export { createEntityProxy } from './utils/createEntityProxy.js';
 
 // Export types for other packages to use
 export type { State } from './types/State.js';
