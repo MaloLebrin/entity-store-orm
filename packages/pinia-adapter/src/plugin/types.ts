@@ -1,4 +1,4 @@
-import type { WithId } from '@entity-store/core'
+import type { SortOptions, WithId } from '@entity-store/core'
 import type { PiniaPluginContext } from 'pinia'
 
 /**
@@ -43,7 +43,7 @@ export interface EntityStorePlugin<T extends WithId = any> {
   $getActive: () => (T & { $isDirty: boolean })[]
   $getFirstActive: () => (T & { $isDirty: boolean }) | undefined
   $getWhere: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => Record<string, T & { $isDirty: boolean }>
-  $getWhereArray: (filter: (entity: T & { $isDirty: boolean }) => boolean | null, options?: any) => (T & { $isDirty: boolean })[]
+  $getWhereArray: (filter: (entity: T & { $isDirty: boolean }) => boolean | null, options?: SortOptions<T>) => (T & { $isDirty: boolean })[]
   $getFirstWhere: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => (T & { $isDirty: boolean }) | undefined
   $getIsEmpty: () => boolean
   $getIsNotEmpty: () => boolean
@@ -53,13 +53,6 @@ export interface EntityStorePlugin<T extends WithId = any> {
   $search: (field: string) => (T & { $isDirty: boolean })[]
   $getMissingIds: (ids: (string | number)[], canHaveDuplicates?: boolean) => (string | number)[]
   $getMissingEntities: (entities: T[]) => T[]
-}
-
-/**
- * Type for plugin context with entities
- */
-export interface EntityPluginContext<T extends WithId = any> extends PiniaPluginContext {
-  store: EntityStorePlugin<T>
 }
 
 /**

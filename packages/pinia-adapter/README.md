@@ -184,7 +184,7 @@ installEntityStorePlugin(pinia)
 ### Types
 
 ```typescript
-import type { EntityStorePlugin, EntityPluginContext, EntityPluginOptions } from '@entity-store/pinia-adapter'
+import type { EntityStorePlugin, EntityPluginOptions } from '@entity-store/pinia-adapter'
 ```
 
 ## 🔍 Troubleshooting

@@ -111,7 +111,6 @@ export { entityStorePlugin, installEntityStorePlugin } from './plugin'
 
 // Export des types du plugin
 export type {
-  EntityPluginContext,
   EntityPluginOptions, EntityStorePlugin
 } from './plugin'
 
