@@ -23,8 +23,20 @@ export function sortEntities<T extends WithId>(
       aValue = orderBy(a)
       bValue = orderBy(b)
     } else {
-      aValue = a[orderBy] as string | number | Date
-      bValue = b[orderBy] as string | number | Date
+      const aRaw = a[orderBy];
+      const bRaw = b[orderBy];
+      aValue =
+        typeof aRaw === 'string' || typeof aRaw === 'number'
+          ? aRaw
+          : aRaw instanceof Date
+          ? aRaw
+          : undefined;
+      bValue =
+        typeof bRaw === 'string' || typeof bRaw === 'number'
+          ? bRaw
+          : bRaw instanceof Date
+          ? bRaw
+          : undefined;
     }
 
     // Handle null/undefined values
