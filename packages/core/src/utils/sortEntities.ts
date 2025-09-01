@@ -16,8 +16,8 @@ export function sortEntities<T extends WithId>(
   const { orderBy, sortBy = 'asc' } = options
 
   return [...entities].sort((a, b) => {
-    let aValue: string | number | Date
-    let bValue: string | number | Date
+    let aValue: string | number | Date | null | undefined
+    let bValue: string | number | Date | null | undefined
 
     if (typeof orderBy === 'function') {
       aValue = orderBy(a)
