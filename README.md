@@ -140,7 +140,7 @@ pnpm dev
 - [ ] Redux Toolkit Adapter
 - [ ] Jotai Adapter
 - [ ] Valtio Adapter
-- [X] Pinia Plugin
+- [x] Pinia Plugin
 - [ ] Migration tools
 - [ ] Integration examples
 
