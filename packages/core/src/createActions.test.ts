@@ -331,6 +331,43 @@ describe('createActions', () => {
     });
   })
 
+  describe('Entity proxy metadata', () => {
+    test('should wrap created entities with proxy and track changes', () => {
+      const user: User = { id: 1, name: 'John', email: 'john@example.com', age: 30 };
+      actions.createOne(user);
+
+      const e = state.entities.byId[1]!
+      expect(e.$isDirty).toBe(false)
+      expect(e.$meta).toBeDefined()
+      expect(e.$meta.createdAt).toBeGreaterThan(0)
+      expect(e.$meta.updatedAt).toBeNull()
+
+      // mutate via actions.updateOne -> should mark dirty and record field
+      actions.updateOne(1, { id: 1, name: 'Johnny', email: 'john@example.com', age: 30 })
+      expect(e.$isDirty).toBe(true)
+      expect(e.$meta.changedFields.has('name')).toBe(true)
+      expect(e.$meta.updatedAt).not.toBeNull()
+
+      // updateField should also mark dirty and add field
+      actions.updateField('age', 31, 1)
+      expect(e.$meta.changedFields.has('age')).toBe(true)
+
+      // reset dirty
+      actions.setIsNotDirty(1)
+      expect(e.$isDirty).toBe(false)
+      expect(e.$meta.changedFields.size).toBe(0)
+    })
+
+    test('should proxy current entity set with setCurrent', () => {
+      const user: User = { id: 2, name: 'Jane', email: 'jane@example.com', age: 25 };
+      actions.setCurrent(user);
+      const c = state.entities.current!
+      expect(c.$isDirty).toBe(false)
+      c.name = 'Janet'
+      expect(c.$isDirty).toBe(true)
+    })
+  })
+
   describe('Integration tests', () => {
     test('should handle complex workflow', () => {
       // Create entities

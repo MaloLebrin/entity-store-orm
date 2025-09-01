@@ -101,6 +101,7 @@ interface User extends WithId {
 // WithId automatically adds:
 // - id: Id (string | number)
 // - $isDirty: boolean (for modification tracking)
+// - $meta: EntityMeta<T> (automatic metadata tracking)
 ```
 
 ## Complete Example
@@ -139,3 +140,100 @@ const isActive = getters.isAlreadyActive(1)
 - **Performant**: Optimized logic for entity management
 - **Flexible**: Easily extensible and customizable
 - **Tested**: Complete test coverage
+- **Metadata**: Automatic entity metadata tracking
+
+## Entity Metadata
+
+All entities are automatically wrapped with metadata tracking when created:
+
+```typescript
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+const actions = createActions<User>(state)
+actions.createOne({ id: 1, name: 'John', email: 'john@example.com' })
+
+const user = state.entities.byId[1]
+console.log(user.$isDirty)           // false (initially clean)
+console.log(user.$meta.createdAt)    // timestamp of creation
+console.log(user.$meta.updatedAt)    // null (not modified yet)
+console.log(user.$meta.changedFields) // Set() (empty initially)
+
+// Modify the entity
+user.name = 'Johnny'
+console.log(user.$isDirty)           // true (automatically set)
+console.log(user.$meta.updatedAt)    // timestamp of modification
+console.log(user.$meta.changedFields) // Set(['name'])
+
+// Reset dirty state
+actions.setIsNotDirty(1)
+console.log(user.$isDirty)           // false
+console.log(user.$meta.changedFields) // Set() (cleared)
+```
+
+### Metadata Properties
+
+- `$isDirty`: boolean - Automatically set to `true` when entity is modified
+- `$meta.createdAt`: number - Timestamp when entity was created
+- `$meta.updatedAt`: number | null - Timestamp of last modification
+- `$meta.changedFields`: Set<keyof T> - Set of field names that have been modified
+
+### Automatic Tracking
+
+The metadata tracking is completely automatic and transparent:
+
+- **Entity Creation**: When using `createOne()` or `setCurrent()`, entities are wrapped with metadata
+- **Field Modifications**: Direct property changes (`user.name = 'new'`) automatically update metadata
+- **Action Updates**: Using `updateOne()` or `updateField()` also triggers metadata updates
+- **Reset Capability**: Use `setIsNotDirty()` to reset the dirty state and clear changed fields
+
+### Use Cases
+
+**Form Management**:
+```typescript
+// Check if form has unsaved changes
+const hasUnsavedChanges = user.$isDirty
+
+// Show which fields were modified
+const modifiedFields = Array.from(user.$meta.changedFields)
+```
+
+**Audit Trail**:
+```typescript
+// Track entity lifecycle
+console.log(`User created: ${new Date(user.$meta.createdAt)}`)
+if (user.$meta.updatedAt) {
+  console.log(`Last modified: ${new Date(user.$meta.updatedAt)}`)
+}
+```
+
+**Conditional Updates**:
+```typescript
+// Only send updates if entity was modified
+if (user.$isDirty) {
+  await saveToServer(user)
+  actions.setIsNotDirty(user.id) // Mark as clean after save
+}
+```
+
+## Exported Types
+
+```typescript
+import type { EntityMeta, EntityWithMeta } from '@entity-store/core'
+
+// EntityMeta contains the metadata structure
+interface EntityMeta<T> {
+  changedFields: Set<keyof T>
+  createdAt: number
+  updatedAt: number | null
+}
+
+// EntityWithMeta is the full entity type with metadata
+type EntityWithMeta<T> = T & {
+  $isDirty: boolean
+  $meta: EntityMeta<T>
+}
+```
