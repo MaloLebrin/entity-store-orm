@@ -68,7 +68,7 @@ describe('Pinia Adapter Extensions', () => {
       const useTodoStore = createPiniaEntityStore<Todo>('todos', {
         actions: {
           toggleTodo: (store) => (id: number) => {
-            const current = store.getOne()(id)
+            const current = store.getOne(id)
             if (current) {
               const updatedTodo: Todo = {
                 ...current,
@@ -78,7 +78,7 @@ describe('Pinia Adapter Extensions', () => {
             }
           },
           addTag: (store) => (id: number, tag: string) => {
-            const current = store.getOne()(id)
+            const current = store.getOne(id)
             if (current && !current.tags.includes(tag)) {
               const updatedTodo: Todo = {
                 ...current,
@@ -105,10 +105,10 @@ describe('Pinia Adapter Extensions', () => {
       
       // Test custom actions
       store.toggleTodo(1)
-      expect(store.getOne()(1)?.completed).toBe(true)
+      expect(store.getOne(1)?.completed).toBe(true)
       
       store.addTag(1, 'important')
-      expect(store.getOne()(1)?.tags).toContain('important')
+      expect(store.getOne(1)?.tags).toContain('important')
     })
   })
 
@@ -216,13 +216,13 @@ describe('Pinia Adapter Extensions', () => {
       const useTodoStore = createPiniaEntityStore<Todo>('todos', {
         getters: {
           getTypedGetters: (store) => (id: number) => {
-            const todo = store.getOne()(id)
+            const todo = store.getOne(id)
             return todo ? todo.priority : null
           }
         },
         actions: {
           setTypedActions: (store) => (id: number, priority: Todo['priority']) => {
-            const current = store.getOne()(id)
+            const current = store.getOne(id)
             if (current) {
               store.updateOne(id, { ...current, priority })
             }

@@ -39,7 +39,10 @@ const VALUE_GETTERS = [
 
 // Constants for getters that take parameters directly
 const PARAMETER_GETTERS = [
-  'getWhereArray'
+  'getWhereArray',
+  'getOne',
+  'getMany',
+  'search'
 ] as const
 
 type ValueGetterKey = typeof VALUE_GETTERS[number]

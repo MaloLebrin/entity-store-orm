@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import createGetters from './createGetters.js';
 import createState from './createState.js';
+import createGetters from './getters/index.js';
 import type { EntityWithMeta } from './types/EntityMeta.js';
 import type { WithId } from './types/WithId.js';
 
