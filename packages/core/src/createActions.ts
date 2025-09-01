@@ -1,5 +1,6 @@
 import type { State } from './types/State.js'
 import type { Id, WithId } from './types/WithId.js'
+import { createEntityProxy } from './utils/createEntityProxy.js'
 
 export default function createActions<T extends WithId>(state: State<T>) {
   return {
@@ -11,7 +12,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
       if (!state.entities.byId[payload.id] && !state.entities.allIds.includes(payload.id)) {
         state.entities.allIds.push(payload.id)
       }
-      state.entities.byId[payload.id] = { ...payload, $isDirty: false }
+      state.entities.byId[payload.id] = createEntityProxy(payload)
     },
 
     /**
@@ -27,7 +28,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
      * @param payload
      */
     setCurrent(payload: T) {
-      state.entities.current = { ...payload, $isDirty: false }
+      state.entities.current = createEntityProxy(payload)
     },
 
     /**
@@ -45,11 +46,12 @@ export default function createActions<T extends WithId>(state: State<T>) {
      */
     updateOne(id: Id, payload: T): void {
       if (state.entities.byId[id]) {
-        state.entities.byId[id] = {
-          ...state.entities.byId[id],
-          ...payload,
-          $isDirty: true,
-        }
+        const proxy = state.entities.byId[id]
+        Object.keys(payload).forEach((k) => {
+          const key = k as keyof T
+          // @ts-expect-error index write
+          proxy[key] = payload[key]
+        })
       }
       else {
         this.createOne(payload)
@@ -105,10 +107,7 @@ export default function createActions<T extends WithId>(state: State<T>) {
    */
     setIsDirty(id: Id) {
       if (state.entities.byId[id]) {
-        state.entities.byId[id] = {
-          ...state.entities.byId[id]!,
-          $isDirty: true,
-        }
+        state.entities.byId[id]!.$isDirty = true
       }
     },
 
@@ -118,10 +117,8 @@ export default function createActions<T extends WithId>(state: State<T>) {
    */
     setIsNotDirty(id: Id) {
       if (state.entities.byId[id]) {
-        state.entities.byId[id] = {
-          ...state.entities.byId[id]!,
-          $isDirty: false,
-        }
+        state.entities.byId[id]!.$isDirty = false
+        state.entities.byId[id]!.$meta.changedFields.clear()
       }
     },
 
@@ -130,10 +127,10 @@ export default function createActions<T extends WithId>(state: State<T>) {
      * @param field: string field to update
      * @param id: Id of entity
      */
-    updateField<K extends keyof T>(field: K, value: (T & { $isDirty: boolean })[K], id: Id) {
-      if (state.entities.byId[id]) {
-        state.entities.byId[id]![field] = value
-        this.setIsDirty(id)
+    updateField<K extends keyof T>(field: K, value: T[K], id: Id) {
+      const entity = state.entities.byId[id]
+      if (entity) {
+        ;(entity as unknown as Record<string, unknown>)[field as string] = value as unknown
       }
     },
 

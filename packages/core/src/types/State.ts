@@ -1,10 +1,11 @@
 import type { Id, WithId } from './WithId'
+import type { EntityWithMeta } from './EntityMeta.js'
 
 export interface State<T extends WithId> {
   entities: {
-    byId: Record<Id, T & { $isDirty: boolean }>
+    byId: Record<Id, EntityWithMeta<T>>
     allIds: Id[]
-    current: T & { $isDirty: boolean } | null
+    current: EntityWithMeta<T> | null
     currentById: Id | null
     active: Id[]
   }

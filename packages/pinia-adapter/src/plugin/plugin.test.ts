@@ -100,12 +100,30 @@ describe('Entity Store Plugin', () => {
     
     // Test createOne
     store.$createOne(entity1)
-    expect(store.$getOne(1)).toEqual({ ...entity1, $isDirty: false })
+    const created = store.$getOne(1)
+    expect(created).toMatchObject({
+      ...entity1,
+      $isDirty: false,
+      $meta: {
+        createdAt: expect.any(Number),
+        updatedAt: null,
+      },
+    })
+    expect(created.$meta.changedFields instanceof Set).toBe(true)
     expect(store.$getAllIds()).toEqual(['1'])
     
     // Test createMany
     store.$createMany([entity2])
-    expect(store.$getOne(2)).toEqual({ ...entity2, $isDirty: false })
+    const created2 = store.$getOne(2)
+    expect(created2).toMatchObject({
+      ...entity2,
+      $isDirty: false,
+      $meta: {
+        createdAt: expect.any(Number),
+        updatedAt: null,
+      },
+    })
+    expect(created2.$meta.changedFields instanceof Set).toBe(true)
     expect(store.$getAllIds()).toEqual(['1', '2'])
     
     // Test updateOne
@@ -131,18 +149,46 @@ describe('Entity Store Plugin', () => {
     store.$createMany(entities)
     
     // Test getAll
-    expect(store.$getAll()).toEqual({
-      '1': { ...entities[0], $isDirty: false },
-      '2': { ...entities[1], $isDirty: false },
-      '3': { ...entities[2], $isDirty: false }
+    const all = store.$getAll()
+    expect(all['1']).toMatchObject({
+      ...entities[0],
+      $isDirty: false,
+      $meta: { createdAt: expect.any(Number), updatedAt: null },
     })
+    expect(all['1'].$meta.changedFields instanceof Set).toBe(true)
+    expect(all['2']).toMatchObject({
+      ...entities[1],
+      $isDirty: false,
+      $meta: { createdAt: expect.any(Number), updatedAt: null },
+    })
+    expect(all['2'].$meta.changedFields instanceof Set).toBe(true)
+    expect(all['3']).toMatchObject({
+      ...entities[2],
+      $isDirty: false,
+      $meta: { createdAt: expect.any(Number), updatedAt: null },
+    })
+    expect(all['3'].$meta.changedFields instanceof Set).toBe(true)
     
     // Test getAllArray
-    expect(store.$getAllArray()).toEqual([
-      { ...entities[0], $isDirty: false },
-      { ...entities[1], $isDirty: false },
-      { ...entities[2], $isDirty: false }
-    ])
+    const arr = store.$getAllArray()
+    expect(arr[0]).toMatchObject({
+      ...entities[0],
+      $isDirty: false,
+      $meta: { createdAt: expect.any(Number), updatedAt: null },
+    })
+    expect(arr[0].$meta.changedFields instanceof Set).toBe(true)
+    expect(arr[1]).toMatchObject({
+      ...entities[1],
+      $isDirty: false,
+      $meta: { createdAt: expect.any(Number), updatedAt: null },
+    })
+    expect(arr[1].$meta.changedFields instanceof Set).toBe(true)
+    expect(arr[2]).toMatchObject({
+      ...entities[2],
+      $isDirty: false,
+      $meta: { createdAt: expect.any(Number), updatedAt: null },
+    })
+    expect(arr[2].$meta.changedFields instanceof Set).toBe(true)
     
     // Test getAllIds
     expect(store.$getAllIds()).toEqual(['1', '2', '3'])
