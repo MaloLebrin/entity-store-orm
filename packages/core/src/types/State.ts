@@ -1,5 +1,5 @@
-import type { Id, WithId } from './WithId'
 import type { EntityWithMeta } from './EntityMeta.js'
+import type { Id, WithId } from './WithId'
 
 export interface State<T extends WithId> {
   entities: {
