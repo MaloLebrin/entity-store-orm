@@ -296,8 +296,7 @@ describe('createGetters', () => {
 
   describe('getWhereArray', () => {
     test('should filter entities by predicate and return array', () => {
-      const getWhereArray = state.getWhereArray();
-      const adults = getWhereArray(user => user.age >= 30);
+      const adults = state.getWhereArray(user => user.age >= 30);
       
       expect(Array.isArray(adults)).toBe(true);
       expect(adults).toHaveLength(2);
@@ -306,24 +305,21 @@ describe('createGetters', () => {
     });
 
     test('should return all entities when filter is not a function', () => {
-      const getWhereArray = state.getWhereArray();
-      const all = getWhereArray(null as any);
+      const all = state.getWhereArray(null as any);
       
       expect(Array.isArray(all)).toBe(true);
       expect(all).toHaveLength(3);
     });
 
     test('should return empty array when no entities match filter', () => {
-      const getWhereArray = state.getWhereArray();
-      const seniors = getWhereArray(user => user.age >= 60);
+      const seniors = state.getWhereArray(user => user.age >= 60);
       
       expect(Array.isArray(seniors)).toBe(true);
       expect(seniors).toHaveLength(0);
     });
 
     test('should sort entities by field in ascending order', () => {
-      const getWhereArray = state.getWhereArray();
-      const sortedByName = getWhereArray(user => user.age >= 25, { orderBy: 'name', sortBy: 'asc' });
+      const sortedByName = state.getWhereArray(user => user.age >= 25, { orderBy: 'name', sortBy: 'asc' });
       
       expect(Array.isArray(sortedByName)).toBe(true);
       expect(sortedByName).toHaveLength(3);
@@ -333,8 +329,7 @@ describe('createGetters', () => {
     });
 
     test('should sort entities by field in descending order', () => {
-      const getWhereArray = state.getWhereArray();
-      const sortedByAge = getWhereArray(user => user.age >= 25, { orderBy: 'age', sortBy: 'desc' });
+      const sortedByAge = state.getWhereArray(user => user.age >= 25, { orderBy: 'age', sortBy: 'desc' });
       
       expect(Array.isArray(sortedByAge)).toBe(true);
       expect(sortedByAge).toHaveLength(3);
@@ -344,8 +339,7 @@ describe('createGetters', () => {
     });
 
     test('should sort entities using custom sort function', () => {
-      const getWhereArray = state.getWhereArray();
-      const sortedByCustom = getWhereArray(user => user.age >= 25, { 
+      const sortedByCustom = state.getWhereArray(user => user.age >= 25, { 
         orderBy: (user) => user.name.length, 
         sortBy: 'asc' 
       });

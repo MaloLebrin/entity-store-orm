@@ -104,30 +104,28 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
    * @param filter - The filtering callback that will be used to filter the items.
    * @param options - Optional sorting options (orderBy and sortBy)
    */
-  function getWhereArray(state = currentState) {
-    return (filter: (arg: EntityWithMeta<T>) => boolean | null, options?: SortOptions<T>) => {
-      if (typeof filter !== 'function')
-        return Object.values(state.entities.byId)
+  function getWhereArray(filter: (arg: EntityWithMeta<T>) => boolean | null, options?: SortOptions<T>, state = currentState) {
+    if (typeof filter !== 'function')
+      return Object.values(state.entities.byId)
 
-      const filtered = state.entities.allIds.reduce((acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
-        const item = state.entities.byId[id]
-        if (!item || !filter(item))
-          return acc
-
-        acc[id] = item
+    const filtered = state.entities.allIds.reduce((acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
+      const item = state.entities.byId[id]
+      if (!item || !filter(item))
         return acc
-      }, {} as Record<Id, EntityWithMeta<T>>)
 
-      const filteredArray = Object.values(filtered)
-      
-      // If no sorting options, return filtered results as is
-      if (!options?.orderBy) {
-        return filteredArray
-      }
+      acc[id] = item
+      return acc
+    }, {} as Record<Id, EntityWithMeta<T>>)
 
-      // Sort the filtered array
-      return sortEntities(filteredArray, options)
+    const filteredArray = Object.values(filtered)
+    
+    // If no sorting options, return filtered results as is
+    if (!options?.orderBy) {
+      return filteredArray
     }
+
+    // Sort the filtered array
+    return sortEntities(filteredArray, options)
   }
 
   /**

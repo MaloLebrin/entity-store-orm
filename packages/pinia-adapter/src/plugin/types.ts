@@ -43,7 +43,7 @@ export interface EntityStorePlugin<T extends WithId = any> {
   $getActive: () => (T & { $isDirty: boolean })[]
   $getFirstActive: () => (T & { $isDirty: boolean }) | undefined
   $getWhere: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => Record<string, T & { $isDirty: boolean }>
-  $getWhereArray: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => (T & { $isDirty: boolean })[]
+  $getWhereArray: (filter: (entity: T & { $isDirty: boolean }) => boolean | null, options?: any) => (T & { $isDirty: boolean })[]
   $getFirstWhere: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => (T & { $isDirty: boolean }) | undefined
   $getIsEmpty: () => boolean
   $getIsNotEmpty: () => boolean
@@ -111,7 +111,7 @@ declare module 'pinia' {
     $getActive: () => (any & { $isDirty: boolean })[]
     $getFirstActive: () => (any & { $isDirty: boolean }) | undefined
     $getWhere: (filter: (entity: any & { $isDirty: boolean }) => boolean | null) => Record<string, any & { $isDirty: boolean }>
-    $getWhereArray: (filter: (entity: any & { $isDirty: boolean }) => boolean | null) => (any & { $isDirty: boolean })[]
+    $getWhereArray: (filter: (entity: any & { $isDirty: boolean }) => boolean | null, options?: any) => (any & { $isDirty: boolean })[]
     $getFirstWhere: (filter: (entity: any & { $isDirty: boolean }) => boolean | null) => (any & { $isDirty: boolean }) | undefined
     $getIsEmpty: () => boolean
     $getIsNotEmpty: () => boolean

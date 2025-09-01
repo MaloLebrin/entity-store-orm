@@ -1,68 +1,97 @@
-import { createPinia, defineStore } from 'pinia'
-import { createApp } from 'vue'
-import { entityStorePlugin } from './plugin'
+import { createPinia } from 'pinia'
+import { createPiniaEntityStore, installEntityStorePlugin } from '../index'
 
-// 1. Créer une application Vue
-const app = createApp({})
+// Example entity interface
+interface User {
+  id: number
+  name: string
+  age: number
+  email: string
+}
 
-// 2. Créer une instance Pinia
-const pinia = createPinia()
+// Create a Pinia store with entity management
+const useUserStore = createPiniaEntityStore<User>('users')
 
-// 3. Installer le plugin
-pinia.use(entityStorePlugin)
-
-// 4. Installer Pinia dans l'application
-app.use(pinia)
-
-// 5. Définir un store normal (le plugin ajoutera automatiquement la gestion d'entités)
-const useUserStore = defineStore('users', {
-  state: () => ({
-    customField: 'users'
-  }),
-  actions: {
-    customAction() {
-      return 'custom user action'
+// Example usage with the new getWhereArray syntax
+export function exampleUsage() {
+  const pinia = createPinia()
+  installEntityStorePlugin(pinia)
+  
+  const userStore = useUserStore()
+  
+  // Add some users
+  userStore.$createMany([
+    { id: 1, name: 'John', age: 30, email: 'john@example.com' },
+    { id: 2, name: 'Jane', age: 25, email: 'jane@example.com' },
+    { id: 3, name: 'Bob', age: 35, email: 'bob@example.com' },
+    { id: 4, name: 'Alice', age: 28, email: 'alice@example.com' }
+  ])
+  
+  // Example 1: Filter users by age (new syntax - no empty parentheses)
+  const adults = userStore.$getWhereArray(
+    user => user.age >= 25
+  )
+  console.log('Adults:', adults.map(u => u.name))
+  // Output: ['John', 'Jane', 'Bob', 'Alice']
+  
+  // Example 2: Filter and sort by age descending (new syntax)
+  const sortedByAge = userStore.$getWhereArray(
+    user => user.age >= 25,
+    { orderBy: 'age', sortBy: 'desc' }
+  )
+  console.log('Sorted by age (desc):', sortedByAge.map(u => ({ name: u.name, age: u.age })))
+  // Output: [{ name: 'Bob', age: 35 }, { name: 'John', age: 30 }, { name: 'Alice', age: 28 }, { name: 'Jane', age: 25 }]
+  
+  // Example 3: Filter and sort by name ascending
+  const sortedByName = userStore.$getWhereArray(
+    user => user.age >= 25,
+    { orderBy: 'name', sortBy: 'asc' }
+  )
+  console.log('Sorted by name (asc):', sortedByName.map(u => u.name))
+  // Output: ['Alice', 'Bob', 'Jane', 'John']
+  
+  // Example 4: Filter young users and sort by email length
+  const youngUsers = userStore.$getWhereArray(
+    user => user.age < 30,
+    { 
+      orderBy: (user) => user.email.length, 
+      sortBy: 'asc' 
     }
+  )
+  console.log('Young users sorted by email length:', youngUsers.map(u => ({ name: u.name, email: u.email })))
+  // Output: Sorted by email length
+  
+  return {
+    adults,
+    sortedByAge,
+    sortedByName,
+    youngUsers
   }
-})
+}
 
-// 6. Utiliser le store avec la gestion d'entités automatique
-const userStore = useUserStore()
-
-// 7. Utiliser les fonctionnalités d'entités préfixées avec $
-const user1 = { id: 1, name: 'John Doe', email: 'john@example.com' }
-const user2 = { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-
-// Créer des entités
-userStore.$createOne(user1)
-userStore.$createMany([user2])
-
-// Récupérer des entités
-console.log('All users:', userStore.$getAll())
-console.log('All user IDs:', userStore.$getAllIds())
-console.log('User by ID:', userStore.$getOne(1))
-
-// Rechercher des entités
-const johnUsers = userStore.$search('John')
-console.log('Users with "John":', johnUsers)
-
-// Mettre à jour une entité
-userStore.$updateOne(1, { name: 'John Updated' })
-
-// Supprimer une entité
-userStore.$deleteOne(2)
-
-// Vérifier l'état final
-console.log('Final users:', userStore.$getAll())
-console.log('Final user IDs:', userStore.$getAllIds())
-
-// 8. Le store conserve ses fonctionnalités personnalisées
-console.log('Custom field:', userStore.customField)
-console.log('Custom action:', userStore.customAction())
-
-// 9. L'état des entités est accessible via $entities
-console.log('Entities state:', userStore.$entities)
-console.log('Entities by ID:', userStore.$entities.byId)
-console.log('All IDs:', userStore.$entities.allIds)
-console.log('Current entity:', userStore.$entities.current)
-console.log('Active entities:', userStore.$entities.active)
+// Example with the plugin approach
+export function pluginExample() {
+  const pinia = createPinia()
+  installEntityStorePlugin(pinia)
+  
+  // Create a store with the plugin
+  const store = useUserStore()
+  
+  // Add users
+  store.$createMany([
+    { id: 1, name: 'John', age: 30, email: 'john@example.com' },
+    { id: 2, name: 'Jane', age: 25, email: 'jane@example.com' },
+    { id: 3, name: 'Bob', age: 35, email: 'bob@example.com' }
+  ])
+  
+  // Use the new syntax with the plugin
+  const activeUsers = store.$getWhereArray(
+    user => user.age >= 25,
+    { orderBy: 'name', sortBy: 'asc' }
+  )
+  
+  console.log('Active users sorted by name:', activeUsers.map(u => u.name))
+  // Output: ['Bob', 'Jane', 'John']
+  
+  return activeUsers
+}

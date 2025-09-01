@@ -39,7 +39,7 @@ export function sortingExample() {
   })
   
   // Example 1: Sort by field in ascending order
-  const sortedByName = getters.getWhereArray()(
+  const sortedByName = getters.getWhereArray(
     user => user.age >= 25, 
     { orderBy: 'name', sortBy: 'asc' }
   )
@@ -47,7 +47,7 @@ export function sortingExample() {
   // Output: ['Alice', 'Bob', 'Jane', 'John']
   
   // Example 2: Sort by field in descending order
-  const sortedByAge = getters.getWhereArray()(
+  const sortedByAge = getters.getWhereArray(
     user => user.age >= 25, 
     { orderBy: 'age', sortBy: 'desc' }
   )
@@ -55,7 +55,7 @@ export function sortingExample() {
   // Output: [{ name: 'Bob', age: 35 }, { name: 'John', age: 30 }, { name: 'Alice', age: 28 }, { name: 'Jane', age: 25 }]
   
   // Example 3: Sort using custom function
-  const sortedByEmailLength = getters.getWhereArray()(
+  const sortedByEmailLength = getters.getWhereArray(
     user => user.age >= 25, 
     { 
       orderBy: (user) => user.email.length, 
@@ -66,14 +66,14 @@ export function sortingExample() {
   // Output: Sorted by email length
   
   // Example 4: Sort by date
-  const sortedByDate = getters.getWhereArray()(
+  const sortedByDate = getters.getWhereArray(
     user => user.age >= 25, 
     { orderBy: 'createdAt', sortBy: 'asc' }
   )
   console.log('Sorted by creation date (asc):', sortedByDate.map(u => ({ name: u.name, createdAt: u.createdAt })))
   
   // Example 5: Default ascending order (sortBy is optional)
-  const sortedByAgeDefault = getters.getWhereArray()(
+  const sortedByAgeDefault = getters.getWhereArray(
     user => user.age >= 25, 
     { orderBy: 'age' } // defaults to 'asc'
   )
@@ -95,7 +95,7 @@ export function advancedSortingExample() {
   // ... add data ...
   
   // Chain filtering and sorting
-  const youngUsers = getters.getWhereArray()(
+  const youngUsers = getters.getWhereArray(
     user => user.age < 30, // filter young users
     { orderBy: 'name', sortBy: 'asc' } // sort by name
   )
@@ -103,7 +103,7 @@ export function advancedSortingExample() {
   // Use with other getters
   const activeUsers = getters.getActive()
   const activeUserSet = new Set(activeUsers)
-  const sortedActiveUsers = getters.getWhereArray()(
+  const sortedActiveUsers = getters.getWhereArray(
     user => activeUserSet.has(user.id), // filter active users
     { orderBy: 'age', sortBy: 'desc' } // sort by age descending
   )

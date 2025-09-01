@@ -37,6 +37,11 @@ const VALUE_GETTERS = [
   'getCurrentById'
 ] as const
 
+// Constants for getters that take parameters directly
+const PARAMETER_GETTERS = [
+  'getWhereArray'
+] as const
+
 type ValueGetterKey = typeof VALUE_GETTERS[number]
 
 /**
@@ -68,6 +73,18 @@ function createValueGetter(store: EntityStore, key: string, baseState: any) {
     }
     
     return value
+  }
+}
+
+/**
+ * Creates a getter that takes parameters directly
+ */
+function createParameterGetter(store: EntityStore, key: string, baseState: any) {
+  return (...args: any[]) => {
+    const currentState = createCurrentState(store)
+    const currentGetters = createGetters(currentState)
+    const currentGetter = (currentGetters as any)[key]
+    return currentGetter(...args, currentState)
   }
 }
 
@@ -114,6 +131,9 @@ function addGettersToStore(store: EntityStore, getters: Getters, baseState: any)
         // Check if it's a getter that returns a direct value
         if (VALUE_GETTERS.includes(key as ValueGetterKey)) {
           store[`$${key}`] = createValueGetter(store, key, baseState)
+        } else if (PARAMETER_GETTERS.includes(key as any)) {
+          // Getters that take parameters directly
+          store[`$${key}`] = createParameterGetter(store, key, baseState)
         } else {
           // Others return functions that take parameters
           store[`$${key}`] = result
