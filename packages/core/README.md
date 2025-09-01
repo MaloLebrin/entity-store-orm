@@ -180,3 +180,60 @@ console.log(user.$meta.changedFields) // Set() (cleared)
 - `$meta.createdAt`: number - Timestamp when entity was created
 - `$meta.updatedAt`: number | null - Timestamp of last modification
 - `$meta.changedFields`: Set<keyof T> - Set of field names that have been modified
+
+### Automatic Tracking
+
+The metadata tracking is completely automatic and transparent:
+
+- **Entity Creation**: When using `createOne()` or `setCurrent()`, entities are wrapped with metadata
+- **Field Modifications**: Direct property changes (`user.name = 'new'`) automatically update metadata
+- **Action Updates**: Using `updateOne()` or `updateField()` also triggers metadata updates
+- **Reset Capability**: Use `setIsNotDirty()` to reset the dirty state and clear changed fields
+
+### Use Cases
+
+**Form Management**:
+```typescript
+// Check if form has unsaved changes
+const hasUnsavedChanges = user.$isDirty
+
+// Show which fields were modified
+const modifiedFields = Array.from(user.$meta.changedFields)
+```
+
+**Audit Trail**:
+```typescript
+// Track entity lifecycle
+console.log(`User created: ${new Date(user.$meta.createdAt)}`)
+if (user.$meta.updatedAt) {
+  console.log(`Last modified: ${new Date(user.$meta.updatedAt)}`)
+}
+```
+
+**Conditional Updates**:
+```typescript
+// Only send updates if entity was modified
+if (user.$isDirty) {
+  await saveToServer(user)
+  actions.setIsNotDirty(user.id) // Mark as clean after save
+}
+```
+
+## Exported Types
+
+```typescript
+import type { EntityMeta, EntityWithMeta } from '@entity-store/core'
+
+// EntityMeta contains the metadata structure
+interface EntityMeta<T> {
+  changedFields: Set<keyof T>
+  createdAt: number
+  updatedAt: number | null
+}
+
+// EntityWithMeta is the full entity type with metadata
+type EntityWithMeta<T> = T & {
+  $isDirty: boolean
+  $meta: EntityMeta<T>
+}
+```
