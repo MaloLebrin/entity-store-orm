@@ -1,485 +1,219 @@
-# Pinia Entity Store Adapter
+# Entity Store Plugin for Pinia
 
-A Pinia adapter for the agnostic entity management system, allowing you to create stores with complete entity management while maintaining Pinia's flexibility.
+This Pinia plugin automatically adds entity management to all your existing Pinia stores without modifying their current structure.
 
-## 📦 Installation
-
-```bash
-pnpm add entity-store
-```
-
-## 🚀 Basic Usage
+## 🚀 Installation
 
 ```typescript
-import { createPiniaEntityStore } from 'entity-store/adapters/pinia'
+import { createPinia } from 'pinia'
+import { entityStorePlugin } from '@entity-store/pinia-adapter'
 
-interface Todo {
-  id: number
-  title: string
-  completed: boolean
-}
-
-// Create a basic store
-export const useTodoStore = createPiniaEntityStore<Todo>('todos')
+const pinia = createPinia().use(entityStorePlugin)
+app.use(pinia)
 ```
 
 ## ✨ Features
 
-### Automatic Entity Management
+The plugin automatically adds to all your stores:
 
-The store automatically includes all entity management methods:
+### 🔧 **Extended State**
+- `$entities.byId` : Record of entities by ID
+- `$entities.allIds` : List of IDs
+- `$entities.current` : Currently selected entity
+- `$entities.currentById` : ID of the current entity
+- `$entities.active` : List of active IDs
 
-- **Getters**: `getOne`, `getAll`, `getAllArray`, `getAllIds`, `getCurrent`, `getActive`, etc.
-- **Actions**: `createOne`, `createMany`, `updateOne`, `deleteOne`, `setCurrent`, `setActive`, etc.
-- **State**: `byId`, `allIds`, `current`, `currentById`, `active`, `$isDirty`
+### 🎯 **Prefixed Actions**
+- `$createOne(entity)` : Create an entity
+- `$createMany(entities)` : Create multiple entities
+- `$updateOne(id, entity)` : Update an entity
+- `$updateMany(entities)` : Update multiple entities
+- `$deleteOne(id)` : Delete an entity
+- `$deleteMany(ids)` : Delete multiple entities
+- `$setCurrent(entity)` : Set the current entity
+- `$setCurrentById(id)` : Set the current entity by ID
+- `$removeCurrent()` : Remove the current entity
+- `$removeCurrentById()` : Remove the current entity by ID
+- `$setActive(id)` : Mark an entity as active
+- `$resetActive()` : Reset active entities
+- `$setIsDirty(id)` : Mark an entity as modified
+- `$setIsNotDirty(id)` : Mark an entity as not modified
+- `$updateField(field, value, id)` : Update a specific field
 
-### Extension with Custom Getters
+### 🔍 **Prefixed Getters**
+- `$getOne(id)` : Get an entity by ID
+- `$getMany(ids)` : Get multiple entities by IDs
+- `$getAll()` : Get all entities
+- `$getAllArray()` : Get all entities as an array
+- `$getAllIds()` : Get all IDs
+- `$getCurrent()` : Get the current entity
+- `$getCurrentById()` : Get the current entity by ID
+- `$getActive()` : Get active entities
+- `$getFirstActive()` : Get the first active entity
+- `$getWhere(filter)` : Filter entities
+- `$getWhereArray(filter)` : Filter entities as an array
+- `$getFirstWhere(filter)` : Get the first filtered entity
+- `$getIsEmpty()` : Check if the store is empty
+- `$getIsNotEmpty()` : Check if the store is not empty
+- `$isAlreadyInStore(id)` : Check if an entity exists
+- `$isAlreadyActive(id)` : Check if an entity is active
+- `$isDirty(id)` : Check if an entity has been modified
+- `$search(field)` : Search in entities
+- `$getMissingIds(ids)` : Get missing IDs
+- `$getMissingEntities(entities)` : Get missing entities
 
-```typescript
-export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
-  getters: {
-    // Custom getter: get todos by priority
-    getTodosByPriority: (store) => (priority: 'low' | 'medium' | 'high') => {
-      const getWhere = store.getWhere()
-      return getWhere(todo => todo.priority === priority)
-    },
-    
-    // Custom getter: count completed todos
-    getCompletedCount: (store) => () => {
-      const getWhere = store.getWhere()
-      return Object.keys(getWhere(todo => todo.completed)).length
-    }
-  }
-})
-```
+## 📖 Usage Examples
 
-### Extension with Custom Actions
-
-```typescript
-export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
-  actions: {
-    // Custom action: toggle todo completion
-    toggleTodo: (store) => (id: number) => {
-      const current = store.getOne()(id)
-      if (current) {
-        const updatedTodo = {
-          ...current,
-          completed: !current.completed,
-          updatedAt: new Date()
-        }
-        store.updateOne(id, updatedTodo)
-      }
-    },
-    
-    // Custom action: complete all todos
-    completeAll: (store) => () => {
-      const allTodos = store.getAllArray()
-      allTodos.forEach(todo => {
-        if (!todo.completed) {
-          store.updateOne(todo.id, { ...todo, completed: true })
-        }
-      })
-    }
-  }
-})
-```
-
-### Extension with Custom State
+### Simple Store with Plugin
 
 ```typescript
-export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
-  state: {
-    // Custom UI state
-    ui: {
-      isLoading: false,
-      error: null as string | null
-    },
-    
-    // Custom filters
-    filters: {
-      showCompleted: true,
-      priorityFilter: null as 'low' | 'medium' | 'high' | null
-    }
-  }
-})
-```
+import { defineStore } from 'pinia'
+import type { WithId } from '@entity-store/types'
 
-### Complete Extension (state + getters + actions)
-
-```typescript
-export const useTodoStore = createPiniaEntityStore<Todo>('todos', {
-  state: {
-    ui: { 
-      isLoading: false, 
-      error: null as string | null,
-      selectedTags: [] as string[],
-      sortBy: 'createdAt' as 'createdAt' | 'updatedAt' | 'priority' | 'title',
-      sortOrder: 'desc' as 'asc' | 'desc'
-    },
-    filters: { 
-      showCompleted: true, 
-      showIncomplete: true,
-      priorityFilter: null as 'low' | 'medium' | 'high' | null,
-      tagFilter: null as string | null
-    }
-  },
-  
-  getters: {
-    // Custom getter: get filtered and sorted todos
-    getFilteredTodos: (store) => () => {
-      let todos = store.getAllArray()
-      
-      // Apply filters
-      if (!store.entities.filters.showCompleted) {
-        todos = todos.filter(todo => !todo.completed)
-      }
-      if (!store.entities.filters.showIncomplete) {
-        todos = todos.filter(todo => todo.completed)
-      }
-      if (store.entities.filters.priorityFilter) {
-        todos = todos.filter(todo => todo.priority === store.entities.filters.priorityFilter)
-      }
-      if (store.entities.filters.tagFilter) {
-        todos = todos.filter(todo => todo.tags.includes(store.entities.filters.tagFilter!))
-      }
-      
-      // Apply sorting
-      todos.sort((a, b) => {
-        let aValue: any
-        let bValue: any
-        
-        switch (store.entities.ui.sortBy) {
-          case 'createdAt':
-            aValue = a.createdAt.getTime()
-            bValue = b.createdAt.getTime()
-            break
-          case 'updatedAt':
-            aValue = a.updatedAt.getTime()
-            bValue = b.updatedAt.getTime()
-            break
-          case 'priority':
-            const priorityOrder = { high: 3, medium: 2, low: 1 }
-            aValue = priorityOrder[a.priority]
-            bValue = priorityOrder[b.priority]
-            break
-          case 'title':
-            aValue = a.title.toLowerCase()
-            bValue = b.title.toLowerCase()
-            break
-          default:
-            return 0
-        }
-        
-        if (store.entities.ui.sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1
-        } else {
-          return aValue < bValue ? 1 : -1
-        }
-      })
-      
-      return todos
-    },
-    
-    // Custom getter: get all available tags
-    getAvailableTags: (store) => () => {
-      const allTags = new Set<string>()
-      store.getAllArray().forEach(todo => {
-        todo.tags.forEach(tag => allTags.add(tag))
-      })
-      return Array.from(allTags).sort()
-    }
-  },
-  
-  actions: {
-    // Custom actions for UI
-    setLoading: (store) => (loading: boolean) => {
-      store.entities.ui.isLoading = loading
-    },
-    
-    setError: (store) => (error: string | null) => {
-      store.entities.ui.error = error
-    },
-    
-    setSortBy: (store) => (sortBy: 'createdAt' | 'updatedAt' | 'priority' | 'title') => {
-      store.entities.ui.sortBy = sortBy
-    },
-    
-    setSortOrder: (store) => (sortOrder: 'asc' | 'desc') => {
-      store.entities.ui.sortOrder = sortOrder
-    },
-    
-    // Custom actions for filters
-    toggleFilter: (store) => (filterType: keyof typeof store.entities.filters) => {
-      if (filterType === 'showCompleted' || filterType === 'showIncomplete') {
-        store.entities.filters[filterType] = !store.entities.filters[filterType]
-      }
-    },
-    
-    setPriorityFilter: (store) => (priority: 'low' | 'medium' | 'high' | null) => {
-      store.entities.filters.priorityFilter = priority
-    },
-    
-    setTagFilter: (store) => (tag: string | null) => {
-      store.entities.filters.tagFilter = tag
-    },
-    
-    clearFilters: (store) => () => {
-      store.entities.filters.showCompleted = true
-      store.entities.filters.showIncomplete = true
-      store.entities.filters.priorityFilter = null
-      store.entities.filters.tagFilter = null
-    }
-  }
-})
-```
-
-## 🎯 Usage in a Vue Component
-
-```vue
-<template>
-  <div>
-    <!-- UI State -->
-    <div v-if="todoStore.entities.ui.isLoading">Loading...</div>
-    <div v-if="todoStore.entities.ui.error" class="error">{{ todoStore.entities.ui.error }}</div>
-    
-    <!-- Sort Controls -->
-    <select v-model="todoStore.entities.ui.sortBy">
-      <option value="createdAt">Creation Date</option>
-      <option value="updatedAt">Modification Date</option>
-      <option value="priority">Priority</option>
-      <option value="title">Title</option>
-    </select>
-    
-    <button @click="todoStore.setSortOrder(todoStore.entities.ui.sortOrder === 'asc' ? 'desc' : 'asc')">
-      {{ todoStore.entities.ui.sortOrder === 'asc' ? '↑' : '↓' }}
-    </button>
-    
-    <!-- Filters -->
-    <label>
-      <input 
-        type="checkbox" 
-        v-model="todoStore.entities.filters.showCompleted"
-        @change="todoStore.toggleFilter('showCompleted')"
-      />
-      Show completed
-    </label>
-    
-    <select v-model="todoStore.entities.filters.priorityFilter">
-      <option value="">All priorities</option>
-      <option value="high">High</option>
-      <option value="medium">Medium</option>
-      <option value="low">Low</option>
-    </select>
-    
-    <button @click="todoStore.clearFilters()">Reset filters</button>
-    
-    <!-- Todo list -->
-    <div v-for="todo in filteredTodos" :key="todo.id">
-      <input 
-        type="checkbox" 
-        :checked="todo.completed"
-        @change="todoStore.toggleTodo(todo.id)"
-      />
-      {{ todo.title }}
-      <span :class="`priority-${todo.priority}`">{{ todo.priority }}</span>
-      
-      <!-- Tags -->
-      <div v-for="tag in todo.tags" :key="tag">
-        {{ tag }}
-        <button @click="todoStore.removeTag(todo.id, tag)">×</button>
-      </div>
-      
-      <button @click="addTag(todo.id)">+ Tag</button>
-    </div>
-    
-    <!-- Batch actions -->
-    <button @click="todoStore.completeAll()">Complete all</button>
-    
-    <!-- Statistics -->
-    <div>
-      Total: {{ todoStore.getAllIds().length }} |
-      Completed: {{ todoStore.getCompletedCount() }} |
-      High priority: {{ Object.keys(todoStore.getHighPriorityTodos()).length }}
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useTodoStore } from './stores/todoStore'
-
-const todoStore = useTodoStore()
-
-// Use custom getter
-const filteredTodos = computed(() => todoStore.getFilteredTodos())
-
-// Function to add a tag
-const addTag = (id: number) => {
-  const tag = prompt('Enter a tag:')
-  if (tag) {
-    todoStore.addTag(id, tag)
-  }
+interface User extends WithId {
+  name: string
+  email: string
+  age: number
 }
 
-// Initialize with sample data
-const initializeStore = () => {
-  if (todoStore.getIsEmpty()) {
-    const sampleTodos = [
-      { 
-        id: 1, 
-        title: 'Learn Vue 3', 
-        description: 'Master the Composition API', 
-        completed: false, 
-        priority: 'high' as const, 
-        tags: ['vue', 'learning'],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      { 
-        id: 2, 
-        title: 'Build Entity Store', 
-        description: 'Create a robust system', 
-        completed: false, 
-        priority: 'high' as const, 
-        tags: ['architecture', 'typescript'],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]
-    
-    todoStore.createMany(sampleTodos)
-  }
-}
-
-// Initialize on mount
-onMounted(() => {
-  initializeStore()
-})
-</script>
-```
-
-## 🔧 TypeScript Typing Improvements
-
-The adapter now uses native Pinia types instead of `any`, providing better type safety:
-
-### Exported Types
-
-```typescript
-import { 
-  createPiniaEntityStore, 
-  type BaseEntityStore,
-  type PiniaEntityStore 
-} from 'entity-store/adapters/pinia'
-
-// BaseEntityStore<T> - Base type with all entity methods
-// PiniaEntityStore<T> - Type of the instantiated store
-```
-
-### Typing Custom Getters and Actions
-
-```typescript
-// Getters and actions receive the typed store
-getTodosByPriority: (store: BaseEntityStore<Todo>) => (priority: Todo['priority']) => {
-  // store is fully typed with all entity methods
-  const getWhere = store.getWhere()
-  return getWhere(todo => todo.priority === priority)
-}
-```
-
-### Typing Custom State
-
-```typescript
-// Custom state is merged with entity state
-state: {
-  ui: {
+// Create a normal store - the plugin automatically adds entity functionality
+export const useUserStore = defineStore('users', {
+  state: () => ({
+    // Your custom state
     isLoading: false,
-    error: null as string | null
-  } as TodoUIState
-}
-
-// TypeScript knows that store.entities.ui exists and is typed
-store.entities.ui.isLoading = true // ✅ TypeScript accepts boolean
+    error: null,
+    // The plugin automatically adds $entities
+  }),
+  
+  actions: {
+    // Your custom actions
+    async fetchUsers() {
+      this.isLoading = true
+      try {
+        const users: User[] = await api.getUsers()
+        // Using plugin methods
+        this.$createMany(users)
+      } catch (error) {
+        this.error = error.message
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // You can still use your custom actions
+    customAction() {
+      // Access entities via the plugin
+      const allUsers = this.$getAllArray()
+      console.log('Total users:', allUsers.length)
+    }
+  },
+  
+  getters: {
+    // Your custom getters
+    getUsersByAge: (state) => (minAge: number) => {
+      // Using plugin getters
+      return state.$getWhereArray((user) => user.age >= minAge)
+    },
+    
+    getActiveUsersCount: (state) => () => {
+      // Using plugin getters
+      return state.$getActive().length
+    }
+  }
+})
 ```
 
-### Advantages of the New Type System
-
-1. **Type Safety**: No more `any`, all types are verified
-2. **Autocompletion**: Complete IntelliSense for all methods
-3. **Error Checking**: TypeScript detects errors at compilation
-4. **Native Pinia Types**: Perfect compatibility with the Pinia ecosystem
-5. **Extensibility**: Generic types for all use cases
-
-## ✨ Advantages
-
-1. **Maximum Flexibility**: Extend your stores like in a classic Pinia store
-2. **Automatic Entity Management**: All base methods are included
-3. **Advanced Type Safety**: Complete TypeScript support with native Pinia types
-4. **Performance**: Uses Pinia's native reactivity
-5. **Extensibility**: Easily add custom getters, actions, and state
-6. **Compatibility**: Works with all existing Pinia plugins
-7. **Simplicity**: Single function with integrated options
-
-## 📚 Complete API
-
-### Configuration Options
+### Usage in a Component
 
 ```typescript
-interface PiniaEntityStoreOptions<T extends WithId> {
-  getters?: Record<string, (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown>
-  actions?: Record<string, (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown>
-  state?: Record<string, unknown>
-  storeName?: string
-}
-```
+import { useUserStore } from '@/stores/users'
 
-### Included Base Methods
-
-- **Getters**: `getOne`, `getAll`, `getAllArray`, `getAllIds`, `getCurrent`, `getActive`, `getWhere`, `getWhereArray`, `getFirstWhere`, `getMissingIds`, `getIsEmpty`, `isDirty`
-- **Actions**: `createOne`, `createMany`, `updateOne`, `updateMany`, `deleteOne`, `deleteMany`, `setCurrent`, `setCurrentById`, `removeCurrent`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`
-
-### Base State
-
-```typescript
-interface State<T extends WithId> {
-  entities: {
-    byId: Record<Id, T & { $isDirty: boolean }>
-    allIds: Id[]
-    current: T & { $isDirty: boolean } | null
-    currentById: Id | null
-    active: Id[]
+export default {
+  setup() {
+    const userStore = useUserStore()
+    
+    // Using plugin methods
+    const createUser = (user: User) => {
+      userStore.$createOne(user)
+    }
+    
+    const getUser = (id: string | number) => {
+      return userStore.$getOne(id)
+    }
+    
+    const getAllUsers = () => {
+      return userStore.$getAllArray()
+    }
+    
+    const updateUser = (id: string | number, updates: Partial<User>) => {
+      const existingUser = userStore.$getOne(id)
+      if (existingUser) {
+        userStore.$updateOne(id, { ...existingUser, ...updates })
+      }
+    }
+    
+    const deleteUser = (id: string | number) => {
+      userStore.$deleteOne(id)
+    }
+    
+    const setCurrentUser = (user: User) => {
+      userStore.$setCurrent(user)
+    }
+    
+    const getCurrentUser = () => {
+      return userStore.$getCurrent()
+    }
+    
+    return {
+      // State
+      users: userStore.$entities,
+      isLoading: userStore.isLoading,
+      error: userStore.error,
+      
+      // Plugin methods
+      createUser,
+      getUser,
+      getAllUsers,
+      updateUser,
+      deleteUser,
+      setCurrentUser,
+      getCurrentUser,
+      
+      // Custom methods
+      fetchUsers: userStore.fetchUsers,
+      getUsersByAge: userStore.getUsersByAge,
+    }
   }
 }
 ```
 
-## 🎯 Best Practices
+## 🔄 Coexistence with the Adapter
 
-1. **Custom Getters**: Use them for filtering, sorting, and calculation logic
-2. **Custom Actions**: Use them for complex business operations
-3. **Custom State**: Use it for UI state, filters, and configuration
-4. **Type Safety**: Define clear interfaces for your entities and extensions
-5. **Reactivity**: Take advantage of Pinia's automatic reactivity for your extensions
-6. **Strict Types**: Use union types and type assertions for more safety
+This plugin coexists perfectly with the existing adapter:
 
-## 🚀 Advanced Use Cases
+- **Plugin**: Adds functionality to ALL stores (prefixed with `$`)
+- **Adapter**: Creates specialized stores with all functionality integrated
 
-- **Form Management**: Validation state, errors, submission
-- **Filtering and Search**: Complex filters, real-time search
-- **Permission Management**: Access rights verification
-- **Synchronization**: Server synchronization state
-- **History**: Undo/redo action management
-- **Offline Mode**: Connectivity state and local cache
+You can use both approaches in the same project without conflicts.
 
-## 🔧 Code Analysis and Reflection
+## 🎯 Plugin Advantages
 
-The translation of the French documentation to English significantly improves the accessibility and international adoption of the Entity Store library. This change enhances the developer experience by:
+1. **Non-intrusive**: Doesn't affect your existing stores
+2. **Automatic**: Applies to all stores created after installation
+3. **Prefixed**: All added properties have the `$` prefix to avoid conflicts
+4. **Type-safe**: Complete TypeScript support
+5. **Performant**: Uses the existing core for business logic
+6. **Devtools**: Complete integration with Pinia development tools
 
-1. **Global Accessibility**: English documentation makes the library accessible to a broader international developer community
-2. **Consistency**: Aligns with standard practices in the JavaScript/TypeScript ecosystem where English is the lingua franca
-3. **Professional Standards**: Follows industry best practices for open-source libraries
+## 🧪 Tests
 
-The codebase maintains its architectural integrity while improving documentation clarity. The TypeScript interfaces and type definitions remain robust, providing excellent developer experience through IntelliSense and compile-time error checking.
+```bash
+# Run plugin tests
+pnpm test plugin/plugin.test.ts
+```
 
-**Potential Improvements:**
-- Consider adding JSDoc comments in English to all exported functions and interfaces
-- Implement comprehensive unit tests to ensure the translation doesn't break existing functionality
-- Add examples in multiple programming languages/frameworks to further broaden adoption
+## 📚 Documentation
+
+- [Core Documentation](../../../packages/core/README.md)
+- [Types Documentation](../../../packages/types/README.md)
+- [Pinia Adapter Documentation](../README.md)

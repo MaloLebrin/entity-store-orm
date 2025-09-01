@@ -29,18 +29,6 @@ npm install @entity-store/core
 - `createActions()` : CRUD actions for entities
 - `createGetters()` : Getters for retrieving and filtering data
 
-### @entity-store/types
-Shared types and interfaces.
-
-```bash
-npm install @entity-store/types
-```
-
-**Types:**
-- `WithId` : Base interface for all entities
-- `State` : Entity state structure
-- `FilterFn` : Types for filtering functions
-
 ### @entity-store/pinia-adapter
 Pinia adapter with all core functionality.
 
@@ -65,15 +53,11 @@ npm install entity-store
 ### With Pinia (recommended)
 
 ```typescript
-import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
-import type { WithId } from '@entity-store/types'
+import { createPinia } from 'pinia'
+import { entityStorePlugin } from '@entity-store/pinia-adapter'
 
-interface User extends WithId {
-  name: string
-  email: string
-}
-
-const useUserStore = createPiniaEntityStore<User>('users')
+const pinia = createPinia().use(entityStorePlugin)
+app.use(pinia)
 
 // In a Vue component
 const userStore = useUserStore()
@@ -156,7 +140,7 @@ pnpm dev
 - [ ] Redux Toolkit Adapter
 - [ ] Jotai Adapter
 - [ ] Valtio Adapter
-- [ ] Pinia Plugin
+- [X] Pinia Plugin
 - [ ] Migration tools
 - [ ] Integration examples
 
