@@ -76,8 +76,8 @@ getters.getCurrent()               // Get current entity
 getters.getCurrentById()           // Get current entity by ID
 getters.getActive()                // Get active entities
 getters.getFirstActive()           // Get first active entity
-getters.getWhere(filter)           // Filter entities
-getters.getWhereArray(filter)      // Filter entities as array
+getters.getWhere(filter, options?) // Filter entities (sorting ignored for dictionaries)
+getters.getWhereArray(filter, options?) // Filter entities as array with optional sorting
 getters.getFirstWhere(filter)      // Get first filtered entity
 getters.getIsEmpty()               // Check if state is empty
 getters.getIsNotEmpty()            // Check if state is not empty
@@ -87,6 +87,79 @@ getters.isDirty(id)                // Check if entity is modified
 getters.search(field)              // Search in entities
 getters.getMissingIds(ids)         // Get missing IDs
 getters.getMissingEntities(entities) // Get missing entities
+```
+
+### Sorting Options
+
+The `getWhereArray` getter supports optional sorting through the `options` parameter:
+
+```typescript
+interface SortOptions<T> {
+  orderBy?: keyof T | ((item: EntityWithMeta<T>) => string | number | Date)
+  sortBy?: 'asc' | 'desc' // defaults to 'asc'
+}
+```
+
+#### Basic Sorting
+
+```typescript
+// Sort by field in ascending order
+const sortedByName = getters.getWhereArray()(
+  user => user.age >= 25, 
+  { orderBy: 'name', sortBy: 'asc' }
+)
+
+// Sort by field in descending order
+const sortedByAge = getters.getWhereArray()(
+  user => user.age >= 25, 
+  { orderBy: 'age', sortBy: 'desc' }
+)
+
+// Default ascending order (sortBy is optional)
+const sortedByAgeDefault = getters.getWhereArray()(
+  user => user.age >= 25, 
+  { orderBy: 'age' } // defaults to 'asc'
+)
+```
+
+#### Custom Sort Functions
+
+```typescript
+// Sort by computed value
+const sortedByEmailLength = getters.getWhereArray()(
+  user => user.age >= 25, 
+  { 
+    orderBy: (user) => user.email.length, 
+    sortBy: 'asc' 
+  }
+)
+
+// Sort by multiple criteria
+const sortedByComplex = getters.getWhereArray()(
+  user => user.age >= 25, 
+  { 
+    orderBy: (user) => `${user.age}-${user.name}`, 
+    sortBy: 'desc' 
+  }
+)
+```
+
+#### Date Sorting
+
+```typescript
+// Sort by date fields
+const sortedByDate = getters.getWhereArray()(
+  user => user.age >= 25, 
+  { orderBy: 'createdAt', sortBy: 'asc' }
+)
+```
+
+#### Important Notes
+
+- **`getWhereArray`**: Supports full sorting functionality and returns sorted arrays
+- **`getWhere`**: Ignores sorting options since dictionaries don't maintain order
+- **Performance**: Sorting is applied after filtering, so it only sorts the filtered results
+- **Type Safety**: Full TypeScript support with proper type inference
 ```
 
 ## Types
@@ -131,6 +204,17 @@ actions.setActive(1)
 const currentUser = getters.getCurrent()
 const allUsers = getters.getAllArray()
 const isActive = getters.isAlreadyActive(1)
+
+// Advanced filtering with sorting
+const youngUsers = getters.getWhereArray()(
+  user => user.age < 30, // filter young users
+  { orderBy: 'name', sortBy: 'asc' } // sort by name
+)
+
+const sortedByAge = getters.getWhereArray()(
+  user => user.age >= 25, // filter adults
+  { orderBy: 'age', sortBy: 'desc' } // sort by age descending
+)
 ```
 
 ## Benefits
