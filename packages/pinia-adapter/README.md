@@ -4,7 +4,7 @@ This package provides two different approaches for using entity management with 
 
 ## 🚀 Two Approaches
 
-### 1. **Plugin Approach** (Recommended for existing stores)
+### 1. **Plugin Approach** (Recommended)
 
 The Pinia plugin automatically adds entity management to **all** your existing stores without code modification.
 
@@ -99,7 +99,7 @@ console.log(userStore.customField) // 'users'
 console.log(userStore.customAction()) // 'custom user action'
 ```
 
-### 2. **Adapter Approach** (For new stores)
+### 2. **Adapter Approach**
 
 The adapter approach creates specialized stores with integrated entity management.
 
