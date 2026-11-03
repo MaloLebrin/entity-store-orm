@@ -75,13 +75,13 @@ import { defineStore } from 'pinia'
 // Define a normal store
 const useUserStore = defineStore('users', {
   state: () => ({
-    customField: 'users'
+    customField: 'users',
   }),
   actions: {
     customAction() {
       return 'custom user action'
-    }
-  }
+    },
+  },
 })
 
 // Use the store
@@ -116,13 +116,13 @@ interface User {
 
 const useUserStore = createPiniaEntityStore<User>('users', {
   state: () => ({
-    customField: 'users'
+    customField: 'users',
   }),
   actions: {
     customAction() {
       return 'custom user action'
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -149,12 +149,14 @@ installEntityStorePlugin(pinia)
 ## 🎯 Use Cases
 
 ### Plugin Approach - Ideal for:
+
 - **Existing stores** that you don't want to modify
 - **Progressive migration** to entity management
 - **Applications with many different stores**
 - **Maximum reusability**
 
 ### Adapter Approach - Ideal for:
+
 - **New stores** specifically designed for entities
 - **Maximum type safety** with TypeScript
 - **Total control** over store structure
@@ -184,7 +186,10 @@ installEntityStorePlugin(pinia)
 ### Types
 
 ```typescript
-import type { EntityStorePlugin, EntityPluginOptions } from '@entity-store/pinia-adapter'
+import type {
+  EntityStorePlugin,
+  EntityPluginOptions,
+} from '@entity-store/pinia-adapter'
 ```
 
 ## 🔍 Troubleshooting

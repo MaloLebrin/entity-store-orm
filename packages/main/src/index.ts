@@ -1,14 +1,24 @@
 // Main export file for the entity-store package
 
-// Re-export types and interfaces
-export type { ByIdParams, FilterFn, Id, OptionalFilterFn, State, WithId } from '@entity-store/types';
-
 // Re-export core functions
-export { default as createActions, default as createGetters, default as createState } from '@entity-store/core';
+export { createActions, createGetters, createState } from '@entity-store/core'
+export type {
+  BaseEntityStore,
+  PiniaEntityStore,
+  PiniaEntityStoreOptions,
+} from '@entity-store/pinia-adapter'
 
 // Re-export adapters
-export { createPiniaEntityStore } from '@entity-store/pinia-adapter';
-export type { BaseEntityStore, PiniaEntityStore, PiniaEntityStoreOptions } from '@entity-store/pinia-adapter';
+export { createPiniaEntityStore } from '@entity-store/pinia-adapter'
+// Re-export types and interfaces
+export type {
+  ByIdParams,
+  FilterFn,
+  Id,
+  OptionalFilterFn,
+  State,
+  WithId,
+} from '@entity-store/types'
 
 // Utilities (coming soon)
 // export * from './utils/index.js';

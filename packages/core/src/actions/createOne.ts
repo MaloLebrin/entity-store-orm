@@ -8,7 +8,10 @@ import { createEntityProxy } from '../utils/createEntityProxy.js'
  */
 export function createOne<T extends WithId>(state: State<T>) {
   return (payload: T): void => {
-    if (!state.entities.byId[payload.id] && !state.entities.allIds.includes(payload.id)) {
+    if (
+      !state.entities.byId[payload.id] &&
+      !state.entities.allIds.includes(payload.id)
+    ) {
       state.entities.allIds.push(payload.id)
     }
     state.entities.byId[payload.id] = createEntityProxy(payload)

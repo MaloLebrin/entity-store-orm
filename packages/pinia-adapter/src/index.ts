@@ -1,4 +1,9 @@
-import { createActions, createGetters, createState, type WithId } from '@entity-store/core'
+import {
+  createActions,
+  createGetters,
+  createState,
+  type WithId,
+} from '@entity-store/core'
 import { defineStore } from 'pinia'
 
 /**
@@ -23,17 +28,23 @@ export interface PiniaEntityStoreOptions<T extends WithId> {
    * Additional state properties to add to the store
    */
   state?: Record<string, unknown>
-  
+
   /**
    * Additional getters to add to the store
    */
-  getters?: Record<string, (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown>
-  
+  getters?: Record<
+    string,
+    (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown
+  >
+
   /**
    * Additional actions to add to the store
    */
-  actions?: Record<string, (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown>
-  
+  actions?: Record<
+    string,
+    (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown
+  >
+
   /**
    * Custom store name (optional, defaults to the provided storeName)
    */
@@ -48,50 +59,52 @@ export interface PiniaEntityStoreOptions<T extends WithId> {
  */
 export function createPiniaEntityStore<T extends WithId>(
   storeName: string,
-  options: PiniaEntityStoreOptions<T> = {}
+  options: PiniaEntityStoreOptions<T> = {},
 ): any {
   return defineStore(options.storeName || storeName, () => {
     // Create the base state using our core function
     const baseState = createState<T>()
-    
+
     // Create state by merging base state with custom state
     const entities = {
       ...baseState.entities,
-      ...options.state
+      ...options.state,
     }
-    
+
     // Create a state object that the core functions can work with
     const state = {
-      entities
+      entities,
     }
-    
+
     // Create getters and actions with the state
     const getters = createGetters<T>(state)
     const actions = createActions<T>(state)
-    
+
     // Create the base store object
     const baseStore: BaseEntityStore<T> = {
       entities,
       ...getters,
-      ...actions
+      ...actions,
     } as BaseEntityStore<T>
-    
+
     // Create custom getters as functions that receive the store context
     const customGetters: Record<string, (...args: unknown[]) => unknown> = {}
     if (options.getters) {
       Object.entries(options.getters).forEach(([key, getterFn]) => {
-        customGetters[key] = (...args: unknown[]) => getterFn(baseStore)(...args)
+        customGetters[key] = (...args: unknown[]) =>
+          getterFn(baseStore)(...args)
       })
     }
-    
+
     // Create custom actions as functions that receive the store context
     const customActions: Record<string, (...args: unknown[]) => unknown> = {}
     if (options.actions) {
       Object.entries(options.actions).forEach(([key, actionFn]) => {
-        customActions[key] = (...args: unknown[]) => actionFn(baseStore)(...args)
+        customActions[key] = (...args: unknown[]) =>
+          actionFn(baseStore)(...args)
       })
     }
-    
+
     // Return the store with all functionality
     return {
       ...baseStore,
@@ -104,13 +117,14 @@ export function createPiniaEntityStore<T extends WithId>(
 /**
  * Type for the Pinia entity store instance
  */
-export type PiniaEntityStore<T extends WithId> = ReturnType<ReturnType<typeof createPiniaEntityStore<T>>>
-
-// Export du plugin Pinia
-export { entityStorePlugin, installEntityStorePlugin } from './plugin'
+export type PiniaEntityStore<T extends WithId> = ReturnType<
+  ReturnType<typeof createPiniaEntityStore<T>>
+>
 
 // Export des types du plugin
 export type {
-  EntityPluginOptions, EntityStorePlugin
+  EntityPluginOptions,
+  EntityStorePlugin,
 } from './plugin'
-
+// Export du plugin Pinia
+export { entityStorePlugin, installEntityStorePlugin } from './plugin'

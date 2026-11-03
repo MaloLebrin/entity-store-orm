@@ -14,7 +14,7 @@ export interface EntityStorePlugin<T extends WithId = any> {
     currentById: string | null
     active: string[]
   }
-  
+
   // Prefixed actions
   $createOne: (payload: T) => void
   $createMany: (payload: T[]) => void
@@ -31,7 +31,7 @@ export interface EntityStorePlugin<T extends WithId = any> {
   $setIsDirty: (id: string | number) => void
   $setIsNotDirty: (id: string | number) => void
   $updateField: (field: string, value: any, id: string | number) => void
-  
+
   // Prefixed getters
   $getOne: (id: string | number) => (T & { $isDirty: boolean }) | undefined
   $getMany: (ids: (string | number)[]) => (T & { $isDirty: boolean })[]
@@ -42,25 +42,33 @@ export interface EntityStorePlugin<T extends WithId = any> {
   $getCurrentById: () => (T & { $isDirty: boolean }) | null
   $getActive: () => (T & { $isDirty: boolean })[]
   $getFirstActive: () => (T & { $isDirty: boolean }) | undefined
-  $getWhere: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => Record<string, T & { $isDirty: boolean }>
-  $getWhereArray: (filter: (entity: T & { $isDirty: boolean }) => boolean | null, options?: SortOptions<T>) => (T & { $isDirty: boolean })[]
-  $getFirstWhere: (filter: (entity: T & { $isDirty: boolean }) => boolean | null) => (T & { $isDirty: boolean }) | undefined
+  $getWhere: (
+    filter: (entity: T & { $isDirty: boolean }) => boolean | null,
+  ) => Record<string, T & { $isDirty: boolean }>
+  $getWhereArray: (
+    filter: (entity: T & { $isDirty: boolean }) => boolean | null,
+    options?: SortOptions<T>,
+  ) => (T & { $isDirty: boolean })[]
+  $getFirstWhere: (
+    filter: (entity: T & { $isDirty: boolean }) => boolean | null,
+  ) => (T & { $isDirty: boolean }) | undefined
   $getIsEmpty: () => boolean
   $getIsNotEmpty: () => boolean
   $isAlreadyInStore: (id: string | number) => boolean
   $isAlreadyActive: (id: string | number) => boolean
   $isDirty: (id: string | number) => boolean
   $search: (field: string) => (T & { $isDirty: boolean })[]
-  $getMissingIds: (ids: (string | number)[], canHaveDuplicates?: boolean) => (string | number)[]
+  $getMissingIds: (
+    ids: (string | number)[],
+    canHaveDuplicates?: boolean,
+  ) => (string | number)[]
   $getMissingEntities: (entities: T[]) => T[]
 }
 
 /**
  * Plugin configuration options (empty for now, but extensible)
  */
-export interface EntityPluginOptions {
-  // Future options for global configuration
-}
+export type EntityPluginOptions = {}
 
 /**
  * Type to extend the PiniaCustomProperties interface
@@ -75,7 +83,7 @@ declare module 'pinia' {
       currentById: string | null
       active: string[]
     }
-    
+
     // Prefixed actions
     $createOne: (payload: any) => void
     $createMany: (payload: any[]) => void
@@ -92,7 +100,7 @@ declare module 'pinia' {
     $setIsDirty: (id: string | number) => void
     $setIsNotDirty: (id: string | number) => void
     $updateField: (field: string, value: any, id: string | number) => void
-    
+
     // Prefixed getters
     $getOne: (id: string | number) => (any & { $isDirty: boolean }) | undefined
     $getMany: (ids: (string | number)[]) => (any & { $isDirty: boolean })[]
@@ -103,16 +111,26 @@ declare module 'pinia' {
     $getCurrentById: () => (any & { $isDirty: boolean }) | null
     $getActive: () => (any & { $isDirty: boolean })[]
     $getFirstActive: () => (any & { $isDirty: boolean }) | undefined
-    $getWhere: (filter: (entity: any & { $isDirty: boolean }) => boolean | null) => Record<string, any & { $isDirty: boolean }>
-    $getWhereArray: (filter: (entity: any & { $isDirty: boolean }) => boolean | null, options?: any) => (any & { $isDirty: boolean })[]
-    $getFirstWhere: (filter: (entity: any & { $isDirty: boolean }) => boolean | null) => (any & { $isDirty: boolean }) | undefined
+    $getWhere: (
+      filter: (entity: any & { $isDirty: boolean }) => boolean | null,
+    ) => Record<string, any & { $isDirty: boolean }>
+    $getWhereArray: (
+      filter: (entity: any & { $isDirty: boolean }) => boolean | null,
+      options?: any,
+    ) => (any & { $isDirty: boolean })[]
+    $getFirstWhere: (
+      filter: (entity: any & { $isDirty: boolean }) => boolean | null,
+    ) => (any & { $isDirty: boolean }) | undefined
     $getIsEmpty: () => boolean
     $getIsNotEmpty: () => boolean
     $isAlreadyInStore: (id: string | number) => boolean
     $isAlreadyActive: (id: string | number) => boolean
     $isDirty: (id: string | number) => boolean
     $search: (field: string) => (any & { $isDirty: boolean })[]
-    $getMissingIds: (ids: (string | number)[], canHaveDuplicates?: boolean) => (string | number)[]
+    $getMissingIds: (
+      ids: (string | number)[],
+      canHaveDuplicates?: boolean,
+    ) => (string | number)[]
     $getMissingEntities: (entities: any[]) => any[]
   }
 }

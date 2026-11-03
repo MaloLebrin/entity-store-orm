@@ -23,19 +23,22 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: ⚙️ Set node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
 
-      - name: ⚙️ Setup
-        run: npm i -g @antfu/ni
-
       - name: 🔧 Install
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧹 Lint
+        run: pnpm lint
+
+      - name: 🏗️ Build
+        run: pnpm build
 
       - name: ☑️ Type checking
-        run: nr type-check
+        run: pnpm type-check
 
       - name: ✅ Tests
-        run: nr test
+        run: pnpm test

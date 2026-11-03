@@ -7,8 +7,8 @@ import type { WithId } from '../types/WithId.js'
  * @return array of entities
  */
 export function search<T extends WithId>(currentState: State<T>) {
-  return (field: string) => Object.values(currentState.entities.byId)
-    .filter(item => {
+  return (field: string) =>
+    Object.values(currentState.entities.byId).filter((item) => {
       const regex = new RegExp(field, 'i')
       for (const value of Object.values(item)) {
         if (typeof value === 'string' && regex.test(value)) {

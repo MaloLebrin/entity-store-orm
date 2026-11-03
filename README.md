@@ -18,6 +18,7 @@ entity-store/
 ## 📦 Available Packages
 
 ### @entity-store/core
+
 Agnostic package containing entity management business logic.
 
 ```bash
@@ -30,6 +31,7 @@ npm install @entity-store/core
 - `createGetters()` : Getters for retrieving and filtering data
 
 ### @entity-store/pinia-adapter
+
 Pinia adapter with all core functionality.
 
 ```bash
@@ -42,6 +44,7 @@ npm install @entity-store/pinia-adapter pinia
 - Native integration with Vue ecosystem
 
 ### entity-store (main package)
+
 Main package that exports everything, for simple usage.
 
 ```bash
@@ -87,18 +90,22 @@ const user = getters.getOne()(1)
 ## 🎯 Benefits of this Architecture
 
 ### **Optimal Tree-shaking**
+
 - Import only what you need
 - Minimal bundle size for production
 
 ### **Isolated Dependencies**
+
 - Each package manages its own dependencies
 - No conflicts between state managers
 
 ### **Scalability**
+
 - Easy addition of new adapters
 - Simplified maintenance per package
 
 ### **Usage Flexibility**
+
 - Use core alone for an agnostic solution
 - Or a specific adapter for native integration
 

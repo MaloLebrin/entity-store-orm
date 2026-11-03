@@ -17,6 +17,7 @@ app.use(pinia)
 The plugin automatically adds to all your stores:
 
 ### 🔧 **Extended State**
+
 - `$entities.byId` : Record of entities by ID
 - `$entities.allIds` : List of IDs
 - `$entities.current` : Currently selected entity
@@ -24,6 +25,7 @@ The plugin automatically adds to all your stores:
 - `$entities.active` : List of active IDs
 
 ### 🎯 **Prefixed Actions**
+
 - `$createOne(entity)` : Create an entity
 - `$createMany(entities)` : Create multiple entities
 - `$updateOne(id, entity)` : Update an entity
@@ -41,6 +43,7 @@ The plugin automatically adds to all your stores:
 - `$updateField(field, value, id)` : Update a specific field
 
 ### 🔍 **Prefixed Getters**
+
 - `$getOne(id)` : Get an entity by ID
 - `$getMany(ids)` : Get multiple entities by IDs
 - `$getAll()` : Get all entities
@@ -84,7 +87,7 @@ export const useUserStore = defineStore('users', {
     error: null,
     // The plugin automatically adds $entities
   }),
-  
+
   actions: {
     // Your custom actions
     async fetchUsers() {
@@ -99,27 +102,27 @@ export const useUserStore = defineStore('users', {
         this.isLoading = false
       }
     },
-    
+
     // You can still use your custom actions
     customAction() {
       // Access entities via the plugin
       const allUsers = this.$getAllArray()
       console.log('Total users:', allUsers.length)
-    }
+    },
   },
-  
+
   getters: {
     // Your custom getters
     getUsersByAge: (state) => (minAge: number) => {
       // Using plugin getters
       return state.$getWhereArray((user) => user.age >= minAge)
     },
-    
+
     getActiveUsersCount: (state) => () => {
       // Using plugin getters
       return state.$getActive().length
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -131,45 +134,45 @@ import { useUserStore } from '@/stores/users'
 export default {
   setup() {
     const userStore = useUserStore()
-    
+
     // Using plugin methods
     const createUser = (user: User) => {
       userStore.$createOne(user)
     }
-    
+
     const getUser = (id: string | number) => {
       return userStore.$getOne(id)
     }
-    
+
     const getAllUsers = () => {
       return userStore.$getAllArray()
     }
-    
+
     const updateUser = (id: string | number, updates: Partial<User>) => {
       const existingUser = userStore.$getOne(id)
       if (existingUser) {
         userStore.$updateOne(id, { ...existingUser, ...updates })
       }
     }
-    
+
     const deleteUser = (id: string | number) => {
       userStore.$deleteOne(id)
     }
-    
+
     const setCurrentUser = (user: User) => {
       userStore.$setCurrent(user)
     }
-    
+
     const getCurrentUser = () => {
       return userStore.$getCurrent()
     }
-    
+
     return {
       // State
       users: userStore.$entities,
       isLoading: userStore.isLoading,
       error: userStore.error,
-      
+
       // Plugin methods
       createUser,
       getUser,
@@ -178,12 +181,12 @@ export default {
       deleteUser,
       setCurrentUser,
       getCurrentUser,
-      
+
       // Custom methods
       fetchUsers: userStore.fetchUsers,
       getUsersByAge: userStore.getUsersByAge,
     }
-  }
+  },
 }
 ```
 

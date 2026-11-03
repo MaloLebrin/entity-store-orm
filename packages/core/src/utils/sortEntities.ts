@@ -7,7 +7,7 @@ import type { WithId } from '../types/WithId.js'
  */
 export function sortEntities<T extends WithId>(
   entities: EntityWithMeta<T>[],
-  options?: SortOptions<T>
+  options?: SortOptions<T>,
 ): EntityWithMeta<T>[] {
   if (!options?.orderBy) {
     return entities
@@ -23,20 +23,20 @@ export function sortEntities<T extends WithId>(
       aValue = orderBy(a)
       bValue = orderBy(b)
     } else {
-      const aRaw = a[orderBy];
-      const bRaw = b[orderBy];
+      const aRaw = a[orderBy]
+      const bRaw = b[orderBy]
       aValue =
         typeof aRaw === 'string' || typeof aRaw === 'number'
           ? aRaw
           : aRaw instanceof Date
-          ? aRaw
-          : undefined;
+            ? aRaw
+            : undefined
       bValue =
         typeof bRaw === 'string' || typeof bRaw === 'number'
           ? bRaw
           : bRaw instanceof Date
-          ? bRaw
-          : undefined;
+            ? bRaw
+            : undefined
     }
 
     // Handle null/undefined values

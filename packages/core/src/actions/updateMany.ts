@@ -10,6 +10,6 @@ import { updateOne } from './updateOne.js'
 export function updateMany<T extends WithId>(state: State<T>) {
   const updateOneFn = updateOne(state)
   return (payload: T[]): void => {
-    payload.forEach(entity => updateOneFn(entity.id, entity))
+    for (const entity of payload) updateOneFn(entity.id, entity)
   }
 }

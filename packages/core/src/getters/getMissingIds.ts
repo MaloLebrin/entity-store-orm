@@ -10,9 +10,10 @@ export function getMissingIds<T extends WithId>(currentState: State<T>) {
   return (ids: Id[], canHaveDuplicates?: boolean) => {
     if (!ids || !Array.isArray(ids) || ids.length === 0) return []
 
-    const filteredIds = ids.filter(id => !currentState.entities.allIds.includes(id))
-    if (!canHaveDuplicates)
-      return Array.from(new Set(filteredIds))
+    const filteredIds = ids.filter(
+      (id) => !currentState.entities.allIds.includes(id),
+    )
+    if (!canHaveDuplicates) return Array.from(new Set(filteredIds))
 
     return filteredIds
   }

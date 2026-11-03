@@ -3,6 +3,6 @@ export { entityStorePlugin, installEntityStorePlugin } from './plugin'
 
 // Export des types
 export type {
-    EntityPluginOptions, EntityStorePlugin
+  EntityPluginOptions,
+  EntityStorePlugin,
 } from './types'
-

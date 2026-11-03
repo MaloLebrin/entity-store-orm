@@ -41,11 +41,11 @@ import type { State } from '@entity-store/types'
 
 interface State<T> {
   entities: {
-    byId: Record<string, T>           // Entities indexed by ID
-    allIds: string[]                  // List of all IDs
-    current: T | null                 // Currently selected entity
-    currentById: string | null        // ID of current entity
-    active: string[]                  // List of active IDs
+    byId: Record<string, T> // Entities indexed by ID
+    allIds: string[] // List of all IDs
+    current: T | null // Currently selected entity
+    currentById: string | null // ID of current entity
+    active: string[] // List of active IDs
   }
 }
 ```
@@ -65,7 +65,7 @@ type OptionalFilterFn<T> = (entity: T) => boolean | null
 
 // Usage example
 const filterAdults: FilterFn<User> = (user) => user.age >= 18
-const filterByName: OptionalFilterFn<User> = (user) => 
+const filterByName: OptionalFilterFn<User> = (user) =>
   user.name.includes('John') ? true : null
 ```
 

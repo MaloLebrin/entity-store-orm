@@ -9,6 +9,8 @@ import type { Id, WithId } from '../types/WithId.js'
 export function getMany<T extends WithId>(currentState: State<T>) {
   return (ids: Id[]) => {
     if (!ids || !Array.isArray(ids)) return []
-    return ids.map(id => currentState.entities.byId[id]).filter((item): item is EntityWithMeta<T> => item !== undefined)
+    return ids
+      .map((id) => currentState.entities.byId[id])
+      .filter((item): item is EntityWithMeta<T> => item !== undefined)
   }
 }

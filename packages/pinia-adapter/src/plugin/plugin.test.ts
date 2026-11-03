@@ -22,8 +22,8 @@ describe('Entity Store Plugin', () => {
     // Define the store AFTER plugin installation
     useTestStore = defineStore('test', {
       state: () => ({
-        customField: 'test'
-      })
+        customField: 'test',
+      }),
     })
   })
 
@@ -40,7 +40,7 @@ describe('Entity Store Plugin', () => {
 
   test('should add all entity actions with $ prefix', () => {
     const store = useTestStore() as any
-    
+
     // Check that all actions are functions
     expect(typeof store.$createOne).toBe('function')
     expect(typeof store.$createMany).toBe('function')
@@ -61,7 +61,7 @@ describe('Entity Store Plugin', () => {
 
   test('should add all entity getters with $ prefix', () => {
     const store = useTestStore() as any
-    
+
     // Check that getters that take parameters are functions
     expect(typeof store.$getOne).toBe('function')
     expect(typeof store.$getMany).toBe('function')
@@ -74,7 +74,7 @@ describe('Entity Store Plugin', () => {
     expect(typeof store.$search).toBe('function')
     expect(typeof store.$getMissingIds).toBe('function')
     expect(typeof store.$getMissingEntities).toBe('function')
-    
+
     // Check that getters that return direct values are now functions
     expect(typeof store.$getAllArray).toBe('function')
     expect(typeof store.$getAllIds).toBe('function')
@@ -94,10 +94,10 @@ describe('Entity Store Plugin', () => {
 
   test('should work with entity operations', () => {
     const store = useTestStore() as any
-    
+
     const entity1: TestEntity = { id: 1, name: 'Test 1', value: 100 }
     const entity2: TestEntity = { id: 2, name: 'Test 2', value: 200 }
-    
+
     // Test createOne
     store.$createOne(entity1)
     const created = store.$getOne(1)
@@ -111,7 +111,7 @@ describe('Entity Store Plugin', () => {
     })
     expect(created.$meta.changedFields instanceof Set).toBe(true)
     expect(store.$getAllIds()).toEqual(['1'])
-    
+
     // Test createMany
     store.$createMany([entity2])
     const created2 = store.$getOne(2)
@@ -125,12 +125,12 @@ describe('Entity Store Plugin', () => {
     })
     expect(created2.$meta.changedFields instanceof Set).toBe(true)
     expect(store.$getAllIds()).toEqual(['1', '2'])
-    
+
     // Test updateOne
     store.$updateOne(1, { name: 'Updated Test 1' })
     expect(store.$getOne(1)?.name).toBe('Updated Test 1')
     expect(store.$getOne(1)?.$isDirty).toBe(true)
-    
+
     // Test deleteOne
     store.$deleteOne(1)
     expect(store.$getOne(1)).toBeUndefined()
@@ -139,15 +139,15 @@ describe('Entity Store Plugin', () => {
 
   test('should handle getters correctly', () => {
     const store = useTestStore() as any
-    
+
     const entities: TestEntity[] = [
       { id: 1, name: 'Test 1', value: 100 },
       { id: 2, name: 'Test 2', value: 200 },
-      { id: 3, name: 'Test 3', value: 300 }
+      { id: 3, name: 'Test 3', value: 300 },
     ]
-    
+
     store.$createMany(entities)
-    
+
     // Test getAll
     const all = store.$getAll()
     expect(all['1']).toMatchObject({
@@ -168,7 +168,7 @@ describe('Entity Store Plugin', () => {
       $meta: { createdAt: expect.any(Number), updatedAt: null },
     })
     expect(all['3'].$meta.changedFields instanceof Set).toBe(true)
-    
+
     // Test getAllArray
     const arr = store.$getAllArray()
     expect(arr[0]).toMatchObject({
@@ -189,24 +189,24 @@ describe('Entity Store Plugin', () => {
       $meta: { createdAt: expect.any(Number), updatedAt: null },
     })
     expect(arr[2].$meta.changedFields instanceof Set).toBe(true)
-    
+
     // Test getAllIds
     expect(store.$getAllIds()).toEqual(['1', '2', '3'])
-    
+
     // Test getWhere
     const filtered = store.$getWhere((entity) => entity.value > 150)
     expect(Object.keys(filtered)).toEqual(['2', '3'])
-    
+
     // Test getWhereArray
     const filteredArray = store.$getWhereArray((entity) => entity.value > 150)
     expect(filteredArray).toHaveLength(2)
-    expect(filteredArray.map(e => e.id)).toEqual([2, 3])
-    
+    expect(filteredArray.map((e) => e.id)).toEqual([2, 3])
+
     // Test getWhereArray with sorting options
-    const sortedArray = store.$getWhereArray(
-      (entity) => entity.value > 150,
-      { orderBy: 'value', sortBy: 'desc' }
-    )
+    const sortedArray = store.$getWhereArray((entity) => entity.value > 150, {
+      orderBy: 'value',
+      sortBy: 'desc',
+    })
     expect(sortedArray).toHaveLength(2)
     expect(sortedArray[0].value).toBe(300) // Bob Johnson
     expect(sortedArray[1].value).toBe(200) // Jane Smith
@@ -214,41 +214,41 @@ describe('Entity Store Plugin', () => {
 
   test('should handle search functionality', () => {
     const store = useTestStore() as any
-    
+
     const entities: TestEntity[] = [
       { id: 1, name: 'John Doe', value: 100 },
       { id: 2, name: 'Jane Smith', value: 200 },
-      { id: 3, name: 'Bob Johnson', value: 300 }
+      { id: 3, name: 'Bob Johnson', value: 300 },
     ]
-    
+
     store.$createMany(entities)
-    
+
     // Test search
     const johnResults = store.$search('John')
     expect(johnResults).toHaveLength(2) // John Doe and Bob Johnson
-    
+
     const janeResults = store.$search('Jane')
     expect(janeResults).toHaveLength(1) // Jane Smith
   })
 
   test('should handle missing entities correctly', () => {
     const store = useTestStore() as any
-    
+
     const entities: TestEntity[] = [
       { id: 1, name: 'Test 1', value: 100 },
-      { id: 2, name: 'Test 2', value: 200 }
+      { id: 2, name: 'Test 2', value: 200 },
     ]
-    
+
     store.$createMany(entities)
-    
+
     // Test getMissingIds
     const missingIds = store.$getMissingIds([1, 2, 3, 4])
     expect(missingIds).toEqual([3, 4])
-    
+
     // Test getMissingEntities
     const missingEntities = store.$getMissingEntities([
       { id: 1, name: 'Test 1', value: 100 },
-      { id: 3, name: 'Test 3', value: 300 }
+      { id: 3, name: 'Test 3', value: 300 },
     ])
     expect(missingEntities).toEqual([{ id: 3, name: 'Test 3', value: 300 }])
   })

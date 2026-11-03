@@ -28,6 +28,7 @@ import type { WithId } from 'entity-store'
 ### Option 2: Install only what you need (Recommended for production)
 
 #### For Pinia users:
+
 ```bash
 npm install @entity-store/pinia-adapter pinia
 # or
@@ -43,6 +44,7 @@ import type { WithId } from '@entity-store/types'
 ```
 
 #### For agnostic usage (any state manager):
+
 ```bash
 npm install @entity-store/core @entity-store/types
 # or
@@ -58,6 +60,7 @@ import type { WithId } from '@entity-store/types'
 ```
 
 #### For types only:
+
 ```bash
 npm install @entity-store/types
 # or
@@ -73,23 +76,25 @@ import type { WithId, State, FilterFn } from '@entity-store/types'
 
 ## Bundle Size Comparison
 
-| Package | Size | Use Case |
-|---------|------|----------|
-| `@entity-store/types` | ~2KB | Types only |
-| `@entity-store/core` | ~15KB | Core logic |
+| Package                       | Size  | Use Case          |
+| ----------------------------- | ----- | ----------------- |
+| `@entity-store/types`         | ~2KB  | Types only        |
+| `@entity-store/core`          | ~15KB | Core logic        |
 | `@entity-store/pinia-adapter` | ~20KB | Pinia integration |
-| `entity-store` (all) | ~40KB | Everything |
+| `entity-store` (all)          | ~40KB | Everything        |
 
 ## Migration from v1.0.0
 
 If you're upgrading from the previous single-package version:
 
 ### Before (v1.0.0):
+
 ```typescript
 import { createPiniaEntityStore } from 'entity-store'
 ```
 
 ### After (v2.0.0):
+
 ```typescript
 // Option 1: Keep using the main package
 import { createPiniaEntityStore } from 'entity-store'

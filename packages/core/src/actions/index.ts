@@ -40,9 +40,19 @@ export default function createActions<T extends WithId>(state: State<T>) {
 
 // Export individual functions for testing
 export {
-    createMany, createOne, deleteMany, deleteOne, removeCurrent, removeCurrentById, resetActive,
-    setActive, setCurrent, setCurrentById, setIsDirty,
-    setIsNotDirty,
-    updateField, updateMany, updateOne
+  createMany,
+  createOne,
+  deleteMany,
+  deleteOne,
+  removeCurrent,
+  removeCurrentById,
+  resetActive,
+  setActive,
+  setCurrent,
+  setCurrentById,
+  setIsDirty,
+  setIsNotDirty,
+  updateField,
+  updateMany,
+  updateOne,
 }
-
