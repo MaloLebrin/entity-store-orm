@@ -1,6 +1,6 @@
 {
   "name": "@entity-store/core",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Core entity management functions - agnostic to state managers",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -37,7 +37,7 @@
     "typescript",
     "agnostic"
   ],
-  "author": "",
+  "author": "Malo Lebrin",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "catalog:",
@@ -46,5 +46,20 @@
     "vitest": "catalog:"
   },
   "module": "./dist/index.js",
-  "sideEffects": false
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaloLebrin/entity-store-orm.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/MaloLebrin/entity-store-orm#readme",
+  "bugs": {
+    "url": "https://github.com/MaloLebrin/entity-store-orm/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

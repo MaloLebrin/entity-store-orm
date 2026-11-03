@@ -1,160 +1,72 @@
 # Entity Store
 
-ORM-agnostic entity management system with adapters for different state managers, organized as a monorepo for better modularity and performance.
+A tiny, framework-agnostic way to keep **normalized collections of entities** in your state manager, with the same actions and getters everywhere.
 
-## 🏗️ Architecture
-
-The project is organized in separate packages to enable targeted usage and optimal tree-shaking:
-
-```
-entity-store/
-├── packages/
-│   ├── core/           # Pure business logic, 0 dependencies
-│   ├── types/          # Shared types
-│   ├── pinia/  # Pinia adapter
-│   └── main/           # Main package with conditional exports
-```
-
-## 📦 Available Packages
-
-### @entity-store/core
-
-Agnostic package containing entity management business logic.
-
-```bash
-npm install @entity-store/core
-```
-
-**Features:**
-- `createState()` : Initial state creation
-- `createActions()` : CRUD actions for entities
-- `createGetters()` : Getters for retrieving and filtering data
-
-### @entity-store/pinia
-
-Pinia adapter with all core functionality.
-
-```bash
-npm install @entity-store/pinia pinia
-```
-
-**Features:**
-- Complete Pinia store with entity management
-- Customizable extensions (state, getters, actions)
-- Native integration with Vue ecosystem
-
-### entity-store (main package)
-
-Main package that exports everything, for simple usage.
-
-```bash
-npm install entity-store
-```
-
-## 🚀 Quick Start
-
-### With Pinia (recommended)
-
-```typescript
-import { createPinia } from 'pinia'
-import { entityStorePlugin } from '@entity-store/pinia'
-
-const pinia = createPinia().use(entityStorePlugin)
-app.use(pinia)
-
-// In a Vue component
-const userStore = useUserStore()
-userStore.createOne({ id: 1, name: 'John', email: 'john@example.com' })
-```
-
-### With Core (agnostic)
-
-```typescript
-import { createState, createActions, createGetters } from '@entity-store/core'
-import type { WithId } from '@entity-store/core'
-
-interface User extends WithId {
+```ts
+interface User {
+  id: number
   name: string
-  email: string
 }
 
-const state = createState<User>()
-const actions = createActions<User>(state)
-const getters = createGetters<User>(state)
-
-// Usage
-actions.createOne({ id: 1, name: 'John', email: 'john@example.com' })
-const user = getters.getOne()(1)
+users.createOne({ id: 1, name: 'Ada' })
+users.updateField('name', 'Ada Lovelace', 1)
+users.isDirty(1) // true
+users.getWhereArray((u) => u.name.startsWith('Ada'))
 ```
 
-## 🎯 Benefits of this Architecture
+State is always the same plain, serializable shape:
 
-### **Optimal Tree-shaking**
+```ts
+{
+  entities: {
+    byId: Record<Id, T & { $isDirty: boolean; $meta: { changedFields; createdAt; updatedAt } }>,
+    allIds: Id[],
+    current: T | null,      // the entity being edited / displayed
+    currentById: Id | null,
+    active: Id[],           // e.g. selected rows
+  }
+}
+```
 
-- Import only what you need
-- Minimal bundle size for production
+Every action is a **pure function** `(state, ...args) => nextState` in `@entity-store/core`: no mutation, no `Proxy`, structural sharing, and the same state reference when nothing changed. Adapters only plug that core into a state container.
 
-### **Isolated Dependencies**
+## Packages
 
-- Each package manages its own dependencies
-- No conflicts between state managers
+| Package                                       | For                          | Entry point                             |
+| --------------------------------------------- | ---------------------------- | --------------------------------------- |
+| [`@entity-store/core`](./packages/core)       | Pure state, actions, getters | `actions`, `getters`, `createEntityApi` |
+| [`@entity-store/pinia`](./packages/pinia)     | Vue / Pinia                  | `defineEntityStore<User>('users')`      |
+| [`@entity-store/zustand`](./packages/zustand) | Zustand                      | `createEntityStore<User>()`             |
+| [`@entity-store/redux`](./packages/redux)     | Redux Toolkit                | `createEntitySlice<User>('users')`      |
+| [`@entity-store/jotai`](./packages/jotai)     | Jotai                        | `createEntityAtoms<User>()`             |
+| [`@entity-store/valtio`](./packages/valtio)   | Valtio                       | `createEntityStore<User>()`             |
 
-### **Scalability**
+All adapters expose the same action and getter names; they only differ in how you call them (store methods, dispatch, atoms, selectors).
 
-- Easy addition of new adapters
-- Simplified maintenance per package
+## Actions
 
-### **Usage Flexibility**
+`createOne`, `createMany`, `updateOne`, `updateMany`, `updateField`, `deleteOne`, `deleteMany`, `setCurrent`, `removeCurrent`, `setCurrentById`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`.
 
-- Use core alone for an agnostic solution
-- Or a specific adapter for native integration
+## Getters
 
-## 🔧 Development
+`getAll`, `getAllArray`, `getAllIds`, `getIsEmpty`, `getIsNotEmpty`, `getCurrent`, `getCurrentById`, `getActive`, `getFirstActive`, `getOne`, `getMany`, `getWhere`, `getWhereArray` (with `orderBy` / `sortBy`), `getFirstWhere`, `isAlreadyInStore`, `isAlreadyActive`, `isDirty`, `getMissingIds`, `getMissingEntities`, `search`.
 
-### Install dependencies
+## Dirty tracking
+
+Updating an entity (`updateOne`, `updateMany`, `updateField`) marks it dirty, records the changed fields and sets `$meta.updatedAt`. `setIsNotDirty(id)` clears that. Setting a field to the value it already has is a no-op.
+
+## Development
 
 ```bash
 pnpm install
+pnpm build        # the adapters resolve @entity-store/core through its build
+pnpm lint && pnpm type-check && pnpm test
+pnpm check:package   # publint + are-the-types-wrong
+pnpm changeset       # describe a change for the next release
 ```
 
-### Build all packages
+Releases are automated with [Changesets](https://github.com/changesets/changesets): merging to `main` opens (or updates) a "version packages" PR; merging that publishes to npm.
 
-```bash
-pnpm build
-```
-
-### Tests
-
-```bash
-pnpm test
-```
-
-### Development in watch mode
-
-```bash
-pnpm dev
-```
-
-## 📚 Documentation
-
-- [Core Documentation](./packages/core/README.md)
-- [Types Documentation](./packages/types/README.md)
-- [Pinia Adapter Documentation](./packages/pinia/README.md)
-
-## 🚧 Roadmap
-
-- [ ] Zustand Adapter
-- [ ] Redux Toolkit Adapter
-- [ ] Jotai Adapter
-- [ ] Valtio Adapter
-- [x] Pinia Plugin
-- [ ] Migration tools
-- [ ] Integration examples
-
-## 🤝 Contributing
-
-Contributions are welcome! Each package can be developed and tested independently.
-
-## 📄 License
+## License
 
 MIT

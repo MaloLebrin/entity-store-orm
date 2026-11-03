@@ -1,317 +1,55 @@
 # @entity-store/core
 
-Agnostic core package for entity management, independent of any state manager.
-
-## Installation
+Pure, immutable core of Entity Store: the state shape, every action and getter as a plain function, and a helper to bind them to any state container. Zero dependencies.
 
 ```bash
-npm install @entity-store/core
-# or
 pnpm add @entity-store/core
-# or
-yarn add @entity-store/core
 ```
 
-## Usage
+## Pure functions
 
-### Import functions
+```ts
+import { actions, getters, createState } from '@entity-store/core'
 
-```typescript
-import { createState, createActions, createGetters } from '@entity-store/core'
-```
-
-### Create state
-
-```typescript
-import { createState } from '@entity-store/core'
-
-// Create initial state
-const state = createState<User>()
-
-// State contains:
-// - entities.byId: Record of entities by ID
-// - entities.allIds: List of IDs
-// - entities.current: Currently selected entity
-// - entities.currentById: ID of current entity
-// - entities.active: List of active IDs
-```
-
-### Create actions
-
-```typescript
-import { createActions } from '@entity-store/core'
-
-const actions = createActions<User>(state)
-
-// Available actions:
-actions.createOne(user) // Create an entity
-actions.createMany(users) // Create multiple entities
-actions.updateOne(id, user) // Update an entity
-actions.updateMany(users) // Update multiple entities
-actions.deleteOne(id) // Delete an entity
-actions.deleteMany(ids) // Delete multiple entities
-actions.setCurrent(user) // Set current entity
-actions.setCurrentById(id) // Set current entity by ID
-actions.setActive(id) // Mark entity as active
-actions.resetActive() // Reset active entities
-actions.setIsDirty(id) // Mark entity as modified
-actions.setIsNotDirty(id) // Mark entity as unmodified
-actions.updateField(field, value, id) // Update a specific field
-```
-
-### Create getters
-
-```typescript
-import { createGetters } from '@entity-store/core'
-
-const getters = createGetters<User>(state)
-
-// Available getters:
-getters.getOne()(id)              // Get entity by ID
-getters.getMany(ids)              // Get multiple entities by IDs
-getters.getAll()                   // Get all entities
-getters.getAllArray()              // Get all entities as array
-getters.getAllIds()                // Get all IDs
-getters.getCurrent()               // Get current entity
-getters.getCurrentById()           // Get current entity by ID
-getters.getActive()                // Get active entities
-getters.getFirstActive()           // Get first active entity
-getters.getWhere(filter, options?) // Filter entities (sorting ignored for dictionaries)
-getters.getWhereArray(filter, options?) // Filter entities as array with optional sorting
-getters.getFirstWhere(filter)      // Get first filtered entity
-getters.getIsEmpty()               // Check if state is empty
-getters.getIsNotEmpty()            // Check if state is not empty
-getters.isAlreadyInStore(id)      // Check if entity exists
-getters.isAlreadyActive(id)        // Check if entity is active
-getters.isDirty(id)                // Check if entity is modified
-getters.search(field)              // Search in entities
-getters.getMissingIds(ids)         // Get missing IDs
-getters.getMissingEntities(entities) // Get missing entities
-```
-
-### Sorting Options
-
-The `getWhereArray` getter supports optional sorting through the `options` parameter:
-
-```typescript
-interface SortOptions<T> {
-  orderBy?: keyof T | ((item: EntityWithMeta<T>) => string | number | Date)
-  sortBy?: 'asc' | 'desc' // defaults to 'asc'
-}
-```
-
-#### Basic Sorting
-
-```typescript
-// Sort by field in ascending order
-const sortedByName = getters.getWhereArray()((user) => user.age >= 25, {
-  orderBy: 'name',
-  sortBy: 'asc',
-})
-
-// Sort by field in descending order
-const sortedByAge = getters.getWhereArray()((user) => user.age >= 25, {
-  orderBy: 'age',
-  sortBy: 'desc',
-})
-
-// Default ascending order (sortBy is optional)
-const sortedByAgeDefault = getters.getWhereArray()(
-  (user) => user.age >= 25,
-  { orderBy: 'age' }, // defaults to 'asc'
-)
-```
-
-#### Custom Sort Functions
-
-```typescript
-// Sort by computed value
-const sortedByEmailLength = getters.getWhereArray()((user) => user.age >= 25, {
-  orderBy: (user) => user.email.length,
-  sortBy: 'asc',
-})
-
-// Sort by multiple criteria
-const sortedByComplex = getters.getWhereArray()((user) => user.age >= 25, {
-  orderBy: (user) => `${user.age}-${user.name}`,
-  sortBy: 'desc',
-})
-```
-
-#### Date Sorting
-
-```typescript
-// Sort by date fields
-const sortedByDate = getters.getWhereArray()((user) => user.age >= 25, {
-  orderBy: 'createdAt',
-  sortBy: 'asc',
-})
-```
-
-#### Important Notes
-
-- **`getWhereArray`**: Supports full sorting functionality and returns sorted arrays
-- **`getWhere`**: Ignores sorting options since dictionaries don't maintain order
-- **Performance**: Sorting is applied after filtering, so it only sorts the filtered results
-- **Type Safety**: Full TypeScript support with proper type inference
-````
-
-## Types
-
-```typescript
-interface User extends WithId {
-  name: string
-  email: string
-  age: number
-}
-
-// WithId automatically adds:
-// - id: Id (string | number)
-// - $isDirty: boolean (for modification tracking)
-// - $meta: EntityMeta<T> (automatic metadata tracking)
-````
-
-## Complete Example
-
-```typescript
-import { createState, createActions, createGetters } from '@entity-store/core'
-
-interface User extends WithId {
-  name: string
-  email: string
-}
-
-// Create state
-const state = createState<User>()
-
-// Create actions and getters
-const actions = createActions<User>(state)
-const getters = createGetters<User>(state)
-
-// Usage
-const user: User = { id: 1, name: 'John', email: 'john@example.com' }
-
-actions.createOne(user)
-actions.setCurrent(user)
-actions.setActive(1)
-
-const currentUser = getters.getCurrent()
-const allUsers = getters.getAllArray()
-const isActive = getters.isAlreadyActive(1)
-
-// Advanced filtering with sorting
-const youngUsers = getters.getWhereArray()(
-  (user) => user.age < 30, // filter young users
-  { orderBy: 'name', sortBy: 'asc' }, // sort by name
-)
-
-const sortedByAge = getters.getWhereArray()(
-  (user) => user.age >= 25, // filter adults
-  { orderBy: 'age', sortBy: 'desc' }, // sort by age descending
-)
-```
-
-## Benefits
-
-- **Agnostic**: Works with any state manager
-- **Type-safe**: Fully typed with TypeScript
-- **Performant**: Optimized logic for entity management
-- **Flexible**: Easily extensible and customizable
-- **Tested**: Complete test coverage
-- **Metadata**: Automatic entity metadata tracking
-
-## Entity Metadata
-
-All entities are automatically wrapped with metadata tracking when created:
-
-```typescript
 interface User {
   id: number
   name: string
-  email: string
 }
 
-const actions = createActions<User>(state)
-actions.createOne({ id: 1, name: 'John', email: 'john@example.com' })
+let state = createState<User>()
+state = actions.createOne(state, { id: 1, name: 'Ada' })
+state = actions.updateField(state, 'name', 'Ada Lovelace', 1)
 
-const user = state.entities.byId[1]
-console.log(user.$isDirty) // false (initially clean)
-console.log(user.$meta.createdAt) // timestamp of creation
-console.log(user.$meta.updatedAt) // null (not modified yet)
-console.log(user.$meta.changedFields) // Set() (empty initially)
-
-// Modify the entity
-user.name = 'Johnny'
-console.log(user.$isDirty) // true (automatically set)
-console.log(user.$meta.updatedAt) // timestamp of modification
-console.log(user.$meta.changedFields) // Set(['name'])
-
-// Reset dirty state
-actions.setIsNotDirty(1)
-console.log(user.$isDirty) // false
-console.log(user.$meta.changedFields) // Set() (cleared)
+getters.getOne(state, 1)?.$isDirty // true
+getters.getWhereArray(state, (u) => u.name.startsWith('Ada'), {
+  orderBy: 'name',
+})
 ```
 
-### Metadata Properties
+- Actions take the state first and return the next state. The input is never mutated; unchanged entities keep their reference; if nothing changes, **the same state object is returned** (cheap to compare, no useless re-renders).
+- Getters take the state first and return a value.
+- Each stored entity is `T & { $isDirty, $meta: { changedFields, createdAt, updatedAt } }`. Metadata is plain data (arrays, numbers), so the whole state is JSON-serializable.
+- Time-dependent actions accept an optional trailing `now` timestamp for deterministic tests.
 
-- `$isDirty`: boolean - Automatically set to `true` when entity is modified
-- `$meta.createdAt`: number - Timestamp when entity was created
-- `$meta.updatedAt`: number | null - Timestamp of last modification
-- `$meta.changedFields`: Set<keyof T> - Set of field names that have been modified
+## Binding to a state container
 
-### Automatic Tracking
+`createEntityApi` is what adapters use. Give it a `get` and a `set` and you get state-less actions and getters:
 
-The metadata tracking is completely automatic and transparent:
+```ts
+import { createEntityApi, createState, type State } from '@entity-store/core'
 
-- **Entity Creation**: When using `createOne()` or `setCurrent()`, entities are wrapped with metadata
-- **Field Modifications**: Direct property changes (`user.name = 'new'`) automatically update metadata
-- **Action Updates**: Using `updateOne()` or `updateField()` also triggers metadata updates
-- **Reset Capability**: Use `setIsNotDirty()` to reset the dirty state and clear changed fields
+let state: State<User> = createState<User>()
+const { actions, getters } = createEntityApi<User>({
+  get: () => state,
+  set: (next) => {
+    state = next
+  },
+})
 
-### Use Cases
-
-**Form Management**:
-```typescript
-// Check if form has unsaved changes
-const hasUnsavedChanges = user.$isDirty
-
-// Show which fields were modified
-const modifiedFields = Array.from(user.$meta.changedFields)
+actions.createOne({ id: 1, name: 'Ada' })
+getters.getAllIds() // [1]
 ```
 
-**Audit Trail**:
-```typescript
-// Track entity lifecycle
-console.log(`User created: ${new Date(user.$meta.createdAt)}`)
-if (user.$meta.updatedAt) {
-  console.log(`Last modified: ${new Date(user.$meta.updatedAt)}`)
-}
-```
+## Exports
 
-**Conditional Updates**:
-```typescript
-// Only send updates if entity was modified
-if (user.$isDirty) {
-  await saveToServer(user)
-  actions.setIsNotDirty(user.id) // Mark as clean after save
-}
-```
-
-## Exported Types
-
-```typescript
-import type { EntityMeta, EntityWithMeta } from '@entity-store/core'
-
-// EntityMeta contains the metadata structure
-interface EntityMeta<T> {
-  changedFields: Set<keyof T>
-  createdAt: number
-  updatedAt: number | null
-}
-
-// EntityWithMeta is the full entity type with metadata
-type EntityWithMeta<T> = T & {
-  $isDirty: boolean
-  $meta: EntityMeta<T>
-}
-```
+`actions`, `getters`, `createState`, `createEntityApi`, `withMeta`, `patchEntity`, and the types `State`, `WithId`, `Id`, `EntityWithMeta`, `EntityMeta`, `SortOptions`, `FilterFn`, `EntityActions`, `EntityGetters`, `EntityApi`.
