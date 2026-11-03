@@ -37,8 +37,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^24.3.0",
-    "typescript": "^5.9.2"
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   },
   "module": "./dist/index.js",
   "sideEffects": false
