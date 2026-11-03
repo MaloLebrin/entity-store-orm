@@ -1,0 +1,56 @@
+{
+  "name": "@entity-store/redux",
+  "version": "1.0.0",
+  "description": "Redux Toolkit adapter for Entity Store",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm clean && pnpm build",
+    "type-check": "tsc --noEmit",
+    "check:package": "publint && attw --pack . --profile node16"
+  },
+  "keywords": [
+    "redux",
+    "entity-management",
+    "state-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@reduxjs/toolkit": "^2.0.0"
+  },
+  "dependencies": {
+    "@entity-store/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@reduxjs/toolkit": "catalog:"
+  },
+  "module": "./dist/index.js",
+  "sideEffects": false
+}

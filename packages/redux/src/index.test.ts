@@ -1,0 +1,75 @@
+import type { WithId } from '@entity-store/core'
+import { configureStore } from '@reduxjs/toolkit'
+import { describe, expect, test } from 'vitest'
+import { createEntitySlice } from './index.js'
+
+interface User extends WithId {
+  name: string
+  age: number
+}
+
+const ada: User = { id: 1, name: 'Ada', age: 36 }
+const bob: User = { id: 2, name: 'Bob', age: 25 }
+
+function setup() {
+  const users = createEntitySlice<User>('users')
+  const store = configureStore({ reducer: { users: users.reducer } })
+  type Root = ReturnType<typeof store.getState>
+  const select = users.getSelectors((root: Root) => root.users)
+  return { users, store, select, a: users.actions }
+}
+
+describe('redux adapter', () => {
+  test('initial state has the normalized shape', () => {
+    const { store } = setup()
+    expect(store.getState().users.entities).toEqual({
+      byId: {},
+      allIds: [],
+      current: null,
+      currentById: null,
+      active: [],
+    })
+  })
+
+  test('actions and selectors', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createMany([ada, bob]))
+    store.dispatch(a.updateField({ field: 'name', value: 'Ada L.', id: 1 }))
+    store.dispatch(a.setActive(1))
+    store.dispatch(a.setCurrentById(2))
+    const root = store.getState()
+
+    expect(select.getAllIds(root)).toEqual([1, 2])
+    expect(select.getOne(root, 1)?.name).toBe('Ada L.')
+    expect(select.isDirty(root, 1)).toBe(true)
+    expect(select.getActive(root)).toEqual([1])
+    expect(select.getCurrentById(root)?.name).toBe('Bob')
+    expect(select.getWhereArray(root, (u) => u.age > 30)).toHaveLength(1)
+
+    store.dispatch(a.deleteOne(1))
+    expect(select.getAllIds(store.getState())).toEqual([2])
+  })
+
+  test('updateOne, current and dirty flags', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createOne(ada))
+    store.dispatch(a.updateOne({ id: 1, payload: { ...ada, age: 37 } }))
+    store.dispatch(a.setCurrent(ada))
+    expect(select.getOne(store.getState(), 1)?.$meta.changedFields).toEqual([
+      'age',
+    ])
+    store.dispatch(a.setIsNotDirty(1))
+    expect(select.isDirty(store.getState(), 1)).toBe(false)
+    expect(select.getCurrent(store.getState())?.name).toBe('Ada')
+  })
+
+  test('state stays serializable and untouched entities keep their reference', () => {
+    const { store, a } = setup()
+    store.dispatch(a.createMany([ada, bob]))
+    const before = store.getState().users.entities.byId[2]
+    store.dispatch(a.updateField({ field: 'age', value: 99, id: 1 }))
+    const after = store.getState().users
+    expect(after.entities.byId[2]).toBe(before)
+    expect(JSON.parse(JSON.stringify(after))).toEqual(after)
+  })
+})
