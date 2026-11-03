@@ -1,4 +1,4 @@
-import type { WithId } from '@entity-store/types'
+import type { WithId } from '@entity-store/core'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, test } from 'vitest'
 import { createPiniaEntityStore } from './index.js'

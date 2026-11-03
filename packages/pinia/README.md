@@ -1,4 +1,4 @@
-# @entity-store/pinia-adapter
+# @entity-store/pinia
 
 This package provides two different approaches for using entity management with Pinia:
 
@@ -11,18 +11,18 @@ The Pinia plugin automatically adds entity management to **all** your existing s
 #### Installation
 
 ```bash
-npm install @entity-store/pinia-adapter
+npm install @entity-store/pinia
 # or
-pnpm add @entity-store/pinia-adapter
+pnpm add @entity-store/pinia
 # or
-yarn add @entity-store/pinia-adapter
+yarn add @entity-store/pinia
 ```
 
 #### Usage
 
 ```typescript
 import { createPinia } from 'pinia'
-import { entityStorePlugin } from '@entity-store/pinia-adapter'
+import { entityStorePlugin } from '@entity-store/pinia'
 
 // Create a Pinia instance
 const pinia = createPinia()
@@ -106,7 +106,7 @@ The adapter approach creates specialized stores with integrated entity managemen
 #### Usage
 
 ```typescript
-import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
+import { createPiniaEntityStore } from '@entity-store/pinia'
 
 interface User {
   id: number
@@ -131,7 +131,7 @@ const useUserStore = createPiniaEntityStore<User>('users', {
 ### Plugin options
 
 ```typescript
-import { entityStorePlugin } from '@entity-store/pinia-adapter'
+import { entityStorePlugin } from '@entity-store/pinia'
 
 // The plugin accepts options (currently no options required)
 pinia.use(entityStorePlugin())
@@ -140,7 +140,7 @@ pinia.use(entityStorePlugin())
 ### Helper function
 
 ```typescript
-import { installEntityStorePlugin } from '@entity-store/pinia-adapter'
+import { installEntityStorePlugin } from '@entity-store/pinia'
 
 // Alternative to pinia.use(entityStorePlugin())
 installEntityStorePlugin(pinia)
@@ -189,7 +189,7 @@ installEntityStorePlugin(pinia)
 import type {
   EntityStorePlugin,
   EntityPluginOptions,
-} from '@entity-store/pinia-adapter'
+} from '@entity-store/pinia'
 ```
 
 ## 🔍 Troubleshooting

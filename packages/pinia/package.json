@@ -1,5 +1,5 @@
 {
-  "name": "@entity-store/pinia-adapter",
+  "name": "@entity-store/pinia",
   "version": "1.0.0",
   "description": "Pinia adapter for entity-store",
   "type": "module",
@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@entity-store/core": "workspace:*",
-    "@entity-store/types": "workspace:*",
     "vue": "catalog:"
   },
   "devDependencies": {
