@@ -17,8 +17,7 @@ export function updateOne<T extends WithId>(state: State<T>) {
         // @ts-expect-error index write
         proxy[key] = payload[key]
       })
-    }
-    else {
+    } else {
       createOneFn(payload)
     }
   }

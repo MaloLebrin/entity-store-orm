@@ -8,7 +8,11 @@ import type { Id, WithId } from '../types/WithId.js'
 export function deleteOne<T extends WithId>(state: State<T>) {
   return (id: Id) => {
     delete state.entities.byId[id]
-    state.entities.allIds = state.entities.allIds.filter(entityId => entityId !== id)
-    state.entities.active = state.entities.active.filter(entityId => entityId !== id)
+    state.entities.allIds = state.entities.allIds.filter(
+      (entityId) => entityId !== id,
+    )
+    state.entities.active = state.entities.active.filter(
+      (entityId) => entityId !== id,
+    )
   }
 }

@@ -27,7 +27,9 @@ import { isAlreadyInStore } from './isAlreadyInStore.js'
 import { isDirty } from './isDirty.js'
 import { search } from './search.js'
 
-export default function createGetters<T extends WithId>(currentState: State<T>) {
+export default function createGetters<T extends WithId>(
+  currentState: State<T>,
+) {
   return {
     // Functions that return values directly
     getAll: () => getAll(currentState),
@@ -39,14 +41,17 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
     getActive: () => getActive(currentState),
     getFirstActive: () => getFirstActive(currentState),
     getCurrentById: () => getCurrentById(currentState),
-    
+
     // Functions that return functions taking parameters (curried pattern)
     findOneById: () => findOneById(currentState),
     findManyById: () => findManyById(currentState),
     getMissingIds: () => getMissingIds(currentState),
     getMissingEntities: () => getMissingEntities(currentState),
     getWhere: () => getWhere(currentState),
-    getWhereArray: (filter: (arg: EntityWithMeta<T>) => boolean | null, options?: SortOptions<T>) => getWhereArray(currentState)(filter, options),
+    getWhereArray: (
+      filter: (arg: EntityWithMeta<T>) => boolean | null,
+      options?: SortOptions<T>,
+    ) => getWhereArray(currentState)(filter, options),
     getFirstWhere: () => getFirstWhere(currentState),
     getOne: (id: Id) => getOne(currentState)(id),
     getMany: (ids: Id[]) => getMany(currentState)(ids),
@@ -59,12 +64,26 @@ export default function createGetters<T extends WithId>(currentState: State<T>) 
 
 // Export individual functions for testing
 export {
-    findManyById, findOneById, getActive, getAll,
-    getAllArray,
-    getAllIds, getCurrent, getCurrentById, getFirstActive, getFirstWhere,
-    getIsEmpty,
-    getIsNotEmpty, getMany, getMissingEntities, getMissingIds, getOne, getWhere,
-    getWhereArray, isAlreadyActive, isAlreadyInStore, isDirty,
-    search
+  findManyById,
+  findOneById,
+  getActive,
+  getAll,
+  getAllArray,
+  getAllIds,
+  getCurrent,
+  getCurrentById,
+  getFirstActive,
+  getFirstWhere,
+  getIsEmpty,
+  getIsNotEmpty,
+  getMany,
+  getMissingEntities,
+  getMissingIds,
+  getOne,
+  getWhere,
+  getWhereArray,
+  isAlreadyActive,
+  isAlreadyInStore,
+  isDirty,
+  search,
 }
-

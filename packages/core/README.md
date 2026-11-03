@@ -44,18 +44,18 @@ import { createActions } from '@entity-store/core'
 const actions = createActions<User>(state)
 
 // Available actions:
-actions.createOne(user)           // Create an entity
-actions.createMany(users)         // Create multiple entities
-actions.updateOne(id, user)       // Update an entity
-actions.updateMany(users)         // Update multiple entities
-actions.deleteOne(id)             // Delete an entity
-actions.deleteMany(ids)           // Delete multiple entities
-actions.setCurrent(user)          // Set current entity
-actions.setCurrentById(id)        // Set current entity by ID
-actions.setActive(id)             // Mark entity as active
-actions.resetActive()             // Reset active entities
-actions.setIsDirty(id)            // Mark entity as modified
-actions.setIsNotDirty(id)         // Mark entity as unmodified
+actions.createOne(user) // Create an entity
+actions.createMany(users) // Create multiple entities
+actions.updateOne(id, user) // Update an entity
+actions.updateMany(users) // Update multiple entities
+actions.deleteOne(id) // Delete an entity
+actions.deleteMany(ids) // Delete multiple entities
+actions.setCurrent(user) // Set current entity
+actions.setCurrentById(id) // Set current entity by ID
+actions.setActive(id) // Mark entity as active
+actions.resetActive() // Reset active entities
+actions.setIsDirty(id) // Mark entity as modified
+actions.setIsNotDirty(id) // Mark entity as unmodified
 actions.updateField(field, value, id) // Update a specific field
 ```
 
@@ -104,21 +104,21 @@ interface SortOptions<T> {
 
 ```typescript
 // Sort by field in ascending order
-const sortedByName = getters.getWhereArray()(
-  user => user.age >= 25, 
-  { orderBy: 'name', sortBy: 'asc' }
-)
+const sortedByName = getters.getWhereArray()((user) => user.age >= 25, {
+  orderBy: 'name',
+  sortBy: 'asc',
+})
 
 // Sort by field in descending order
-const sortedByAge = getters.getWhereArray()(
-  user => user.age >= 25, 
-  { orderBy: 'age', sortBy: 'desc' }
-)
+const sortedByAge = getters.getWhereArray()((user) => user.age >= 25, {
+  orderBy: 'age',
+  sortBy: 'desc',
+})
 
 // Default ascending order (sortBy is optional)
 const sortedByAgeDefault = getters.getWhereArray()(
-  user => user.age >= 25, 
-  { orderBy: 'age' } // defaults to 'asc'
+  (user) => user.age >= 25,
+  { orderBy: 'age' }, // defaults to 'asc'
 )
 ```
 
@@ -126,32 +126,26 @@ const sortedByAgeDefault = getters.getWhereArray()(
 
 ```typescript
 // Sort by computed value
-const sortedByEmailLength = getters.getWhereArray()(
-  user => user.age >= 25, 
-  { 
-    orderBy: (user) => user.email.length, 
-    sortBy: 'asc' 
-  }
-)
+const sortedByEmailLength = getters.getWhereArray()((user) => user.age >= 25, {
+  orderBy: (user) => user.email.length,
+  sortBy: 'asc',
+})
 
 // Sort by multiple criteria
-const sortedByComplex = getters.getWhereArray()(
-  user => user.age >= 25, 
-  { 
-    orderBy: (user) => `${user.age}-${user.name}`, 
-    sortBy: 'desc' 
-  }
-)
+const sortedByComplex = getters.getWhereArray()((user) => user.age >= 25, {
+  orderBy: (user) => `${user.age}-${user.name}`,
+  sortBy: 'desc',
+})
 ```
 
 #### Date Sorting
 
 ```typescript
 // Sort by date fields
-const sortedByDate = getters.getWhereArray()(
-  user => user.age >= 25, 
-  { orderBy: 'createdAt', sortBy: 'asc' }
-)
+const sortedByDate = getters.getWhereArray()((user) => user.age >= 25, {
+  orderBy: 'createdAt',
+  sortBy: 'asc',
+})
 ```
 
 #### Important Notes
@@ -160,7 +154,7 @@ const sortedByDate = getters.getWhereArray()(
 - **`getWhere`**: Ignores sorting options since dictionaries don't maintain order
 - **Performance**: Sorting is applied after filtering, so it only sorts the filtered results
 - **Type Safety**: Full TypeScript support with proper type inference
-```
+````
 
 ## Types
 
@@ -175,7 +169,7 @@ interface User extends WithId {
 // - id: Id (string | number)
 // - $isDirty: boolean (for modification tracking)
 // - $meta: EntityMeta<T> (automatic metadata tracking)
-```
+````
 
 ## Complete Example
 
@@ -207,13 +201,13 @@ const isActive = getters.isAlreadyActive(1)
 
 // Advanced filtering with sorting
 const youngUsers = getters.getWhereArray()(
-  user => user.age < 30, // filter young users
-  { orderBy: 'name', sortBy: 'asc' } // sort by name
+  (user) => user.age < 30, // filter young users
+  { orderBy: 'name', sortBy: 'asc' }, // sort by name
 )
 
 const sortedByAge = getters.getWhereArray()(
-  user => user.age >= 25, // filter adults
-  { orderBy: 'age', sortBy: 'desc' } // sort by age descending
+  (user) => user.age >= 25, // filter adults
+  { orderBy: 'age', sortBy: 'desc' }, // sort by age descending
 )
 ```
 
@@ -241,20 +235,20 @@ const actions = createActions<User>(state)
 actions.createOne({ id: 1, name: 'John', email: 'john@example.com' })
 
 const user = state.entities.byId[1]
-console.log(user.$isDirty)           // false (initially clean)
-console.log(user.$meta.createdAt)    // timestamp of creation
-console.log(user.$meta.updatedAt)    // null (not modified yet)
+console.log(user.$isDirty) // false (initially clean)
+console.log(user.$meta.createdAt) // timestamp of creation
+console.log(user.$meta.updatedAt) // null (not modified yet)
 console.log(user.$meta.changedFields) // Set() (empty initially)
 
 // Modify the entity
 user.name = 'Johnny'
-console.log(user.$isDirty)           // true (automatically set)
-console.log(user.$meta.updatedAt)    // timestamp of modification
+console.log(user.$isDirty) // true (automatically set)
+console.log(user.$meta.updatedAt) // timestamp of modification
 console.log(user.$meta.changedFields) // Set(['name'])
 
 // Reset dirty state
 actions.setIsNotDirty(1)
-console.log(user.$isDirty)           // false
+console.log(user.$isDirty) // false
 console.log(user.$meta.changedFields) // Set() (cleared)
 ```
 

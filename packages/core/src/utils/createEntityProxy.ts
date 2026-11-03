@@ -1,7 +1,9 @@
 import type { EntityWithMeta } from '../types/EntityMeta.js'
 import type { WithId } from '../types/WithId.js'
 
-export function createEntityProxy<T extends WithId>(entity: T): EntityWithMeta<T> {
+export function createEntityProxy<T extends WithId>(
+  entity: T,
+): EntityWithMeta<T> {
   const now = Date.now()
   const target = {
     ...entity,
@@ -21,7 +23,7 @@ export function createEntityProxy<T extends WithId>(entity: T): EntityWithMeta<T
         return true
       }
 
-      if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+      if (Object.hasOwn(obj, prop)) {
         const key = prop as keyof T
         const previous = obj[key]
         obj[key] = value
@@ -40,6 +42,3 @@ export function createEntityProxy<T extends WithId>(entity: T): EntityWithMeta<T
     },
   })
 }
-
-
-

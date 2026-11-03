@@ -10,6 +10,3 @@ export type EntityWithMeta<T extends WithId> = T & {
   $isDirty: boolean
   $meta: EntityMeta<T>
 }
-
-
-

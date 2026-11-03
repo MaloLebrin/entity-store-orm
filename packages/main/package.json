@@ -29,9 +29,10 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "pnpm -r dev",
-    "test": "pnpm -r test",
+    "test": "vitest run --passWithNoTests",
     "clean": "pnpm -r clean",
-    "prepublishOnly": "pnpm clean && pnpm build"
+    "prepublishOnly": "pnpm clean && pnpm build",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "orm",

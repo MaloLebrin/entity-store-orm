@@ -12,13 +12,17 @@ export function getFirstWhere<T extends WithId>(currentState: State<T>) {
     if (typeof filter !== 'function')
       return Object.values(currentState.entities.byId)[0]
 
-    return Object.values(currentState.entities.allIds.reduce((acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
-      const item = currentState.entities.byId[id]
-      if (!item || !filter(item))
-        return acc
+    return Object.values(
+      currentState.entities.allIds.reduce(
+        (acc: Record<Id, EntityWithMeta<T>>, id: Id) => {
+          const item = currentState.entities.byId[id]
+          if (!item || !filter(item)) return acc
 
-      acc[id] = item
-      return acc
-    }, {} as Record<Id, EntityWithMeta<T>>))[0]
+          acc[id] = item
+          return acc
+        },
+        {} as Record<Id, EntityWithMeta<T>>,
+      ),
+    )[0]
   }
 }

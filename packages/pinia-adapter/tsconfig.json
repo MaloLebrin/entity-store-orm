@@ -1,18 +1,6 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/example/**/*",
-    "**/example.ts"
-  ]
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/example.ts"],
+  "//": "Les tests et exemples sont exclus du type-check le temps de leur r\u00e9\u00e9criture (\u00e9tapes 2 et 3 du plan)."
 }

@@ -27,14 +27,14 @@ interface Getters {
 // Constants for getters that return direct values
 const VALUE_GETTERS = [
   'getAllArray',
-  'getAllIds', 
+  'getAllIds',
   'getAll',
   'getActive',
   'getFirstActive',
   'getIsEmpty',
   'getIsNotEmpty',
   'getCurrent',
-  'getCurrentById'
+  'getCurrentById',
 ] as const
 
 // Constants for getters that take parameters directly
@@ -42,10 +42,10 @@ const PARAMETER_GETTERS = [
   'getWhereArray',
   'getOne',
   'getMany',
-  'search'
+  'search',
 ] as const
 
-type ValueGetterKey = typeof VALUE_GETTERS[number]
+type ValueGetterKey = (typeof VALUE_GETTERS)[number]
 
 /**
  * Creates a copied state from the current store state
@@ -69,12 +69,12 @@ function createValueGetter(store: EntityStore, key: string, baseState: any) {
     const currentGetters = createGetters(currentState)
     const currentGetter = (currentGetters as any)[key]
     const value = currentGetter(currentState)
-    
+
     // Convert IDs to strings for getAllIds
     if (key === 'getAllIds') {
       return value.map((id: any) => String(id))
     }
-    
+
     return value
   }
 }
@@ -82,7 +82,11 @@ function createValueGetter(store: EntityStore, key: string, baseState: any) {
 /**
  * Creates a getter that takes parameters directly
  */
-function createParameterGetter(store: EntityStore, key: string, baseState: any) {
+function createParameterGetter(
+  store: EntityStore,
+  key: string,
+  baseState: any,
+) {
   return (...args: any[]) => {
     const currentState = createCurrentState(store)
     const currentGetters = createGetters(currentState)
@@ -94,7 +98,11 @@ function createParameterGetter(store: EntityStore, key: string, baseState: any) 
 /**
  * Adds actions to the store
  */
-function addActionsToStore(store: EntityStore, actions: Actions, baseState: any) {
+function addActionsToStore(
+  store: EntityStore,
+  actions: Actions,
+  baseState: any,
+) {
   // Create an actions object bound to the store
   const boundActions: Actions = {}
   for (const key in actions) {
@@ -103,18 +111,18 @@ function addActionsToStore(store: EntityStore, actions: Actions, baseState: any)
       boundActions[key] = action
     }
   }
-  
+
   // Bind the this context to the store for all actions
-  Object.keys(boundActions).forEach(key => {
+  Object.keys(boundActions).forEach((key) => {
     const action = boundActions[key]
     if (typeof action === 'function') {
       boundActions[key] = action.bind(boundActions)
     }
   })
-  
+
   // Add all prefixed actions to the store
   for (const key in boundActions) {
-    if (!store.$state.hasOwnProperty(`$${key}`)) {
+    if (!Object.hasOwn(store.$state, `$${key}`)) {
       store[`$${key}`] = boundActions[key]
     }
   }
@@ -123,14 +131,18 @@ function addActionsToStore(store: EntityStore, actions: Actions, baseState: any)
 /**
  * Adds getters to the store
  */
-function addGettersToStore(store: EntityStore, getters: Getters, baseState: any) {
+function addGettersToStore(
+  store: EntityStore,
+  getters: Getters,
+  baseState: any,
+) {
   for (const key in getters) {
-    if (!store.$state.hasOwnProperty(`$${key}`)) {
+    if (!Object.hasOwn(store.$state, `$${key}`)) {
       const getter = getters[key]
-      
+
       if (typeof getter === 'function') {
         const result = getter(baseState)
-        
+
         // Check if it's a getter that returns a direct value
         if (VALUE_GETTERS.includes(key as ValueGetterKey)) {
           store[`$${key}`] = createValueGetter(store, key, baseState)
@@ -151,16 +163,20 @@ function addGettersToStore(store: EntityStore, getters: Getters, baseState: any)
 /**
  * Adds custom properties for devtools
  */
-function addCustomProperties(store: EntityStore, actions: Actions, getters: Getters) {
+function addCustomProperties(
+  store: EntityStore,
+  actions: Actions,
+  getters: Getters,
+) {
   if (process.env.NODE_ENV === 'development') {
     store._customProperties?.add('$entities')
-    
+
     // Add all actions and getters to custom properties
-    Object.keys(actions).forEach(key => {
+    Object.keys(actions).forEach((key) => {
       store._customProperties?.add(`$${key}`)
     })
-    
-    Object.keys(getters).forEach(key => {
+
+    Object.keys(getters).forEach((key) => {
       store._customProperties?.add(`$${key}`)
     })
   }
@@ -172,34 +188,33 @@ function addCustomProperties(store: EntityStore, actions: Actions, getters: Gett
  */
 export function entityStorePlugin(ctx: PiniaPluginContext) {
   const store = ctx.store
-  
+
   // Create entity state using the core
   const baseState = createState<WithId>()
-  
+
   // Create actions and getters with the state
   const actions = createActions(baseState)
   const getters = createGetters(baseState)
-  
+
   // To properly handle SSR, we need to add state in two places
-  if (!store.$state.hasOwnProperty('$entities')) {
+  if (!Object.hasOwn(store.$state, '$entities')) {
     // Create a reactive ref for entity state
     const entities = ref(baseState.entities)
     // Add to $state for SSR serialization
     store.$state.$entities = entities
   }
-  
   // Transfer the state ref to the store for direct access
   ;(store as any).$entities = toRef(store.$state, '$entities')
-  
+
   // Add actions to the store
   addActionsToStore(store as unknown as EntityStore, actions, baseState)
-  
+
   // Add getters to the store
   addGettersToStore(store as unknown as EntityStore, getters, baseState)
-  
+
   // Add custom properties for devtools
   addCustomProperties(store as unknown as EntityStore, actions, getters)
-  
+
   // Return an empty object as we modify the store directly
   // This allows devtools to track properties
   return {}
@@ -211,4 +226,3 @@ export function entityStorePlugin(ctx: PiniaPluginContext) {
 export function installEntityStorePlugin(pinia: any) {
   pinia.use(entityStorePlugin)
 }
-

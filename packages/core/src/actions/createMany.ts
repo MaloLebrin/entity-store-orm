@@ -9,6 +9,6 @@ import { createOne } from './createOne.js'
 export function createMany<T extends WithId>(state: State<T>) {
   const createOneFn = createOne(state)
   return (payload: T[]): void => {
-    payload.forEach(entity => createOneFn(entity))
+    for (const entity of payload) createOneFn(entity)
   }
 }

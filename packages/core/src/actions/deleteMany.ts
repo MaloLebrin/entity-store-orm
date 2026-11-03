@@ -9,6 +9,6 @@ import { deleteOne } from './deleteOne.js'
 export function deleteMany<T extends WithId>(state: State<T>) {
   const deleteOneFn = deleteOne(state)
   return (ids: Id[]) => {
-    ids.forEach(id => deleteOneFn(id))
+    for (const id of ids) deleteOneFn(id)
   }
 }
