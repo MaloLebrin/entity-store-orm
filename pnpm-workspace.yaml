@@ -13,3 +13,7 @@ catalog:
   "@types/node": "^24.3.0"
   "pinia": "^4.1.0"
   "vue": "^3.5.44"
+  "zustand": "^5.0.16"
+  "@reduxjs/toolkit": "^2.14.0"
+  "jotai": "^3.0.1"
+  "valtio": "^2.3.2"
