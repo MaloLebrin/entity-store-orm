@@ -34,5 +34,6 @@ Adapters are tiny: they give `createEntityApi` a `get` and a `set`. You can do t
 ## Next
 
 - Understand the [concepts](./concepts) (normalized state, immutability, memoization).
+- Learn [filtering](./filters) (predicates and object filters) and [optimistic updates](./optimistic-updates).
 - Follow the guide for your adapter: [Pinia](./adapters/pinia), [Zustand](./adapters/zustand), [Redux Toolkit](./adapters/redux), [Jotai](./adapters/jotai), [Valtio](./adapters/valtio).
 - Browse the generated [API reference](/api/index.html){target="_self"}.

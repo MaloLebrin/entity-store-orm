@@ -28,6 +28,8 @@ export default defineConfig({
         items: [
           { text: 'Quick start', link: '/guide/quick-start' },
           { text: 'Concepts', link: '/guide/concepts' },
+          { text: 'Filtering', link: '/guide/filters' },
+          { text: 'Optimistic updates', link: '/guide/optimistic-updates' },
         ],
       },
       {

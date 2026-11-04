@@ -35,3 +35,4 @@ Reading `snap.entities` directly (e.g. `snap.entities.allIds`) also subscribes.
 - Call **actions on the proxy** (`todos.updateField(...)`), never on the snapshot (it is read-only), and read through `useSnapshot`.
 - `snapshotGetters(snap, { memoize: false })` disables memoization.
 - For SSR create the store per request instead of sharing a module-level one.
+- Optimistic updates: pass the proxy to `withOptimisticUpdate(proxy, id, patch, request)`; read `isPending` through `snapshotGetters(snap)`. See [Optimistic updates](../optimistic-updates).

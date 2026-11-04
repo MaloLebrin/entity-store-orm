@@ -17,3 +17,4 @@ pnpm add @entity-store/zustand zustand
 - Seeding: `createEntityStore<User>(initialEntities)`. For SSR Zustand renders the _initial_ state, so seed at creation and create one store per request.
 - `createEntityStore<User>(undefined, { memoize: false })` disables memoization.
 - Outside React: `store.getState().createOne(...)`, `store.subscribe(...)`.
+- Optimistic updates: `withOptimisticUpdate(store.getState(), id, patch, request)`; read `isPending(id)` in a selector. See [Optimistic updates](../optimistic-updates).

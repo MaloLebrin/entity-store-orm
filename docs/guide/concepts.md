@@ -18,6 +18,7 @@ A collection is stored as one plain, serializable object, whatever the adapter:
 
 - Entities are looked up by id in `byId`; their order lives in `allIds`.
 - Each stored entity carries `$isDirty` and `$meta` (`changedFields`, `createdAt`, `updatedAt`). `updateOne`, `updateMany` and `updateField` mark an entity dirty and record the changed fields; `setIsNotDirty` resets them. `$meta` holds plain numbers/arrays (no `Date` or `Set`), so Redux, devtools and persistence work out of the box.
+- `$meta.pending` is only present while [optimistic updates](./optimistic-updates) wait for an answer; it holds the data needed to undo them.
 - `setAll` replaces the whole collection (every entity clean), which is what you want after loading from an API. `active`, `current` and `currentById` survive only if they still point to an entity of the new list.
 
 ## Pure, immutable functions
@@ -38,7 +39,7 @@ Adapters only plug these functions into a container through `createEntityApi({ g
 | ---------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `getAllArray`    | the current `byId` + `allIds`                                       | `current`, `active` and `currentById` changes don't invalidate it                                                |
 | `getSortedArray` | `(byId, allIds, orderBy, sortBy)`                                   | up to 4 orderings per collection; use a field name or a stable function, an inline arrow is a new key every call |
-| `getWhereArray`  | `(byId, allIds, filter, orderBy, sortBy)`, one entry per collection | pass a stable `filter` reference to benefit                                                                      |
+| `getWhereArray` / `getWhere` / `getFirstWhere` | `(byId, allIds, filter, orderBy, sortBy)`, one entry per collection | a predicate is keyed by reference (pass a stable one); an object filter such as `{ role: 'admin' }` is keyed by value, so an inline literal hits (see [Filtering](./filters)) |
 | `getByField`     | a per-field index, built in O(n) on first use, O(1) afterwards      | misses return one shared empty array                                                                             |
 
 The consequence is that **results are shared**: two calls return the very same array. That makes them safe as `useEffect`/`computed`/selector dependencies, but you must treat them as read-only.

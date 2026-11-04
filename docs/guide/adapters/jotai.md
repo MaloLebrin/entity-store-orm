@@ -16,3 +16,4 @@ pnpm add @entity-store/jotai jotai
 - An **action atom is write-only**: use `useSetAtom(todos.actions.createOne)`, or `set(todos.actions.createOne, entity)` inside another atom's write function.
 - `todos.state` is the underlying atom; use it with a `Provider`/`createStore` for per-request state or testing.
 - `createEntityAtoms<T>({ memoize: false })` disables memoization.
+- Optimistic updates: the three actions are write-only atoms (`set(atoms.actions.optimisticUpdate, id, patch, txId)`); `getters.isPending` is a getter atom. See [Optimistic updates](../optimistic-updates).

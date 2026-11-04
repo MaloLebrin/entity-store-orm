@@ -15,3 +15,4 @@ pnpm add @entity-store/redux @reduxjs/toolkit react-redux
 - Action creators take a single payload: `todos.actions.updateField({ field, value, id })` and `todos.actions.updateOne({ id, payload })`; the others take the same argument as the core action (`createOne(entity)`, `deleteOne(id)`, ...).
 - `getSelectors(root => root.todos)` returns every getter as `(root, ...args) => value`. The array selectors are memoized on the slice state, so `useSelector` receives a stable reference until the collection changes.
 - `createEntitySlice<T>(name, { memoize: false })` disables memoization.
+- Optimistic updates: dispatch `optimisticUpdate({ id, patch, txId })`, then `commitOptimistic` / `rollbackOptimistic({ id, txId })`; `isPending` is a selector. See [Optimistic updates](../optimistic-updates).

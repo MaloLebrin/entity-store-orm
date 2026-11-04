@@ -37,3 +37,4 @@ const todos = useTodosWithExtras()
 - The state is replaced on every action and held in a `shallowRef`: Vue tracks the replacement, not deep writes. Getters called in a template, `computed` or render function are tracked automatically.
 - To add your own state, getters and actions, call the builder form `defineEntityStore<T>()('id', { extend })` (TypeScript can't infer the extension type when `T` is given explicitly). `extend` receives the base store and whatever it returns is merged in: refs become state, `computed`s getters, functions actions.
 - `{ memoize: false }` goes in the options of the builder form.
+- Optimistic updates: pass the store to `withOptimisticUpdate(store, id, patch, request)`. See [Optimistic updates](../optimistic-updates).
