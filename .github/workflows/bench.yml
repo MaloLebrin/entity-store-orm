@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packages/core/**'
-      - 'tests/bench/**'
-      - '.github/workflows/bench.yml'
+      - "packages/core/**"
+      - "tests/bench/**"
+      - ".github/workflows/bench.yml"
 
 jobs:
   bench:
