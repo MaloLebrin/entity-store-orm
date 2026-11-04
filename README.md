@@ -85,31 +85,33 @@ In `@entity-store/core`, every action and getter is also a named export (`import
 
 `pnpm bench` runs `tests/bench`, which compares the core with Redux Toolkit's `createEntityAdapter` (Immer-based) on 1k, 10k and 100k entities. Numbers below come from one run on a shared cloud container (Node 22, no pinned CPU): read them as orders of magnitude, not guarantees, and run `pnpm bench` on your own machine.
 
-| entities | operation                | core (ops/s) | RTK (ops/s) | core / RTK |
-| -------- | ------------------------ | ------------ | ----------- | ---------- |
-| 1,000    | create                   | 5,969        | 354         | 16.9x      |
-| 1,000    | update one               | 1,207,754    | 4,099       | 294.6x     |
-| 1,000    | delete one               | 7,252        | 3,448       | 2.1x       |
-| 1,000    | get one                  | 17,649,119   | 11,281,040  | 1.6x       |
-| 1,000    | get all (RTK recomputed) | 178,266      | 24,113      | 7.4x       |
-| 1,000    | get all (RTK cached)     | 178,266      | 13,593,289  | 0.01x      |
-| 10,000   | create                   | 505          | 27          | 18.4x      |
-| 10,000   | update one               | 232,820      | 334         | 697.8x     |
-| 10,000   | delete one               | 613          | 303         | 2.0x       |
-| 10,000   | get one                  | 16,163,218   | 11,647,575  | 1.4x       |
-| 10,000   | get all (RTK recomputed) | 17,612       | 2,133       | 8.3x       |
-| 10,000   | get all (RTK cached)     | 17,612       | 13,243,118  | 0.00x      |
-| 100,000  | create                   | 21           | 2.2         | 9.6x       |
-| 100,000  | update one               | 2,171        | 25.7        | 84.5x      |
-| 100,000  | delete one               | 52           | 26          | 2.0x       |
-| 100,000  | get one                  | 16,912,108   | 12,315,182  | 1.4x       |
-| 100,000  | get all (RTK recomputed) | 495          | 200         | 2.5x       |
-| 100,000  | get all (RTK cached)     | 495          | 13,382,858  | 0.00x      |
+| entities | operation                                | core (ops/s) | RTK (ops/s) | core / RTK |
+| -------- | ---------------------------------------- | ------------ | ----------- | ---------- |
+| ---      | ---                                      | ---          | ---         | ---        |
+| 1,000    | create                                   | 6,300        | 335         | 18.80x     |
+| 1,000    | update one                               | 1,232,016    | 4,793       | 257.03x    |
+| 1,000    | delete one                               | 8,267        | 3,522       | 2.35x      |
+| 1,000    | get one                                  | 17,578,289   | 12,538,139  | 1.40x      |
+| 1,000    | get all (not memoized vs RTK recomputed) | 175,002      | 25,275      | 6.92x      |
+| 1,000    | get all (memoized vs RTK cached)         | 15,205,162   | 13,605,876  | 1.12x      |
+| 10,000   | create                                   | 509          | 29.4        | 17.32x     |
+| 10,000   | update one                               | 241,491      | 341         | 708.30x    |
+| 10,000   | delete one                               | 615          | 304         | 2.02x      |
+| 10,000   | get one                                  | 15,818,505   | 11,205,494  | 1.41x      |
+| 10,000   | get all (not memoized vs RTK recomputed) | 17,380       | 2,192       | 7.93x      |
+| 10,000   | get all (memoized vs RTK cached)         | 15,282,147   | 12,661,530  | 1.21x      |
+| 100,000  | create                                   | 20.5         | 2.1         | 9.64x      |
+| 100,000  | update one                               | 1,629        | 24.6        | 66.17x     |
+| 100,000  | delete one                               | 50.2         | 24.4        | 2.06x      |
+| 100,000  | get one                                  | 16,760,084   | 12,324,667  | 1.36x      |
+| 100,000  | get all (not memoized vs RTK recomputed) | 378          | 140         | 2.70x      |
+| 100,000  | get all (memoized vs RTK cached)         | 14,924,842   | 13,902,988  | 1.07x      |
 
 What to take from it:
 
 - Writes copy the touched maps (`byId`, `allIds`), so they are O(n) in the collection size, but cheaper than Immer's proxy and freezing work.
-- `getAll*` getters are **not memoized**: they rebuild the array on every call. RTK's `selectAll` is memoized, so on an unchanged state it is a cache hit. In React, select a stable value (`entities`) and derive with `useMemo`, or memoize the derived array yourself.
+- `getAllArray` is **memoized** (and so is `getWhereArray` without a filter): while `byId` and `allIds` keep the same references you get the very same array back, so it is safe as a React/Vue dependency or a Zustand/Redux selector. Changing `current` or `active` does not invalidate it. The array is shared: treat it as read-only and copy before sorting.
+- To rebuild the array on every call, pass `{ memoize: false }`: `getAllArray(state, { memoize: false })`, `createEntityStore({ memoize: false })`, `createEntityAtoms({ memoize: false })`, `defineEntityStore<User>()('users', { memoize: false })`, `createEntitySlice('users', { memoize: false })`.
 - Beyond tens of thousands of entities, prefer paging or `createMany` batches over single updates in a loop.
 
 ## Development

@@ -52,7 +52,10 @@ for (const n of SIZES) {
     .add('delete (rtk)', () => adapter.removeOne(rtkState, mid))
     .add('getOne (core)', () => getOne(coreState, mid))
     .add('getOne (rtk)', () => selectors.selectById(rtkState, mid))
-    .add('getAll (core)', () => getAllArray(coreState))
+    .add('getAll (core, memoized)', () => getAllArray(coreState))
+    .add('getAll (core, not memoized)', () =>
+      getAllArray(coreState, { memoize: false }),
+    )
     // RTK's selectAll is memoized on state.ids / state.entities: this is a cache hit.
     .add('getAll (rtk, cached)', () => selectors.selectAll(rtkState))
     // New `ids` reference: forces the selector to recompute (includes the O(n) copy).
@@ -68,8 +71,16 @@ for (const n of SIZES) {
     ['update one', 'update (core)', 'update (rtk)'],
     ['delete one', 'delete (core)', 'delete (rtk)'],
     ['get one', 'getOne (core)', 'getOne (rtk)'],
-    ['get all (RTK recomputed)', 'getAll (core)', 'getAll (rtk, recomputed)'],
-    ['get all (RTK cached)', 'getAll (core)', 'getAll (rtk, cached)'],
+    [
+      'get all (not memoized vs RTK recomputed)',
+      'getAll (core, not memoized)',
+      'getAll (rtk, recomputed)',
+    ],
+    [
+      'get all (memoized vs RTK cached)',
+      'getAll (core, memoized)',
+      'getAll (rtk, cached)',
+    ],
   ]
   for (const [label, core, rtk] of pairs) {
     const c = ops(core)
