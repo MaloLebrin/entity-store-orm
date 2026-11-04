@@ -109,7 +109,7 @@ In `@entity-store/core`, every action and getter is also a named export (`import
 What to take from it:
 
 - Writes copy the touched maps (`byId`, `allIds`), so they are O(n) in the collection size, but cheaper than Immer's proxy and freezing work.
-- `getAllArray` is **memoized** (and so is `getWhereArray` without a filter): while `byId` and `allIds` keep the same references you get the very same array back, so it is safe as a React/Vue dependency or a Zustand/Redux selector. Changing `current` or `active` does not invalidate it. The array is shared: treat it as read-only and copy before sorting.
+- `getAllArray` is **memoized** (and so is `getWhereArray` without a filter): while `byId` and `allIds` keep the same references you get the very same array back, so it is safe as a React/Vue dependency or a Zustand/Redux selector. Changing `current` or `active` does not invalidate it. The array is shared: treat it as read-only and copy before sorting (`[...getAllArray(s)].sort(...)`). Outside production it is frozen, so an in-place mutation throws instead of corrupting the cache.
 - To rebuild the array on every call, pass `{ memoize: false }`: `getAllArray(state, { memoize: false })`, `createEntityStore({ memoize: false })`, `createEntityAtoms({ memoize: false })`, `defineEntityStore<User>()('users', { memoize: false })`, `createEntitySlice('users', { memoize: false })`.
 - Beyond tens of thousands of entities, prefer paging or `createMany` batches over single updates in a loop.
 
