@@ -1,0 +1,24 @@
+{
+  "name": "@entity-store/test-nuxt",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "test": "vitest run",
+    "type-check": "nuxt prepare && vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@entity-store/core": "workspace:*",
+    "@entity-store/pinia": "workspace:*",
+    "@pinia/nuxt": "^1.0.3",
+    "nuxt": "^4.6.4",
+    "pinia": "catalog:",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue-tsc": "^3.2.0"
+  }
+}
