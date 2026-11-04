@@ -86,6 +86,22 @@ getByField(state, 'authorId', 7) // first call builds an index (O(n)), then O(1)
 - `getWhereArray(state, filter)` also remembers its last result when `filter` (and `orderBy`) are the same references as the previous call; an inline arrow function does not hit, which is no slower than before.
 - All results are shared and read-only (frozen outside production). `{ memoize: false }` / `uncachedGetters` return fresh arrays.
 
+### Object filters (memoized by value)
+
+`getWhereArray`, `getWhere` and `getFirstWhere` accept either a predicate or a plain object. The object form checks strict equality (SameValueZero, like `getByField`) on every listed field, combined with AND, and is typed on the entity:
+
+```ts
+getWhereArray(state, { role: 'admin', age: 30 })
+getWhereArray(state, { role: 'admin' }, { orderBy: 'age', sortBy: 'desc' })
+getFirstWhere(state, { email: 'ada@example.com' }) // O(1) once the index is built
+getWhere(state, { role: 'admin' }) // dictionary, memoized too
+```
+
+- The cache key is the filter's **content**, not its reference: an inline literal hits the cache on every call, and `{ a, b }` equals `{ b, a }`. A predicate is keyed by reference, so an inline arrow still misses. `pnpm bench` prints an "Inline filters" table comparing the two on an unchanged collection.
+- The first field goes through the `getByField` index; a single-field filter without `orderBy` returns the index bucket itself. Other fields filter that bucket. Up to 8 distinct filters are remembered per collection.
+- Values are compared by `SameValueZero`, so object-valued fields match by reference only. An empty object `{}` matches everything. Predicates keep working unchanged.
+- Same contract as the other memoized getters: shared read-only results, frozen outside production, fresh results with `{ memoize: false }` / `uncachedGetters`.
+
 ## Dirty tracking
 
 Updating an entity (`updateOne`, `updateMany`, `updateField`) marks it dirty, records the changed fields and sets `$meta.updatedAt`. `setIsNotDirty(id)` clears that. Setting a field to the value it already has is a no-op.

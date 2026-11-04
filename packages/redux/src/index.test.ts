@@ -106,3 +106,19 @@ describe('redux setAll / getSortedArray / getByField', () => {
     expect(select.getByField(root, 'name', 'Ada').map((u) => u.id)).toEqual([1])
   })
 })
+
+describe('redux object filters', () => {
+  test('selectors accept an object filter, memoized by value', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createMany([ada, bob, { id: 3, name: 'Cy', age: 25 }]))
+    const root = store.getState()
+    expect(select.getWhereArray(root, { age: 25 }).map((u) => u.id)).toEqual([
+      2, 3,
+    ])
+    expect(select.getWhereArray(root, { age: 25 })).toBe(
+      select.getWhereArray(root, { age: 25 }),
+    )
+    expect(select.getFirstWhere(root, { name: 'Cy', age: 25 })?.id).toBe(3)
+    expect(Object.keys(select.getWhere(root, { age: 36 }))).toEqual(['1'])
+  })
+})

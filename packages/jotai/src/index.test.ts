@@ -101,3 +101,24 @@ describe('jotai setAll / getSortedArray / getByField', () => {
     ).toEqual([1])
   })
 })
+
+describe('jotai object filters', () => {
+  test('getter atoms accept an object filter, memoized by value', () => {
+    const users = createEntityAtoms<User>()
+    const store = createStore()
+    store.set(users.actions.createMany, [
+      ada,
+      bob,
+      { id: 3, name: 'Cy', age: 25 },
+    ])
+    const where = store.get(users.getters.getWhereArray)
+    expect(where({ age: 25 }).map((u) => u.id)).toEqual([2, 3])
+    expect(where({ age: 25 })).toBe(where({ age: 25 }))
+    expect(
+      store.get(users.getters.getFirstWhere)({ name: 'Cy', age: 25 })?.id,
+    ).toBe(3)
+    expect(Object.keys(store.get(users.getters.getWhere)({ age: 36 }))).toEqual(
+      ['1'],
+    )
+  })
+})
