@@ -1,0 +1,31 @@
+{
+  "name": "@entity-store/test-bundle",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@entity-store/core": "workspace:*",
+    "@entity-store/jotai": "workspace:*",
+    "@entity-store/pinia": "workspace:*",
+    "@entity-store/redux": "workspace:*",
+    "@entity-store/valtio": "workspace:*",
+    "@entity-store/zustand": "workspace:*",
+    "@reduxjs/toolkit": "^2.14.0",
+    "jotai": "catalog:",
+    "pinia": "catalog:",
+    "valtio": "catalog:",
+    "vue": "catalog:",
+    "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "esbuild": "^0.28.2",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "webpack": "^5.112.2"
+  }
+}
