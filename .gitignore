@@ -131,3 +131,8 @@ Thumbs.db
 .nuxt/
 .output/
 .nitro/
+
+# Documentation site
+docs/public/api/
+docs/.vitepress/dist/
+docs/.vitepress/cache/

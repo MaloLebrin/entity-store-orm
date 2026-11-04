@@ -18,7 +18,11 @@
     "release": "pnpm build && changeset publish",
     "check:package": "pnpm -r check:package",
     "test:consumer": "bash tests/consumer/run.sh",
-    "bench": "pnpm --filter @entity-store/test-bench bench"
+    "bench": "pnpm --filter @entity-store/test-bench bench",
+    "docs:api": "typedoc",
+    "docs:dev": "vitepress dev docs",
+    "docs:site": "vitepress build docs",
+    "docs": "pnpm build && pnpm docs:api && pnpm docs:site"
   },
   "keywords": [
     "orm",
@@ -43,7 +47,9 @@
     "pinia": "catalog:",
     "publint": "^0.3.25",
     "tsup": "^9.0.0",
+    "typedoc": "^0.28.20",
     "typescript": "catalog:",
+    "vitepress": "^1.6.4",
     "vitest": "catalog:"
   },
   "volta": {

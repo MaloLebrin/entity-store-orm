@@ -1,0 +1,32 @@
+{
+  "name": "@entity-store/docs-examples",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Code samples embedded in the documentation site, type-checked in CI",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@entity-store/core": "workspace:*",
+    "@entity-store/jotai": "workspace:*",
+    "@entity-store/pinia": "workspace:*",
+    "@entity-store/redux": "workspace:*",
+    "@entity-store/valtio": "workspace:*",
+    "@entity-store/zustand": "workspace:*",
+    "@reduxjs/toolkit": "^2.14.0",
+    "jotai": "catalog:",
+    "pinia": "catalog:",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-redux": "^9.3.1",
+    "valtio": "catalog:",
+    "vue": "catalog:",
+    "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "catalog:"
+  }
+}

@@ -14,6 +14,7 @@ export interface EntityMeta<T extends WithId> {
   updatedAt: number | null
 }
 
+/** A stored entity: your fields plus `$isDirty` and `$meta`. */
 export type EntityWithMeta<T extends WithId> = T & {
   $isDirty: boolean
   $meta: EntityMeta<T>
