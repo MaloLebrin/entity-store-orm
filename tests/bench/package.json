@@ -1,0 +1,19 @@
+{
+  "name": "@entity-store/test-bench",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node --experimental-strip-types src/run.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@entity-store/core": "workspace:*",
+    "@reduxjs/toolkit": "catalog:",
+    "tinybench": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

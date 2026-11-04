@@ -81,6 +81,37 @@ Updating an entity (`updateOne`, `updateMany`, `updateField`) marks it dirty, re
 
 In `@entity-store/core`, every action and getter is also a named export (`import { createOne, getOne } from '@entity-store/core'`), so bundlers keep only what you use. The `actions` / `getters` objects are convenient but pull everything in.
 
+## Performance
+
+`pnpm bench` runs `tests/bench`, which compares the core with Redux Toolkit's `createEntityAdapter` (Immer-based) on 1k, 10k and 100k entities. Numbers below come from one run on a shared cloud container (Node 22, no pinned CPU): read them as orders of magnitude, not guarantees, and run `pnpm bench` on your own machine.
+
+| entities | operation                | core (ops/s) | RTK (ops/s) | core / RTK |
+| -------- | ------------------------ | ------------ | ----------- | ---------- |
+| 1,000    | create                   | 5,969        | 354         | 16.9x      |
+| 1,000    | update one               | 1,207,754    | 4,099       | 294.6x     |
+| 1,000    | delete one               | 7,252        | 3,448       | 2.1x       |
+| 1,000    | get one                  | 17,649,119   | 11,281,040  | 1.6x       |
+| 1,000    | get all (RTK recomputed) | 178,266      | 24,113      | 7.4x       |
+| 1,000    | get all (RTK cached)     | 178,266      | 13,593,289  | 0.01x      |
+| 10,000   | create                   | 505          | 27          | 18.4x      |
+| 10,000   | update one               | 232,820      | 334         | 697.8x     |
+| 10,000   | delete one               | 613          | 303         | 2.0x       |
+| 10,000   | get one                  | 16,163,218   | 11,647,575  | 1.4x       |
+| 10,000   | get all (RTK recomputed) | 17,612       | 2,133       | 8.3x       |
+| 10,000   | get all (RTK cached)     | 17,612       | 13,243,118  | 0.00x      |
+| 100,000  | create                   | 21           | 2.2         | 9.6x       |
+| 100,000  | update one               | 2,171        | 25.7        | 84.5x      |
+| 100,000  | delete one               | 52           | 26          | 2.0x       |
+| 100,000  | get one                  | 16,912,108   | 12,315,182  | 1.4x       |
+| 100,000  | get all (RTK recomputed) | 495          | 200         | 2.5x       |
+| 100,000  | get all (RTK cached)     | 495          | 13,382,858  | 0.00x      |
+
+What to take from it:
+
+- Writes copy the touched maps (`byId`, `allIds`), so they are O(n) in the collection size, but cheaper than Immer's proxy and freezing work.
+- `getAll*` getters are **not memoized**: they rebuild the array on every call. RTK's `selectAll` is memoized, so on an unchanged state it is a cache hit. In React, select a stable value (`entities`) and derive with `useMemo`, or memoize the derived array yourself.
+- Beyond tens of thousands of entities, prefer paging or `createMany` batches over single updates in a loop.
+
 ## Development
 
 ```bash
@@ -89,6 +120,7 @@ pnpm build        # the adapters resolve @entity-store/core through its build
 pnpm lint && pnpm type-check && pnpm test
 pnpm check:package   # publint + are-the-types-wrong
 pnpm test:consumer   # install the packed tarballs in ESM and CJS projects
+pnpm bench           # core vs Redux Toolkit createEntityAdapter
 pnpm changeset       # describe a change for the next release
 ```
 

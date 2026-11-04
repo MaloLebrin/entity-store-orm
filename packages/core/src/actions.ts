@@ -33,7 +33,20 @@ export function createMany<T extends WithId>(
   payload: T[],
   now?: number,
 ): State<T> {
-  return payload.reduce((acc, entity) => createOne(acc, entity, now), state)
+  if (payload.length === 0) return state
+  // One pass, one copy: chaining createOne would copy byId/allIds per entity.
+  const { byId, allIds } = state.entities
+  const nextById = { ...byId }
+  const known = new Set<Id>(allIds)
+  const nextIds = [...allIds]
+  for (const entity of payload) {
+    nextById[entity.id] = withMeta(entity, now)
+    if (!known.has(entity.id)) {
+      known.add(entity.id)
+      nextIds.push(entity.id)
+    }
+  }
+  return setEntities(state, { byId: nextById, allIds: nextIds })
 }
 
 /** Patch an existing entity (marks it dirty), or create it when missing. */
@@ -57,10 +70,29 @@ export function updateMany<T extends WithId>(
   payload: T[],
   now?: number,
 ): State<T> {
-  return payload.reduce(
-    (acc, entity) => updateOne(acc, entity.id, entity, now),
-    state,
-  )
+  if (payload.length === 0) return state
+  // One pass, copy-on-first-write: no per-entity copy of byId/allIds.
+  const { byId, allIds } = state.entities
+  let nextById = byId
+  let nextIds = allIds
+  let known: Set<Id> | undefined
+  for (const entity of payload) {
+    const existing = nextById[entity.id]
+    const next = existing
+      ? patchEntity(existing, entity, now)
+      : withMeta(entity, now)
+    if (next === existing) continue
+    if (nextById === byId) nextById = { ...byId }
+    nextById[entity.id] = next
+    known ??= new Set<Id>(allIds)
+    if (!known.has(entity.id)) {
+      known.add(entity.id)
+      if (nextIds === allIds) nextIds = [...allIds]
+      nextIds.push(entity.id)
+    }
+  }
+  if (nextById === byId) return state
+  return setEntities(state, { byId: nextById, allIds: nextIds })
 }
 
 export function updateField<T extends WithId, K extends keyof T>(
@@ -99,7 +131,29 @@ export function deleteMany<T extends WithId>(
   state: State<T>,
   ids: Id[],
 ): State<T> {
-  return ids.reduce((acc, id) => deleteOne(acc, id), state)
+  if (ids.length === 0) return state
+  // One filter pass instead of one per id.
+  const { byId, allIds, active } = state.entities
+  const doomed = new Set<Id>(ids)
+  const nextIds = allIds.filter((id) => !doomed.has(id))
+  const nextActive = active.filter((id) => !doomed.has(id))
+  let nextById = byId
+  for (const id of doomed) {
+    if (!(id in nextById)) continue
+    if (nextById === byId) nextById = { ...byId }
+    delete nextById[id]
+  }
+  if (
+    nextById === byId &&
+    nextIds.length === allIds.length &&
+    nextActive.length === active.length
+  )
+    return state
+  return setEntities(state, {
+    byId: nextById,
+    allIds: nextIds,
+    active: nextActive,
+  })
 }
 
 export function setCurrent<T extends WithId>(

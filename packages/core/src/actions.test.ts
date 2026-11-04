@@ -194,3 +194,92 @@ describe('immutability', () => {
     expect(JSON.parse(JSON.stringify(s))).toEqual(s)
   })
 })
+
+describe('batch actions match their single-entity counterparts', () => {
+  interface Item extends WithId {
+    name: string
+  }
+  const NOW = 1000
+  const seeded = (): State<Item> =>
+    a.setActive(
+      a.createMany(
+        createState<Item>(),
+        [1, 2, 3, 4].map((id) => ({ id, name: `n${id}` })),
+        NOW,
+      ),
+      2,
+    )
+
+  test('createMany: new ids, existing ids and duplicates in the payload', () => {
+    const payload: Item[] = [
+      { id: 5, name: 'new' },
+      { id: 2, name: 'replaced' },
+      { id: 5, name: 'dup' },
+      { id: 6, name: 'six' },
+    ]
+    const expected = payload.reduce(
+      (s, e) => a.createOne(s, e, NOW + 1),
+      seeded(),
+    )
+    expect(a.createMany(seeded(), payload, NOW + 1)).toEqual(expected)
+  })
+
+  test('updateMany: patch, no-op, missing id and duplicates', () => {
+    const payload: Item[] = [
+      { id: 1, name: 'patched' },
+      { id: 3, name: 'n3' }, // unchanged
+      { id: 9, name: 'created' }, // missing: created
+      { id: 9, name: 'created again' },
+      { id: 1, name: 'patched twice' },
+    ]
+    const expected = payload.reduce(
+      (s, e) => a.updateOne(s, e.id, e, NOW + 1),
+      seeded(),
+    )
+    expect(a.updateMany(seeded(), payload, NOW + 1)).toEqual(expected)
+  })
+
+  test('deleteMany: present, absent and repeated ids; clears active', () => {
+    const ids = [2, 4, 4, 42]
+    const expected = ids.reduce((s, id) => a.deleteOne(s, id), seeded())
+    const got = a.deleteMany(seeded(), ids)
+    expect(got).toEqual(expected)
+    expect(got.entities.active).toEqual([])
+  })
+
+  test('empty and no-op batches return the same state reference', () => {
+    const s = seeded()
+    expect(a.createMany(s, [])).toBe(s)
+    expect(a.updateMany(s, [])).toBe(s)
+    expect(a.deleteMany(s, [])).toBe(s)
+    expect(a.deleteMany(s, [42, 43])).toBe(s)
+    expect(a.updateMany(s, [{ id: 1, name: 'n1' }], NOW)).toBe(s)
+  })
+
+  test('inputs are never mutated', () => {
+    const s = seeded()
+    const before = JSON.stringify(s)
+    a.createMany(s, [{ id: 7, name: 'x' }])
+    a.updateMany(s, [{ id: 1, name: 'y' }])
+    a.deleteMany(s, [1, 2])
+    expect(JSON.stringify(s)).toBe(before)
+  })
+
+  test('scales linearly: 50k entities in well under a second', () => {
+    const items = Array.from({ length: 50_000 }, (_, i) => ({
+      id: i + 1,
+      name: `u${i}`,
+    }))
+    const start = performance.now()
+    const s = a.createMany(createState<Item>(), items)
+    a.updateMany(
+      s,
+      items.map((e) => ({ ...e, name: `${e.name}!` })),
+    )
+    a.deleteMany(
+      s,
+      items.map((e) => e.id),
+    )
+    expect(performance.now() - start).toBeLessThan(2000)
+  })
+})
