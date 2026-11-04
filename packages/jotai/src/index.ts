@@ -98,7 +98,11 @@ const GETTER_KEYS = [
  * const getOne = useAtomValue(users.getters.getOne)
  * ```
  */
-export function createEntityAtoms<T extends WithId>(): EntityAtoms<T> {
+export function createEntityAtoms<T extends WithId>({
+  memoize,
+}: {
+  memoize?: boolean | undefined
+} = {}): EntityAtoms<T> {
   const state = atom<State<T>>(createState<T>())
 
   const actions = Object.fromEntries(
@@ -108,6 +112,7 @@ export function createEntityAtoms<T extends WithId>(): EntityAtoms<T> {
         const api = createEntityApi<T>({
           get: () => get(state),
           set: (next) => set(state, next),
+          memoize,
         })
         const run = api.actions[key] as (...a: unknown[]) => void
         run(...args)
@@ -120,8 +125,11 @@ export function createEntityAtoms<T extends WithId>(): EntityAtoms<T> {
       key,
       atom((get) => {
         const snapshot = get(state)
-        return createEntityApi<T>({ get: () => snapshot, set: () => {} })
-          .getters[key]
+        return createEntityApi<T>({
+          get: () => snapshot,
+          set: () => {},
+          memoize,
+        }).getters[key]
       }),
     ]),
   ) as unknown as EntityGetterAtoms<T>

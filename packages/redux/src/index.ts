@@ -3,9 +3,10 @@ import {
   createState,
   type EntityGetters,
   type EntityWithMeta,
-  getters as g,
+  getters as gAll,
   type Id,
   type State,
+  uncachedGetters,
   type WithId,
 } from '@entity-store/core'
 import {
@@ -43,9 +44,14 @@ export type EntitySelectors<T extends WithId, Root> = {
  * ```
  *
  * Reducers delegate to the pure core actions, so they stay immutable and the
- * state is plain serializable data.
+ * state is plain serializable data. `getAllArray` selectors are memoized on
+ * `byId`/`allIds`; pass `{ memoize: false }` to rebuild the array on each call.
  */
-export function createEntitySlice<T extends WithId>(name: string) {
+export function createEntitySlice<T extends WithId>(
+  name: string,
+  { memoize = true }: { memoize?: boolean | undefined } = {},
+) {
+  const g = memoize ? gAll : { ...gAll, ...uncachedGetters }
   // Reducers receive an Immer draft. The core is already immutable, so we run
   // it on the original (frozen) state and return the next state as-is.
   const base = (draft: Draft<State<T>>): State<T> =>

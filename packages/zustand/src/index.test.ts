@@ -71,3 +71,15 @@ describe('zustand adapter', () => {
     expect(store.getState().getOne(2)?.name).toBe('Bob')
   })
 })
+
+describe('zustand memoize option', () => {
+  test('getAllArray is memoized by default and can be disabled', () => {
+    const on = createEntityStore<User>()
+    on.getState().createMany([ada, bob])
+    expect(on.getState().getAllArray()).toBe(on.getState().getAllArray())
+
+    const off = createEntityStore<User>(undefined, { memoize: false })
+    off.getState().createMany([ada, bob])
+    expect(off.getState().getAllArray()).not.toBe(off.getState().getAllArray())
+  })
+})

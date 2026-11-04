@@ -59,4 +59,9 @@ export interface EntityApi<T extends WithId> {
 export interface EntityStateAccess<T extends WithId> {
   get: () => State<T>
   set: (state: State<T>) => void
+  /**
+   * Memoize `getAllArray` (and unfiltered `getWhereArray`): the same array is
+   * returned while `byId` and `allIds` are unchanged. Defaults to `true`.
+   */
+  memoize?: boolean | undefined
 }

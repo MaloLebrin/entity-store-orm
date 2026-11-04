@@ -120,3 +120,44 @@ describe('missing', () => {
     expect(g.getMissingEntities(state, [])).toEqual([])
   })
 })
+
+describe('getAllArray memoization', () => {
+  test('same array while byId and allIds are unchanged', () => {
+    const first = g.getAllArray(state)
+    expect(g.getAllArray(state)).toBe(first)
+    // current / active changes do not invalidate it
+    const s2 = setActive(setCurrent(state, users[0] as User), 2)
+    expect(g.getAllArray(s2)).toBe(first)
+  })
+
+  test('new array after an entity changes', () => {
+    const first = g.getAllArray(state)
+    const s2 = createMany(state, [{ id: 4, name: 'Zed', email: 'z', age: 1 }])
+    const next = g.getAllArray(s2)
+    expect(next).not.toBe(first)
+    expect(next).toHaveLength(4)
+    expect(first).toHaveLength(3)
+    const s3 = updateField(state, 'name', 'Johnny', 1)
+    expect(g.getAllArray(s3)).not.toBe(first)
+    expect(g.getAllArray(s3)[0]?.name).toBe('Johnny')
+  })
+
+  test('{ memoize: false } rebuilds the array every time', () => {
+    const a = g.getAllArray(state, { memoize: false })
+    expect(g.getAllArray(state, { memoize: false })).not.toBe(a)
+    expect(a).toEqual(g.getAllArray(state))
+  })
+
+  test('unfiltered getWhereArray shares the memoized array', () => {
+    expect(g.getWhereArray(state)).toBe(g.getAllArray(state))
+    // filtered / sorted results are always new arrays
+    expect(g.getWhereArray(state, () => true)).not.toBe(g.getAllArray(state))
+  })
+
+  test('uncachedGetters never return the shared array', () => {
+    expect(g.uncachedGetters.getAllArray(state)).not.toBe(g.getAllArray(state))
+    expect(g.uncachedGetters.getWhereArray(state)).not.toBe(
+      g.getAllArray(state),
+    )
+  })
+})
