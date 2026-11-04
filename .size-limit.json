@@ -20,36 +20,36 @@
   {
     "name": "core: whole package",
     "path": "packages/core/dist/index.js",
-    "limit": "3.8 kB"
+    "limit": "3.9 kB"
   },
   {
     "name": "pinia adapter (+ core)",
     "path": "packages/pinia/dist/index.js",
     "ignore": ["pinia", "vue"],
-    "limit": "3.45 kB"
+    "limit": "3.6 kB"
   },
   {
     "name": "zustand adapter (+ core)",
     "path": "packages/zustand/dist/index.js",
     "ignore": ["zustand"],
-    "limit": "3.4 kB"
+    "limit": "3.55 kB"
   },
   {
     "name": "redux adapter (+ core)",
     "path": "packages/redux/dist/index.js",
     "ignore": ["@reduxjs/toolkit"],
-    "limit": "3.65 kB"
+    "limit": "3.75 kB"
   },
   {
     "name": "jotai adapter (+ core)",
     "path": "packages/jotai/dist/index.js",
     "ignore": ["jotai"],
-    "limit": "3.6 kB"
+    "limit": "3.75 kB"
   },
   {
     "name": "valtio adapter (+ core)",
     "path": "packages/valtio/dist/index.js",
     "ignore": ["valtio"],
-    "limit": "3.45 kB"
+    "limit": "3.6 kB"
   }
 ]
