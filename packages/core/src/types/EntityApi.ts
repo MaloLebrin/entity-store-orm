@@ -1,10 +1,8 @@
 import type { EntityWithMeta } from './EntityMeta.js'
+import type { EntityFilter } from './Filter.js'
 import type { SortOptions } from './SortOptions.js'
 import type { State } from './State.js'
 import type { Id, WithId } from './WithId.js'
-
-/** Filter callback: return a truthy value to keep the entity. */
-type Predicate<T extends WithId> = (item: EntityWithMeta<T>) => boolean | null
 
 /** State-bound actions: they update the store and return nothing. */
 export interface EntityActions<T extends WithId> {
@@ -40,6 +38,12 @@ export interface EntityActions<T extends WithId> {
   setIsDirty(id: Id): void
   /** Mark an entity as clean and forget its changed fields. */
   setIsNotDirty(id: Id): void
+  /** Apply a patch now and remember how to undo it, under `txId`; see `optimisticUpdate`. */
+  optimisticUpdate(id: Id, patch: Partial<T>, txId: Id): void
+  /** The server accepted update `txId`: keep the values. */
+  commitOptimistic(id: Id, txId: Id): void
+  /** The server refused update `txId`: restore the previous values. */
+  rollbackOptimistic(id: Id, txId: Id): void
 }
 
 /** State-bound getters. */
@@ -66,11 +70,11 @@ export interface EntityGetters<T extends WithId> {
   getOne(id: Id): EntityWithMeta<T> | undefined
   /** Several entities by id (unknown ids skipped). */
   getMany(ids: Id[]): EntityWithMeta<T>[]
-  /** Dictionary of the entities passing `filter`. */
-  getWhere(filter?: Predicate<T> | null): Record<Id, EntityWithMeta<T>>
-  /** Entities passing `filter`, optionally sorted. Memoized for stable `filter`/`options` references. */
+  /** Dictionary of the entities passing `filter` (predicate or object). */
+  getWhere(filter?: EntityFilter<T> | null): Record<Id, EntityWithMeta<T>>
+  /** Entities passing `filter`, optionally sorted. Memoized: stable predicate reference, or any object filter. */
   getWhereArray(
-    filter?: Predicate<T> | null,
+    filter?: EntityFilter<T> | null,
     options?: SortOptions<T>,
   ): EntityWithMeta<T>[]
   /** Every entity sorted by `options`. Memoized per ordering; pass a field name or a stable function. */
@@ -81,13 +85,15 @@ export interface EntityGetters<T extends WithId> {
     value: EntityWithMeta<T>[K],
   ): EntityWithMeta<T>[]
   /** First entity passing `filter`. */
-  getFirstWhere(filter?: Predicate<T> | null): EntityWithMeta<T> | undefined
+  getFirstWhere(filter?: EntityFilter<T> | null): EntityWithMeta<T> | undefined
   /** `true` when the id is stored. */
   isAlreadyInStore(id: Id): boolean
   /** `true` when the id is active. */
   isAlreadyActive(id: Id): boolean
   /** `true` when the entity is dirty. */
   isDirty(id: Id): boolean
+  /** Whether the entity has optimistic updates not yet committed or rolled back. */
+  isPending(id: Id): boolean
   /** Ids of the list that are not stored (deduplicated unless `canHaveDuplicates`). */
   getMissingIds(ids: Id[], canHaveDuplicates?: boolean): Id[]
   /** Entities of the list that are not stored. */

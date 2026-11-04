@@ -56,6 +56,16 @@ describe('jotai adapter', () => {
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
+  test('optimistic update atoms', () => {
+    const users = createEntityAtoms<User>()
+    const store = createStore()
+    store.set(users.actions.createOne, ada)
+    store.set(users.actions.optimisticUpdate, 1, { name: 'X' }, 't')
+    expect(store.get(users.getters.isPending)(1)).toBe(true)
+    store.set(users.actions.rollbackOptimistic, 1, 't')
+    expect(store.get(users.getters.getOne)(1)?.name).toBe('Ada')
+  })
+
   test('each store gets isolated state', () => {
     const users = createEntityAtoms<User>()
     const s1 = createStore()
@@ -99,5 +109,26 @@ describe('jotai setAll / getSortedArray / getByField', () => {
         .get(users.getters.getByField)('name', 'Ada')
         .map((u) => u.id),
     ).toEqual([1])
+  })
+})
+
+describe('jotai object filters', () => {
+  test('getter atoms accept an object filter, memoized by value', () => {
+    const users = createEntityAtoms<User>()
+    const store = createStore()
+    store.set(users.actions.createMany, [
+      ada,
+      bob,
+      { id: 3, name: 'Cy', age: 25 },
+    ])
+    const where = store.get(users.getters.getWhereArray)
+    expect(where({ age: 25 }).map((u) => u.id)).toEqual([2, 3])
+    expect(where({ age: 25 })).toBe(where({ age: 25 }))
+    expect(
+      store.get(users.getters.getFirstWhere)({ name: 'Cy', age: 25 })?.id,
+    ).toBe(3)
+    expect(Object.keys(store.get(users.getters.getWhere)({ age: 36 }))).toEqual(
+      ['1'],
+    )
   })
 })

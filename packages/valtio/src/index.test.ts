@@ -87,3 +87,14 @@ describe('valtio setAll / getSortedArray / getByField', () => {
     expect(store.getByField('name', 'Ada').map((u) => u.id)).toEqual([1])
   })
 })
+
+describe('valtio object filters', () => {
+  test('work through the store', () => {
+    const s = createEntityStore<User>()
+    s.createMany([ada, bob, { id: 3, name: 'Cy', age: 25 }])
+    expect(s.getWhereArray({ age: 25 }).map((u) => u.id)).toEqual([2, 3])
+    expect(s.getWhereArray({ age: 25 })).toBe(s.getWhereArray({ age: 25 }))
+    expect(s.getFirstWhere({ name: 'Cy', age: 25 })?.id).toBe(3)
+    expect(Object.keys(s.getWhere({ age: 36 }))).toEqual(['1'])
+  })
+})

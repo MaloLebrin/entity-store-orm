@@ -1,5 +1,6 @@
 import * as a from './actions.js'
 import * as g from './getters.js'
+import * as o from './optimistic.js'
 import type {
   EntityActions,
   EntityApi,
@@ -18,7 +19,7 @@ export function createEntityApi<T extends WithId>({
   set,
   memoize = true,
 }: EntityStateAccess<T>): EntityApi<T> {
-  // Pick the two memoizable getters explicitly: spreading the `g` namespace
+  // Pick the memoizable getters explicitly: spreading the `g` namespace
   // would force bundlers to keep every getter.
   const read = memoize
     ? {
@@ -26,6 +27,8 @@ export function createEntityApi<T extends WithId>({
         getWhereArray: g.getWhereArray,
         getSortedArray: g.getSortedArray,
         getByField: g.getByField,
+        getWhere: g.getWhere,
+        getFirstWhere: g.getFirstWhere,
       }
     : g.uncachedGetters
   const actions: EntityActions<T> = {
@@ -46,6 +49,11 @@ export function createEntityApi<T extends WithId>({
     resetActive: () => set(a.resetActive(get())),
     setIsDirty: (id) => set(a.setIsDirty(get(), id)),
     setIsNotDirty: (id) => set(a.setIsNotDirty(get(), id)),
+    optimisticUpdate: (id, patch, txId) =>
+      set(o.optimisticUpdate(get(), id, patch, txId)),
+    commitOptimistic: (id, txId) => set(o.commitOptimistic(get(), id, txId)),
+    rollbackOptimistic: (id, txId) =>
+      set(o.rollbackOptimistic(get(), id, txId)),
   }
 
   const getters: EntityGetters<T> = {
@@ -60,14 +68,15 @@ export function createEntityApi<T extends WithId>({
     getFirstActive: () => g.getFirstActive(get()),
     getOne: (id) => g.getOne(get(), id),
     getMany: (ids) => g.getMany(get(), ids),
-    getWhere: (f) => g.getWhere(get(), f),
+    getWhere: (f) => read.getWhere(get(), f),
     getWhereArray: (f, o) => read.getWhereArray(get(), f, o),
     getSortedArray: (o) => read.getSortedArray(get(), o),
     getByField: (field, value) => read.getByField(get(), field, value),
-    getFirstWhere: (f) => g.getFirstWhere(get(), f),
+    getFirstWhere: (f) => read.getFirstWhere(get(), f),
     isAlreadyInStore: (id) => g.isAlreadyInStore(get(), id),
     isAlreadyActive: (id) => g.isAlreadyActive(get(), id),
     isDirty: (id) => g.isDirty(get(), id),
+    isPending: (id) => o.isPending(get(), id),
     getMissingIds: (ids, dup) => g.getMissingIds(get(), ids, dup),
     getMissingEntities: (e) => g.getMissingEntities(get(), e),
     search: (q) => g.search(get(), q),

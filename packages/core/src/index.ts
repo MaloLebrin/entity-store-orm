@@ -40,6 +40,12 @@ import {
   isDirty,
   search,
 } from './getters.js'
+import {
+  commitOptimistic,
+  isPending,
+  optimisticUpdate,
+  rollbackOptimistic,
+} from './optimistic.js'
 
 export {
   createMany,
@@ -104,6 +110,9 @@ export const actions = {
   updateField,
   updateMany,
   updateOne,
+  optimisticUpdate,
+  commitOptimistic,
+  rollbackOptimistic,
 }
 
 /** All getters as one object (convenient, but not tree-shakable: prefer named imports). */
@@ -129,12 +138,20 @@ export const getters = {
   isAlreadyActive,
   isAlreadyInStore,
   isDirty,
+  isPending,
   search,
 }
 
 export { createEntityApi } from './createEntityApi.js'
 export { default as createState } from './createState.js'
 export { patchEntity, withMeta } from './entity.js'
+export {
+  commitOptimistic,
+  isPending,
+  optimisticUpdate,
+  rollbackOptimistic,
+  withOptimisticUpdate,
+} from './optimistic.js'
 export type { ByIdParams } from './types/ByIdParams.js'
 export type {
   EntityActions,
@@ -142,8 +159,18 @@ export type {
   EntityGetters,
   EntityStateAccess,
 } from './types/EntityApi.js'
-export type { EntityMeta, EntityWithMeta } from './types/EntityMeta.js'
-export type { FilterFn, OptionalFilterFn } from './types/Filter.js'
+export type {
+  EntityMeta,
+  EntityWithMeta,
+  PendingChange,
+  PendingField,
+} from './types/EntityMeta.js'
+export type {
+  EntityFilter,
+  FilterFn,
+  OptionalFilterFn,
+  WhereObject,
+} from './types/Filter.js'
 export type { SortOptions } from './types/SortOptions.js'
 export type { State } from './types/State.js'
 export type { Id, WithId } from './types/WithId.js'

@@ -1,4 +1,4 @@
-import { patchEntity, withMeta } from './entity.js'
+import { getOwn, patchEntity, putOwn, withMeta } from './entity.js'
 import type { EntityWithMeta } from './types/EntityMeta.js'
 import type { State } from './types/State.js'
 import type { Id, WithId } from './types/WithId.js'
@@ -55,7 +55,7 @@ export function createMany<T extends WithId>(
   const known = new Set<Id>(allIds)
   const nextIds = [...allIds]
   for (const entity of payload) {
-    nextById[entity.id] = withMeta(entity, now)
+    putOwn(nextById, entity.id, withMeta(entity, now))
     if (!known.has(entity.id)) {
       known.add(entity.id)
       nextIds.push(entity.id)
@@ -78,17 +78,17 @@ export function setAll<T extends WithId>(
   const byId: Record<Id, EntityWithMeta<T>> = {}
   const allIds: Id[] = []
   for (const entity of payload) {
-    if (byId[entity.id] === undefined) allIds.push(entity.id)
-    byId[entity.id] = withMeta(entity, now)
+    if (getOwn(byId, entity.id) === undefined) allIds.push(entity.id)
+    putOwn(byId, entity.id, withMeta(entity, now))
   }
   const { active, current, currentById } = state.entities
   return setEntities(state, {
     byId,
     allIds,
-    active: active.filter((id) => byId[id] !== undefined),
-    current: current ? (byId[current.id] ?? null) : null,
+    active: active.filter((id) => getOwn(byId, id) !== undefined),
+    current: current ? (getOwn(byId, current.id) ?? null) : null,
     currentById:
-      currentById !== null && byId[currentById] !== undefined
+      currentById !== null && getOwn(byId, currentById) !== undefined
         ? currentById
         : null,
   })
@@ -104,7 +104,7 @@ export function updateOne<T extends WithId>(
   payload: T,
   now?: number,
 ): State<T> {
-  const existing = state.entities.byId[id]
+  const existing = getOwn(state.entities.byId, id)
   if (!existing) return createOne(state, payload, now)
   const next = patchEntity(existing, payload, now)
   if (next === existing) return state
@@ -134,13 +134,13 @@ export function updateMany<T extends WithId>(
   let nextIds = allIds
   let known: Set<Id> | undefined
   for (const entity of payload) {
-    const existing = nextById[entity.id]
+    const existing = getOwn(nextById, entity.id)
     const next = existing
       ? patchEntity(existing, entity, now)
       : withMeta(entity, now)
     if (next === existing) continue
     if (nextById === byId) nextById = { ...byId }
-    nextById[entity.id] = next
+    putOwn(nextById, entity.id, next)
     known ??= new Set<Id>(allIds)
     if (!known.has(entity.id)) {
       known.add(entity.id)
@@ -170,7 +170,7 @@ export function updateField<T extends WithId, K extends keyof T>(
   id: Id,
   now?: number,
 ): State<T> {
-  const existing = state.entities.byId[id]
+  const existing = getOwn(state.entities.byId, id)
   if (!existing) return state
   const next = patchEntity(
     existing,
@@ -183,6 +183,17 @@ export function updateField<T extends WithId, K extends keyof T>(
   })
 }
 
+/** Drop `current` / `currentById` when they point to one of the removed ids. */
+function clearRemovedPointers<T extends WithId>(
+  { current, currentById }: State<T>['entities'],
+  isRemoved: (id: Id) => boolean,
+): Partial<State<T>['entities']> {
+  const patch: Partial<State<T>['entities']> = {}
+  if (current !== null && isRemoved(current.id)) patch.current = null
+  if (currentById !== null && isRemoved(currentById)) patch.currentById = null
+  return patch
+}
+
 /**
  * Delete an entity, also removing it from `allIds` and `active`. Returns the same
  * state when the id is unknown. `current` and `currentById` are left untouched.
@@ -192,13 +203,14 @@ export function updateField<T extends WithId, K extends keyof T>(
  */
 export function deleteOne<T extends WithId>(state: State<T>, id: Id): State<T> {
   const { byId, allIds, active } = state.entities
-  if (!(id in byId) && !allIds.includes(id) && !active.includes(id))
+  if (!Object.hasOwn(byId, id) && !allIds.includes(id) && !active.includes(id))
     return state
   const { [id]: _removed, ...rest } = byId
   return setEntities(state, {
     byId: rest,
     allIds: allIds.filter((entityId) => entityId !== id),
     active: active.filter((entityId) => entityId !== id),
+    ...clearRemovedPointers(state.entities, (other) => other === id),
   })
 }
 
@@ -221,7 +233,7 @@ export function deleteMany<T extends WithId>(
   const nextActive = active.filter((id) => !doomed.has(id))
   let nextById = byId
   for (const id of doomed) {
-    if (!(id in nextById)) continue
+    if (!Object.hasOwn(nextById, id)) continue
     if (nextById === byId) nextById = { ...byId }
     delete nextById[id]
   }
@@ -235,6 +247,7 @@ export function deleteMany<T extends WithId>(
     byId: nextById,
     allIds: nextIds,
     active: nextActive,
+    ...clearRemovedPointers(state.entities, (id) => doomed.has(id)),
   })
 }
 
@@ -274,7 +287,7 @@ export function setCurrentById<T extends WithId>(
   state: State<T>,
   id: Id,
 ): State<T> {
-  if (!state.entities.byId[id] || state.entities.currentById === id)
+  if (!getOwn(state.entities.byId, id) || state.entities.currentById === id)
     return state
   return setEntities(state, { currentById: id })
 }
@@ -297,7 +310,7 @@ export function removeCurrentById<T extends WithId>(state: State<T>): State<T> {
  */
 export function setActive<T extends WithId>(state: State<T>, id: Id): State<T> {
   const { active, byId } = state.entities
-  if (active.includes(id) || !byId[id]) return state
+  if (active.includes(id) || !getOwn(byId, id)) return state
   return setEntities(state, { active: [...active, id] })
 }
 
@@ -321,7 +334,7 @@ export function setIsDirty<T extends WithId>(
   state: State<T>,
   id: Id,
 ): State<T> {
-  const existing = state.entities.byId[id]
+  const existing = getOwn(state.entities.byId, id)
   if (!existing || existing.$isDirty) return state
   return setEntities(state, {
     byId: { ...state.entities.byId, [id]: { ...existing, $isDirty: true } },
@@ -333,8 +346,10 @@ export function setIsNotDirty<T extends WithId>(
   state: State<T>,
   id: Id,
 ): State<T> {
-  const existing = state.entities.byId[id]
+  const existing = getOwn(state.entities.byId, id)
   if (!existing) return state
+  if (!existing.$isDirty && existing.$meta.changedFields.length === 0)
+    return state
   return setEntities(state, {
     byId: {
       ...state.entities.byId,

@@ -305,3 +305,156 @@ describe('getWhereArray without a filter', () => {
     )
   })
 })
+
+describe('object filters', () => {
+  interface Member extends WithId {
+    name: string
+    role: 'admin' | 'user'
+    age: number
+    team?: string
+  }
+  const members: Member[] = [
+    { id: 1, name: 'Ada', role: 'admin', age: 30 },
+    { id: 2, name: 'Bob', role: 'user', age: 30 },
+    { id: 3, name: 'Cy', role: 'admin', age: 41, team: 'a' },
+    { id: 4, name: 'Di', role: 'admin', age: 30 },
+  ]
+  const s = createMany(createState<Member>(), members)
+  const ids = (list: { id: unknown }[]) => list.map((m) => m.id)
+
+  test('single and multi-field AND, in allIds order', () => {
+    expect(ids(g.getWhereArray(s, { role: 'admin' }))).toEqual([1, 3, 4])
+    expect(ids(g.getWhereArray(s, { role: 'admin', age: 30 }))).toEqual([1, 4])
+    expect(g.getWhereArray(s, { role: 'user', age: 41 })).toEqual([])
+  })
+
+  test('same results as the equivalent predicate', () => {
+    expect(g.getWhereArray(s, { role: 'admin', age: 30 })).toEqual(
+      g.getWhereArray(s, (m) => m.role === 'admin' && m.age === 30),
+    )
+  })
+
+  test('empty object matches everything, like no filter', () => {
+    expect(g.getWhereArray(s, {})).toBe(g.getAllArray(s))
+    expect(g.getWhere(s, {})).toBe(g.getAll(s))
+    expect(g.getFirstWhere(s, {})?.id).toBe(1)
+  })
+
+  test('memoized by value: an inline literal hits, key order is irrelevant', () => {
+    const a = g.getWhereArray(s, { role: 'admin', age: 30 })
+    expect(g.getWhereArray(s, { age: 30, role: 'admin' })).toBe(a)
+    expect(g.getWhereArray(s, { role: 'admin', age: 41 })).not.toBe(a)
+    const one = g.getWhereArray(s, { role: 'admin' })
+    expect(g.getWhereArray(s, { role: 'admin' })).toBe(one)
+  })
+
+  test('orderBy / sortBy are part of the key', () => {
+    const asc = g.getWhereArray(s, { role: 'admin' }, { orderBy: 'age' })
+    const desc = g.getWhereArray(
+      s,
+      { role: 'admin' },
+      { orderBy: 'age', sortBy: 'desc' },
+    )
+    expect(ids(asc)).toEqual([1, 4, 3])
+    expect(ids(desc)).toEqual([3, 1, 4])
+    expect(g.getWhereArray(s, { role: 'admin' }, { orderBy: 'age' })).toBe(asc)
+  })
+
+  test('mutating the filter object afterwards does not corrupt the cache', () => {
+    const f: { role: 'admin' | 'user'; age: number } = {
+      role: 'admin',
+      age: 30,
+    }
+    const r = g.getWhereArray(s, f)
+    f.age = 41
+    expect(ids(g.getWhereArray(s, f))).toEqual([3])
+    expect(ids(g.getWhereArray(s, { role: 'admin', age: 30 }))).toEqual([1, 4])
+    expect(g.getWhereArray(s, { role: 'admin', age: 30 })).toBe(r)
+  })
+
+  test('invalidated when the collection changes', () => {
+    const before = g.getWhereArray(s, { role: 'admin', age: 30 })
+    const next = updateField(s, 'age', 99, 1)
+    expect(ids(g.getWhereArray(next, { role: 'admin', age: 30 }))).toEqual([4])
+    expect(g.getWhereArray(s, { role: 'admin', age: 30 })).toBe(before)
+  })
+
+  test('strict equality: no coercion, NaN matches NaN, undefined is a value', () => {
+    // @ts-expect-error age is a number
+    expect(g.getWhereArray(s, { age: '30' })).toEqual([])
+    const n = createMany(createState<{ id: number; v: number }>(), [
+      { id: 1, v: Number.NaN },
+      { id: 2, v: 1 },
+    ])
+    expect(ids(g.getWhereArray(n, { v: Number.NaN }))).toEqual([1])
+    expect(ids(g.getWhereArray(s, { team: 'a' }))).toEqual([3])
+  })
+
+  test('filter is typed on the entity', () => {
+    // @ts-expect-error unknown field
+    g.getWhereArray(s, { nope: 1 })
+    // @ts-expect-error wrong value type
+    g.getWhereArray(s, { role: 'root' })
+    // @ts-expect-error undefined is not allowed for a required field
+    g.getWhereArray(s, { age: undefined })
+  })
+
+  test('results are frozen outside production; memoize:false is fresh', () => {
+    const multi = g.getWhereArray(s, { role: 'admin', age: 30 })
+    const single = g.getWhereArray(s, { role: 'admin' })
+    expect(Object.isFrozen(multi)).toBe(true)
+    expect(Object.isFrozen(single)).toBe(true)
+    expect(() => (multi as unknown[]).push(1)).toThrow(TypeError)
+    expect(Object.isFrozen(g.getWhere(s, { role: 'admin' }))).toBe(true)
+
+    const u = g.uncachedGetters
+    const a = u.getWhereArray(s, { role: 'admin', age: 30 })
+    expect(ids(a)).toEqual([1, 4])
+    expect(u.getWhereArray(s, { role: 'admin', age: 30 })).not.toBe(a)
+    expect(Object.isFrozen(a)).toBe(false)
+    expect(u.getWhere(s, { role: 'admin' })).not.toBe(
+      u.getWhere(s, { role: 'admin' }),
+    )
+    expect(u.getFirstWhere(s, { role: 'admin' })?.id).toBe(1)
+    expect(
+      ids(
+        u.getWhereArray(
+          s,
+          { role: 'admin' },
+          { orderBy: 'age', sortBy: 'desc' },
+        ),
+      ),
+    ).toEqual([3, 1, 4])
+  })
+
+  test('getWhere: dictionary, memoized, same content as the predicate form', () => {
+    const rec = g.getWhere(s, { role: 'admin', age: 30 })
+    expect(Object.keys(rec)).toEqual(['1', '4'])
+    expect(g.getWhere(s, { age: 30, role: 'admin' })).toBe(rec)
+    expect(rec).toEqual(
+      g.getWhere(s, (m) => m.role === 'admin' && m.age === 30),
+    )
+  })
+
+  test('getFirstWhere: single and multi field, miss', () => {
+    expect(g.getFirstWhere(s, { role: 'admin' })?.id).toBe(1)
+    expect(g.getFirstWhere(s, { role: 'admin', age: 41 })?.id).toBe(3)
+    expect(g.getFirstWhere(s, { role: 'user', age: 41 })).toBeUndefined()
+  })
+
+  test('uses the getByField index (built once, reused by both)', () => {
+    const fresh = createMany(createState<Member>(), members)
+    g.getWhereArray(fresh, { role: 'admin' })
+    // same index: a getByField hit returns the very same shared bucket
+    expect(g.getByField(fresh, 'role', 'admin')).toBe(
+      g.getWhereArray(fresh, { role: 'admin' }),
+    )
+  })
+
+  test('function filters are unchanged', () => {
+    const f = (m: { age: number }) => m.age === 30
+    expect(g.getWhereArray(s, f)).toBe(g.getWhereArray(s, f))
+    expect(ids(g.getWhereArray(s, f))).toEqual([1, 2, 4])
+    expect(g.getFirstWhere(s, f)?.id).toBe(1)
+  })
+})

@@ -1,4 +1,6 @@
+import { getOwn } from './entity.js'
 import type { EntityWithMeta } from './types/EntityMeta.js'
+import type { EntityFilter, WhereObject } from './types/Filter.js'
 import type { SortOptions } from './types/SortOptions.js'
 import type { State } from './types/State.js'
 import type { Id, WithId } from './types/WithId.js'
@@ -8,8 +10,6 @@ import { sortEntities } from './utils/sortEntities.js'
  * Pure getters: `(state, ...args) => value`. They never mutate the state.
  * Results are derived from `allIds` order, so ordering is deterministic.
  */
-
-type Predicate<T extends WithId> = (item: EntityWithMeta<T>) => boolean | null
 
 /**
  * The `byId` dictionary (same reference as in the state).
@@ -106,7 +106,7 @@ export const getCurrent = <T extends WithId>(state: State<T>) =>
 export const getCurrentById = <T extends WithId>(state: State<T>) =>
   state.entities.currentById === null
     ? null
-    : (state.entities.byId[state.entities.currentById] ?? null)
+    : (getOwn(state.entities.byId, state.entities.currentById) ?? null)
 
 /**
  * Active ids (e.g. selected rows), in activation order.
@@ -124,7 +124,7 @@ export const getFirstActive = <T extends WithId>(state: State<T>) =>
  * The entity with this id, or `undefined`.
  */
 export const getOne = <T extends WithId>(state: State<T>, id: Id) =>
-  state.entities.byId[id]
+  getOwn(state.entities.byId, id)
 
 /**
  * The stored entities for `ids`, in the given order; unknown ids are skipped.
@@ -136,10 +136,123 @@ export function getMany<T extends WithId>(
   if (!Array.isArray(ids)) return []
   const out: EntityWithMeta<T>[] = []
   for (const id of ids) {
-    const item = state.entities.byId[id]
+    const item = getOwn(state.entities.byId, id)
     if (item) out.push(item)
   }
   return out
+}
+
+/** SameValueZero, the equality `getByField` and `Map` use. */
+const sameValue = (a: unknown, b: unknown) =>
+  a === b ||
+  (typeof a === 'number' &&
+    typeof b === 'number' &&
+    Number.isNaN(a) &&
+    Number.isNaN(b))
+
+function matches(
+  item: object,
+  filter: object,
+  keys: readonly string[],
+): boolean {
+  for (const key of keys)
+    if (
+      !sameValue(
+        (item as Record<string, unknown>)[key],
+        (filter as Record<string, unknown>)[key],
+      )
+    )
+      return false
+  return true
+}
+
+/** Same fields, same values: the by-value identity of an object filter. */
+function sameFilter(a: object, b: object): boolean {
+  const keys = Object.keys(a)
+  if (keys.length !== Object.keys(b).length) return false
+  for (const key of keys)
+    if (
+      !Object.hasOwn(b, key) ||
+      !sameValue(
+        (a as Record<string, unknown>)[key],
+        (b as Record<string, unknown>)[key],
+      )
+    )
+      return false
+  return true
+}
+
+interface ObjectWhereEntry {
+  filter: object
+  orderBy: unknown
+  sortBy: unknown
+  result: EntityWithMeta<never>[]
+}
+
+const MAX_OBJECT_WHERE_PER_COLLECTION = 8
+const objectWhereCache = new WeakMap<
+  object,
+  { allIds: Id[]; entries: ObjectWhereEntry[] }
+>()
+const recordCache = new WeakMap<object, Record<Id, EntityWithMeta<never>>>()
+
+function whereObjectArray<T extends WithId>(
+  memoize: boolean,
+  state: State<T>,
+  filter: WhereObject<T>,
+  options?: SortOptions<T>,
+): EntityWithMeta<T>[] {
+  const keys = Object.keys(filter)
+  const first = keys[0]
+  if (first === undefined)
+    return options?.orderBy
+      ? sortedArray(memoize, state, options)
+      : readAll(state, memoize)
+  if (!memoize) {
+    const filtered = readAll(state, false).filter((item) =>
+      matches(item, filter, keys),
+    )
+    return options?.orderBy ? sortEntities(filtered, options) : filtered
+  }
+  const lookup = () =>
+    byField(
+      true,
+      state,
+      first as keyof EntityWithMeta<T>,
+      (filter as Record<string, unknown>)[first] as never,
+    )
+  // One field, no sort: the index bucket is already the answer.
+  if (keys.length === 1 && !options?.orderBy) return lookup()
+
+  const { byId, allIds } = state.entities
+  let slot = objectWhereCache.get(byId)
+  if (!slot || slot.allIds !== allIds) {
+    slot = { allIds, entries: [] }
+    objectWhereCache.set(byId, slot)
+  }
+  const found = slot.entries.find(
+    (e) =>
+      e.orderBy === options?.orderBy &&
+      e.sortBy === options?.sortBy &&
+      sameFilter(e.filter, filter),
+  )
+  if (found) return found.result as unknown as EntityWithMeta<T>[]
+  const bucket = lookup()
+  const rest = keys.slice(1)
+  const filtered =
+    rest.length === 0 ? bucket : bucket.filter((i) => matches(i, filter, rest))
+  const result = options?.orderBy ? sortEntities(filtered, options) : filtered
+  if (freezeInDev) Object.freeze(result)
+  slot.entries.push({
+    // Snapshot: a later mutation of the caller's object must not change the key.
+    filter: { ...filter },
+    orderBy: options?.orderBy,
+    sortBy: options?.sortBy,
+    result: result as unknown as EntityWithMeta<never>[],
+  })
+  if (slot.entries.length > MAX_OBJECT_WHERE_PER_COLLECTION)
+    slot.entries.shift()
+  return result
 }
 
 interface WhereEntry {
@@ -157,9 +270,11 @@ const whereCache = new WeakMap<object, WhereEntry>()
 function whereArray<T extends WithId>(
   memoize: boolean,
   state: State<T>,
-  filter?: Predicate<T> | null,
+  filter?: EntityFilter<T> | null,
   options?: SortOptions<T>,
 ): EntityWithMeta<T>[] {
+  if (typeof filter === 'object' && filter !== null)
+    return whereObjectArray(memoize, state, filter, options)
   if (typeof filter !== 'function')
     return options?.orderBy
       ? sortedArray(memoize, state, options)
@@ -193,32 +308,43 @@ function whereArray<T extends WithId>(
 }
 
 /**
- * Entities passing `filter`, in `allIds` order, optionally sorted with `options`.
+ * Entities passing the filter, in `allIds` order (sorted when `orderBy` is
+ * set). `filter` is either a predicate or a declarative object such as
+ * `{ role: 'admin', age: 30 }` (strict equality on every field, AND).
  *
- * Memoized by default: one result is
- * remembered per `byId` while `filter` (and `options.orderBy` / `options.sortBy`)
- * keep the same references, so pass a stable function, not an inline arrow, to
- * benefit from it. Without a function filter it behaves like
- * {@link getSortedArray} / {@link getAllArray}. The result is shared and
- * read-only (frozen outside production).
- *
- * @param state - Current state.
- * @param filter - Predicate returning a truthy value to keep an entity.
- * @param options - Optional sorting.
+ * Memoized per `byId`/`allIds`. A predicate is keyed by reference, so an inline
+ * arrow never hits; an object filter is keyed by VALUE, so an inline literal
+ * hits, and its first field is resolved through the `getByField` index. The
+ * result is shared and read-only (frozen outside production).
  */
 export function getWhereArray<T extends WithId>(
   state: State<T>,
-  filter?: Predicate<T> | null,
+  filter?: EntityFilter<T> | null,
   options?: SortOptions<T>,
 ): EntityWithMeta<T>[] {
   return whereArray(true, state, filter, options)
 }
 
-/** Dictionary of the entities passing the filter (sorting is not applicable). */
-export function getWhere<T extends WithId>(
+function whereRecord<T extends WithId>(
+  memoize: boolean,
   state: State<T>,
-  filter?: Predicate<T> | null,
+  filter?: EntityFilter<T> | null,
 ): Record<Id, EntityWithMeta<T>> {
+  if (typeof filter === 'object' && filter !== null) {
+    if (Object.keys(filter).length === 0) return state.entities.byId
+    const arr = whereObjectArray(memoize, state, filter)
+    if (memoize) {
+      const hit = recordCache.get(arr)
+      if (hit) return hit as Record<Id, EntityWithMeta<T>>
+    }
+    const out: Record<Id, EntityWithMeta<T>> = {}
+    for (const item of arr) out[item.id] = item
+    if (memoize) {
+      if (freezeInDev) Object.freeze(out)
+      recordCache.set(arr, out as unknown as Record<Id, EntityWithMeta<never>>)
+    }
+    return out
+  }
   if (typeof filter !== 'function') return state.entities.byId
   const out: Record<Id, EntityWithMeta<T>> = {}
   for (const item of getAllArray(state)) if (filter(item)) out[item.id] = item
@@ -226,15 +352,51 @@ export function getWhere<T extends WithId>(
 }
 
 /**
- * The first entity (in `allIds` order) passing `filter`, or `undefined`. Without
- * a filter, the first entity.
+ * Dictionary of the entities passing the filter (sorting is not applicable).
+ * With an object filter the dictionary is memoized like `getWhereArray` (same
+ * reference while nothing changed, frozen outside production).
+ */
+export function getWhere<T extends WithId>(
+  state: State<T>,
+  filter?: EntityFilter<T> | null,
+): Record<Id, EntityWithMeta<T>> {
+  return whereRecord(true, state, filter)
+}
+
+function firstWhere<T extends WithId>(
+  memoize: boolean,
+  state: State<T>,
+  filter?: EntityFilter<T> | null,
+): EntityWithMeta<T> | undefined {
+  if (typeof filter === 'object' && filter !== null) {
+    const keys = Object.keys(filter)
+    const first = keys[0]
+    if (first === undefined) return readAll(state, memoize)[0]
+    const rest = keys.slice(1)
+    const bucket = byField(
+      memoize,
+      state,
+      first as keyof EntityWithMeta<T>,
+      (filter as Record<string, unknown>)[first] as never,
+    )
+    return rest.length === 0
+      ? bucket[0]
+      : bucket.find((item) => matches(item, filter, rest))
+  }
+  const all = readAll(state, memoize)
+  return typeof filter === 'function' ? all.find((i) => filter(i)) : all[0]
+}
+
+/**
+ * First entity (in `allIds` order) passing the filter. With an object filter
+ * the first field goes through the `getByField` index, so a single-field
+ * lookup is O(1) once the index is built.
  */
 export function getFirstWhere<T extends WithId>(
   state: State<T>,
-  filter?: Predicate<T> | null,
+  filter?: EntityFilter<T> | null,
 ): EntityWithMeta<T> | undefined {
-  const all = getAllArray(state)
-  return typeof filter === 'function' ? all.find((i) => filter(i)) : all[0]
+  return firstWhere(true, state, filter)
 }
 
 /**
@@ -253,7 +415,7 @@ export const isAlreadyActive = <T extends WithId>(state: State<T>, id: Id) =>
  * `true` when the entity exists and is dirty; `false` otherwise.
  */
 export const isDirty = <T extends WithId>(state: State<T>, id: Id) =>
-  state.entities.byId[id]?.$isDirty ?? false
+  getOwn(state.entities.byId, id)?.$isDirty ?? false
 
 /** Ids from the list that are not in the store. Deduplicated unless asked. */
 export function getMissingIds<T extends WithId>(
@@ -401,16 +563,25 @@ export function getByField<T extends WithId, K extends keyof EntityWithMeta<T>>(
 
 /**
  * The same getters without memoization: `getAllArray`, `getWhereArray`,
- * `getSortedArray` and `getByField` build a fresh array on every call. Used by the adapters when
+ * `getSortedArray` and `getByField` build a fresh array on every call (and
+ * `getWhere` / `getFirstWhere` skip the object-filter caches). Used by the adapters when
  * created with `{ memoize: false }`.
  */
 export const uncachedGetters = {
   getAllArray: <T extends WithId>(state: State<T>) => readAll(state, false),
   getWhereArray: <T extends WithId>(
     state: State<T>,
-    filter?: Predicate<T> | null,
+    filter?: EntityFilter<T> | null,
     options?: SortOptions<T>,
   ) => whereArray(false, state, filter, options),
+  getWhere: <T extends WithId>(
+    state: State<T>,
+    filter?: EntityFilter<T> | null,
+  ) => whereRecord(false, state, filter),
+  getFirstWhere: <T extends WithId>(
+    state: State<T>,
+    filter?: EntityFilter<T> | null,
+  ) => firstWhere(false, state, filter),
   getSortedArray: <T extends WithId>(
     state: State<T>,
     options: SortOptions<T>,

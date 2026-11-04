@@ -31,6 +31,26 @@ describe('redux adapter', () => {
     })
   })
 
+  test('optimistic update: commit and rollback', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createOne(ada))
+    store.dispatch(
+      a.optimisticUpdate({ id: 1, patch: { name: 'X' }, txId: 't1' }),
+    )
+    expect(select.isPending(store.getState(), 1)).toBe(true)
+    store.dispatch(a.rollbackOptimistic({ id: 1, txId: 't1' }))
+    expect(select.getOne(store.getState(), 1)).toMatchObject({
+      name: 'Ada',
+      $isDirty: false,
+    })
+    store.dispatch(
+      a.optimisticUpdate({ id: 1, patch: { name: 'Y' }, txId: 't2' }),
+    )
+    store.dispatch(a.commitOptimistic({ id: 1, txId: 't2' }))
+    expect(select.getOne(store.getState(), 1)?.name).toBe('Y')
+    expect(select.isPending(store.getState(), 1)).toBe(false)
+  })
+
   test('actions and selectors', () => {
     const { store, select, a } = setup()
     store.dispatch(a.createMany([ada, bob]))
@@ -104,5 +124,21 @@ describe('redux setAll / getSortedArray / getByField', () => {
       select.getSortedArray(root, { orderBy: 'age' }).map((u) => u.id),
     ).toEqual([2, 1])
     expect(select.getByField(root, 'name', 'Ada').map((u) => u.id)).toEqual([1])
+  })
+})
+
+describe('redux object filters', () => {
+  test('selectors accept an object filter, memoized by value', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createMany([ada, bob, { id: 3, name: 'Cy', age: 25 }]))
+    const root = store.getState()
+    expect(select.getWhereArray(root, { age: 25 }).map((u) => u.id)).toEqual([
+      2, 3,
+    ])
+    expect(select.getWhereArray(root, { age: 25 })).toBe(
+      select.getWhereArray(root, { age: 25 }),
+    )
+    expect(select.getFirstWhere(root, { name: 'Cy', age: 25 })?.id).toBe(3)
+    expect(Object.keys(select.getWhere(root, { age: 36 }))).toEqual(['1'])
   })
 })

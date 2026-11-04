@@ -59,4 +59,21 @@ describe('createEntityApi memoize option', () => {
     expect(getters.getWhereArray()).not.toBe(getters.getAllArray())
     expect(getters.getWhereArray((u) => u.name === 'B')).toHaveLength(1)
   })
+
+  test('object filters: memoized by value, fresh with memoize: false', () => {
+    const on = make().getters
+    expect(on.getWhereArray({ name: 'B' })).toBe(
+      on.getWhereArray({ name: 'B' }),
+    )
+    expect(on.getFirstWhere({ name: 'B' })?.id).toBe(2)
+    expect(on.getWhere({ name: 'B' })).toBe(on.getWhere({ name: 'B' }))
+
+    const off = make(false).getters
+    expect(off.getWhereArray({ name: 'B' })).not.toBe(
+      off.getWhereArray({ name: 'B' }),
+    )
+    expect(off.getWhereArray({ name: 'B' }).map((u) => u.id)).toEqual([2])
+    expect(off.getWhere({ name: 'B' })).not.toBe(off.getWhere({ name: 'B' }))
+    expect(off.getFirstWhere({ name: 'B' })?.id).toBe(2)
+  })
 })

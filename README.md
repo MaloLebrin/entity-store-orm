@@ -71,11 +71,11 @@ The state is plain JSON, so it serializes for SSR and hydrates as is. The reposi
 
 ## Actions
 
-`createOne`, `createMany`, `setAll` (replace the whole collection, e.g. after an API load: clean entities, `active`/`current` kept only if still present), `updateOne`, `updateMany` (`updateOne` and `updateMany` are upserts: a missing id is created), `updateField`, `deleteOne`, `deleteMany`, `setCurrent`, `removeCurrent`, `setCurrentById`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`.
+`createOne`, `createMany`, `setAll` (replace the whole collection, e.g. after an API load: clean entities, `active`/`current` kept only if still present), `updateOne`, `updateMany` (`updateOne` and `updateMany` are upserts: a missing id is created), `updateField`, `deleteOne`, `deleteMany`, `setCurrent`, `removeCurrent`, `setCurrentById`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`, `optimisticUpdate`, `commitOptimistic`, `rollbackOptimistic` (see [Optimistic updates](#optimistic-updates)).
 
 ## Getters
 
-`getAll`, `getAllArray`, `getAllIds`, `getIsEmpty`, `getIsNotEmpty`, `getCurrent`, `getCurrentById`, `getActive`, `getFirstActive`, `getOne`, `getMany`, `getWhere`, `getWhereArray` (with `orderBy` / `sortBy`), `getSortedArray` (memoized sort), `getByField` (memoized index lookup), `getFirstWhere`, `isAlreadyInStore`, `isAlreadyActive`, `isDirty`, `getMissingIds`, `getMissingEntities`, `search`.
+`getAll`, `getAllArray`, `getAllIds`, `getIsEmpty`, `getIsNotEmpty`, `getCurrent`, `getCurrentById`, `getActive`, `getFirstActive`, `getOne`, `getMany`, `getWhere`, `getWhereArray` (with `orderBy` / `sortBy`), `getSortedArray` (memoized sort), `getByField` (memoized index lookup), `getFirstWhere`, `isAlreadyInStore`, `isAlreadyActive`, `isDirty`, `isPending`, `getMissingIds`, `getMissingEntities`, `search`.
 
 ### Repeated reads: `getSortedArray` and `getByField`
 
@@ -90,9 +90,47 @@ getByField(state, 'authorId', 7) // first call builds an index (O(n)), then O(1)
 - `getWhereArray(state, filter)` also remembers its last result when `filter` (and `orderBy`) are the same references as the previous call; an inline arrow function does not hit, which is no slower than before.
 - All results are shared and read-only (frozen outside production). `{ memoize: false }` / `uncachedGetters` return fresh arrays.
 
+### Object filters (memoized by value)
+
+`getWhereArray`, `getWhere` and `getFirstWhere` accept either a predicate or a plain object. The object form checks strict equality (SameValueZero, like `getByField`) on every listed field, combined with AND, and is typed on the entity:
+
+```ts
+getWhereArray(state, { role: 'admin', age: 30 })
+getWhereArray(state, { role: 'admin' }, { orderBy: 'age', sortBy: 'desc' })
+getFirstWhere(state, { email: 'ada@example.com' }) // O(1) once the index is built
+getWhere(state, { role: 'admin' }) // dictionary, memoized too
+```
+
+- The cache key is the filter's **content**, not its reference: an inline literal hits the cache on every call, and `{ a, b }` equals `{ b, a }`. A predicate is keyed by reference, so an inline arrow still misses. Measured with `pnpm bench` on an unchanged collection, an inline `{ age: 30 }` runs at about 9 to 10 million ops/s whatever the size (1k to 100k), against 34k ops/s (1k), 3.2k (10k) and 355 (100k) for the equivalent inline arrow. Indicative numbers from a shared container.
+- The first field goes through the `getByField` index; a single-field filter without `orderBy` returns the index bucket itself. Other fields filter that bucket. Up to 8 distinct filters are remembered per collection.
+- Values are compared by `SameValueZero`, so object-valued fields match by reference only. An empty object `{}` matches everything. Predicates keep working unchanged.
+- Same contract as the other memoized getters: shared read-only results, frozen outside production, fresh results with `{ memoize: false }` / `uncachedGetters`.
+
 ## Dirty tracking
 
 Updating an entity (`updateOne`, `updateMany`, `updateField`) marks it dirty, records the changed fields and sets `$meta.updatedAt`. `setIsNotDirty(id)` clears that. Setting a field to the value it already has is a no-op.
+
+## Optimistic updates
+
+Apply a change right away, then keep it (`commitOptimistic`) or undo it (`rollbackOptimistic`) once the server answers. Each update is identified by a `txId` you choose and is recorded as plain data in `entity.$meta.pending`, so it works with every adapter (Redux actions included) and survives serialization.
+
+```ts
+const store = createEntityStore<User>() // Zustand; same actions in Pinia / Valtio
+// one-liner: apply, await, commit or roll back + rethrow
+await withOptimisticUpdate(store.getState(), 1, { name: 'Ada L.' }, () =>
+  api.rename(1, 'Ada L.'),
+)
+
+// or by hand (Redux, Jotai...)
+optimisticUpdate(1, { name: 'Ada L.' }, 'rename-1')
+// server ok  -> commitOptimistic(1, 'rename-1')
+// server ko  -> rollbackOptimistic(1, 'rename-1')   // values, $isDirty, changedFields, updatedAt restored
+isPending(1) // true while an update waits for its answer (spinner)
+```
+
+Redux payloads are objects: `optimisticUpdate({ id, patch, txId })`, `commitOptimistic({ id, txId })`, `rollbackOptimistic({ id, txId })`.
+
+Stacked updates are handled: rolling back an earlier update keeps a later one's value (which then undoes straight to the original), and a field modified by something else in the meantime is not overwritten by a rollback. Committing keeps the values and the dirty flag; call `setIsNotDirty` once persisted if you want it clean.
 
 ## Tree-shaking
 

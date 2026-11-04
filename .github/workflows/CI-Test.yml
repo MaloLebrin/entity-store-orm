@@ -43,6 +43,9 @@ jobs:
       - name: ✅ Tests
         run: pnpm test
 
+      - name: 📏 Bundle size budget (size-limit)
+        run: pnpm size
+
       - name: 📦 Validate packages (publint + attw)
         run: pnpm -r check:package
 
