@@ -1,8 +1,129 @@
-export * as actions from './actions.js'
+import {
+  createMany,
+  createOne,
+  deleteMany,
+  deleteOne,
+  removeCurrent,
+  removeCurrentById,
+  resetActive,
+  setActive,
+  setCurrent,
+  setCurrentById,
+  setIsDirty,
+  setIsNotDirty,
+  updateField,
+  updateMany,
+  updateOne,
+} from './actions.js'
+import {
+  getActive,
+  getAll,
+  getAllArray,
+  getAllIds,
+  getCurrent,
+  getCurrentById,
+  getFirstActive,
+  getFirstWhere,
+  getIsEmpty,
+  getIsNotEmpty,
+  getMany,
+  getMissingEntities,
+  getMissingIds,
+  getOne,
+  getWhere,
+  getWhereArray,
+  isAlreadyActive,
+  isAlreadyInStore,
+  isDirty,
+  search,
+} from './getters.js'
+
+export {
+  createMany,
+  createOne,
+  deleteMany,
+  deleteOne,
+  removeCurrent,
+  removeCurrentById,
+  resetActive,
+  setActive,
+  setCurrent,
+  setCurrentById,
+  setIsDirty,
+  setIsNotDirty,
+  updateField,
+  updateMany,
+  updateOne,
+} from './actions.js'
+export {
+  getActive,
+  getAll,
+  getAllArray,
+  getAllIds,
+  getCurrent,
+  getCurrentById,
+  getFirstActive,
+  getFirstWhere,
+  getIsEmpty,
+  getIsNotEmpty,
+  getMany,
+  getMissingEntities,
+  getMissingIds,
+  getOne,
+  getWhere,
+  getWhereArray,
+  isAlreadyActive,
+  isAlreadyInStore,
+  isDirty,
+  search,
+} from './getters.js'
+
+/** All actions as one object (convenient, but not tree-shakable: prefer named imports). */
+export const actions = {
+  createMany,
+  createOne,
+  deleteMany,
+  deleteOne,
+  removeCurrent,
+  removeCurrentById,
+  resetActive,
+  setActive,
+  setCurrent,
+  setCurrentById,
+  setIsDirty,
+  setIsNotDirty,
+  updateField,
+  updateMany,
+  updateOne,
+}
+
+/** All getters as one object (convenient, but not tree-shakable: prefer named imports). */
+export const getters = {
+  getActive,
+  getAll,
+  getAllArray,
+  getAllIds,
+  getCurrent,
+  getCurrentById,
+  getFirstActive,
+  getFirstWhere,
+  getIsEmpty,
+  getIsNotEmpty,
+  getMany,
+  getMissingEntities,
+  getMissingIds,
+  getOne,
+  getWhere,
+  getWhereArray,
+  isAlreadyActive,
+  isAlreadyInStore,
+  isDirty,
+  search,
+}
+
 export { createEntityApi } from './createEntityApi.js'
 export { default as createState } from './createState.js'
 export { patchEntity, withMeta } from './entity.js'
-export * as getters from './getters.js'
 export type { ByIdParams } from './types/ByIdParams.js'
 export type {
   EntityActions,
