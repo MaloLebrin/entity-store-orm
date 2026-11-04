@@ -186,3 +186,99 @@ describe('getAllArray memoization', () => {
     }
   })
 })
+
+describe('getSortedArray', () => {
+  test('sorts by field or function and is memoized per ordering', () => {
+    const byAge = g.getSortedArray(state, { orderBy: 'age' })
+    expect(byAge.map((u) => u.id)).toEqual([2, 1, 3])
+    expect(g.getSortedArray(state, { orderBy: 'age' })).toBe(byAge)
+    const desc = g.getSortedArray(state, { orderBy: 'age', sortBy: 'desc' })
+    expect(desc.map((u) => u.id)).toEqual([3, 1, 2])
+    expect(desc).not.toBe(byAge)
+    expect(g.getSortedArray(state, { orderBy: 'age' })).toBe(byAge)
+    // the shared source array is untouched
+    expect(g.getAllArray(state).map((u) => u.id)).toEqual([1, 2, 3])
+  })
+
+  test('invalidated by a change, inline functions never hit, no orderBy = getAllArray', () => {
+    const first = g.getSortedArray(state, { orderBy: 'name' })
+    const s2 = createMany(state, [{ id: 4, name: 'Al', email: 'a', age: 1 }])
+    const next = g.getSortedArray(s2, { orderBy: 'name' })
+    expect(next).not.toBe(first)
+    expect(next.map((u) => u.name)).toEqual(['Al', 'Bob', 'Jane', 'John'])
+    const fn = (u: { age: number }) => u.age
+    expect(g.getSortedArray(state, { orderBy: fn })).toBe(
+      g.getSortedArray(state, { orderBy: fn }),
+    )
+    expect(g.getSortedArray(state, { orderBy: (u) => u.age })).not.toBe(
+      g.getSortedArray(state, { orderBy: (u) => u.age }),
+    )
+    expect(g.getSortedArray(state, {})).toBe(g.getAllArray(state))
+  })
+
+  test('keeps at most 4 orderings per collection and can be uncached', () => {
+    const keys = ['id', 'name', 'email', 'age', 'id'] as const
+    const first = g.getSortedArray(state, { orderBy: 'id', sortBy: 'desc' })
+    for (const k of keys) g.getSortedArray(state, { orderBy: k })
+    expect(g.getSortedArray(state, { orderBy: 'id', sortBy: 'desc' })).toEqual(
+      first,
+    )
+    const u = g.uncachedGetters.getSortedArray(state, { orderBy: 'age' })
+    expect(u).not.toBe(
+      g.uncachedGetters.getSortedArray(state, { orderBy: 'age' }),
+    )
+    expect(Object.isFrozen(u)).toBe(false)
+  })
+})
+
+describe('getByField', () => {
+  const s = createMany(state, [
+    { id: 4, name: 'Jane', email: 'jane2@example.com', age: 25 },
+  ])
+
+  test('returns matching entities in allIds order, via a memoized index', () => {
+    const janes = g.getByField(s, 'name', 'Jane')
+    expect(janes.map((u) => u.id)).toEqual([2, 4])
+    expect(g.getByField(s, 'name', 'Jane')).toBe(janes)
+    expect(g.getByField(s, 'age', 25).map((u) => u.id)).toEqual([2, 4])
+    expect(g.getByField(s, 'age', 99)).toEqual([])
+    expect(g.getByField(s, 'age', 99)).toBe(g.getByField(s, 'name', 'nobody'))
+  })
+
+  test('rebuilds after a change and matches getWhereArray', () => {
+    const before = g.getByField(s, 'name', 'Jane')
+    const s2 = updateField(s, 'name', 'Jane', 1)
+    const after = g.getByField(s2, 'name', 'Jane')
+    expect(after).not.toBe(before)
+    expect(after.map((u) => u.id)).toEqual([1, 2, 4])
+    expect(after).toEqual(g.getWhereArray(s2, (u) => u.name === 'Jane'))
+  })
+
+  test('uncachedGetters give fresh, equal results', () => {
+    const a = g.uncachedGetters.getByField(s, 'name', 'Jane')
+    expect(a).toEqual(g.getByField(s, 'name', 'Jane'))
+    expect(a).not.toBe(g.uncachedGetters.getByField(s, 'name', 'Jane'))
+  })
+})
+
+describe('getWhereArray with a stable filter', () => {
+  const adults = (u: { age: number }) => u.age >= 30
+
+  test('reuses the last result for the same filter and ordering', () => {
+    const first = g.getWhereArray(state, adults)
+    expect(g.getWhereArray(state, adults)).toBe(first)
+    const sorted = g.getWhereArray(state, adults, { orderBy: 'age' })
+    expect(sorted).not.toBe(first)
+    expect(g.getWhereArray(state, adults, { orderBy: 'age' })).toBe(sorted)
+  })
+
+  test('inline filters, other states and uncached calls never reuse it', () => {
+    const first = g.getWhereArray(state, adults)
+    expect(g.getWhereArray(state, (u) => u.age >= 30)).not.toBe(first)
+    const s2 = createMany(state, [{ id: 9, name: 'Z', email: 'z', age: 50 }])
+    expect(g.getWhereArray(s2, adults).map((u) => u.id)).toEqual([1, 3, 9])
+    expect(g.uncachedGetters.getWhereArray(state, adults)).not.toBe(
+      g.uncachedGetters.getWhereArray(state, adults),
+    )
+  })
+})

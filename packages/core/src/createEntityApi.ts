@@ -21,11 +21,17 @@ export function createEntityApi<T extends WithId>({
   // Pick the two memoizable getters explicitly: spreading the `g` namespace
   // would force bundlers to keep every getter.
   const read = memoize
-    ? { getAllArray: g.getAllArray, getWhereArray: g.getWhereArray }
+    ? {
+        getAllArray: g.getAllArray,
+        getWhereArray: g.getWhereArray,
+        getSortedArray: g.getSortedArray,
+        getByField: g.getByField,
+      }
     : g.uncachedGetters
   const actions: EntityActions<T> = {
     createOne: (p) => set(a.createOne(get(), p)),
     createMany: (p) => set(a.createMany(get(), p)),
+    setAll: (p) => set(a.setAll(get(), p)),
     updateOne: (id, p) => set(a.updateOne(get(), id, p)),
     updateMany: (p) => set(a.updateMany(get(), p)),
     updateField: (field, value, id) =>
@@ -56,6 +62,8 @@ export function createEntityApi<T extends WithId>({
     getMany: (ids) => g.getMany(get(), ids),
     getWhere: (f) => g.getWhere(get(), f),
     getWhereArray: (f, o) => read.getWhereArray(get(), f, o),
+    getSortedArray: (o) => read.getSortedArray(get(), o),
+    getByField: (field, value) => read.getByField(get(), field, value),
     getFirstWhere: (f) => g.getFirstWhere(get(), f),
     isAlreadyInStore: (id) => g.isAlreadyInStore(get(), id),
     isAlreadyActive: (id) => g.isAlreadyActive(get(), id),

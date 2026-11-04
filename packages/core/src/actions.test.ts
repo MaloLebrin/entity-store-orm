@@ -283,3 +283,46 @@ describe('batch actions match their single-entity counterparts', () => {
     expect(performance.now() - start).toBeLessThan(2000)
   })
 })
+
+describe('setAll', () => {
+  test('replaces the collection with clean entities', () => {
+    const s = a.setAll(
+      a.updateOne(seeded(), 1, { ...john, name: 'X' }, 150),
+      [
+        { id: 2, name: 'Janet', age: 26 },
+        { id: 3, name: 'Bob', age: 40 },
+      ],
+      300,
+    )
+    expect(s.entities.allIds).toEqual([2, 3])
+    expect(Object.keys(s.entities.byId)).toEqual(['2', '3'])
+    expect(s.entities.byId[2]).toMatchObject({
+      name: 'Janet',
+      $isDirty: false,
+      $meta: { changedFields: [], createdAt: 300, updatedAt: null },
+    })
+  })
+
+  test('keeps active/current only while they still exist', () => {
+    let s = a.setActive(a.setActive(seeded(), 1), 2)
+    s = a.setCurrentById(a.setCurrent(s, john), 1)
+    const next = a.setAll(s, [{ id: 1, name: 'Johnny', age: 31 }], 400)
+    expect(next.entities.active).toEqual([1])
+    expect(next.entities.currentById).toBe(1)
+    expect(next.entities.current?.name).toBe('Johnny')
+
+    const gone = a.setAll(s, [jane], 400)
+    expect(gone.entities.active).toEqual([2])
+    expect(gone.entities.current).toBeNull()
+    expect(gone.entities.currentById).toBeNull()
+  })
+
+  test('deduplicates ids (last one wins), empty payload empties the store, no mutation', () => {
+    const s = a.setAll(seeded(), [john, { ...john, name: 'Last' }], 1)
+    expect(s.entities.allIds).toEqual([1])
+    expect(s.entities.byId[1]?.name).toBe('Last')
+    expect(a.setAll(seeded(), []).entities.allIds).toEqual([])
+    const frozen = freeze(seeded())
+    expect(() => a.setAll(frozen, [john])).not.toThrow()
+  })
+})

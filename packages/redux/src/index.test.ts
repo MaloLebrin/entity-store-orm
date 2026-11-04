@@ -92,3 +92,17 @@ describe('redux memoize option', () => {
     }
   })
 })
+
+describe('redux setAll / getSortedArray / getByField', () => {
+  test('work through the slice and selectors', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createMany([ada]))
+    store.dispatch(a.setAll([bob, ada]))
+    const root = store.getState()
+    expect(select.getAllIds(root)).toEqual([2, 1])
+    expect(
+      select.getSortedArray(root, { orderBy: 'age' }).map((u) => u.id),
+    ).toEqual([2, 1])
+    expect(select.getByField(root, 'name', 'Ada').map((u) => u.id)).toEqual([1])
+  })
+})

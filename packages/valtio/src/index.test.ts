@@ -74,3 +74,16 @@ describe('valtio memoize option', () => {
     expect(off.getAllArray()).not.toBe(off.getAllArray())
   })
 })
+
+describe('valtio setAll / getSortedArray / getByField', () => {
+  test('work through the store', () => {
+    const store = createEntityStore<User>()
+    store.createMany([ada])
+    store.setAll([bob, ada])
+    expect(store.getAllIds()).toEqual([2, 1])
+    expect(store.getSortedArray({ orderBy: 'age' }).map((u) => u.id)).toEqual([
+      2, 1,
+    ])
+    expect(store.getByField('name', 'Ada').map((u) => u.id)).toEqual([1])
+  })
+})

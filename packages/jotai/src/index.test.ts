@@ -81,3 +81,23 @@ describe('jotai memoize option', () => {
     }
   })
 })
+
+describe('jotai setAll / getSortedArray / getByField', () => {
+  test('work through the atoms', () => {
+    const users = createEntityAtoms<User>()
+    const store = createStore()
+    store.set(users.actions.createMany, [ada])
+    store.set(users.actions.setAll, [bob, ada])
+    expect(store.get(users.getters.getAllIds)()).toEqual([2, 1])
+    expect(
+      store
+        .get(users.getters.getSortedArray)({ orderBy: 'age' })
+        .map((u) => u.id),
+    ).toEqual([2, 1])
+    expect(
+      store
+        .get(users.getters.getByField)('name', 'Ada')
+        .map((u) => u.id),
+    ).toEqual([1])
+  })
+})

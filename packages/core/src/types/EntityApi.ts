@@ -9,6 +9,8 @@ type Predicate<T extends WithId> = (item: EntityWithMeta<T>) => boolean | null
 export interface EntityActions<T extends WithId> {
   createOne(payload: T): void
   createMany(payload: T[]): void
+  /** Replace the whole collection (clean entities); see `setAll`. */
+  setAll(payload: T[]): void
   updateOne(id: Id, payload: T): void
   updateMany(payload: T[]): void
   updateField<K extends keyof T>(field: K, value: T[K], id: Id): void
@@ -41,6 +43,11 @@ export interface EntityGetters<T extends WithId> {
   getWhereArray(
     filter?: Predicate<T> | null,
     options?: SortOptions<T>,
+  ): EntityWithMeta<T>[]
+  getSortedArray(options: SortOptions<T>): EntityWithMeta<T>[]
+  getByField<K extends keyof EntityWithMeta<T>>(
+    field: K,
+    value: EntityWithMeta<T>[K],
   ): EntityWithMeta<T>[]
   getFirstWhere(filter?: Predicate<T> | null): EntityWithMeta<T> | undefined
   isAlreadyInStore(id: Id): boolean

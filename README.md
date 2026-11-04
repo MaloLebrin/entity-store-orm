@@ -67,11 +67,24 @@ The state is plain JSON, so it serializes for SSR and hydrates as is. The reposi
 
 ## Actions
 
-`createOne`, `createMany`, `updateOne`, `updateMany`, `updateField`, `deleteOne`, `deleteMany`, `setCurrent`, `removeCurrent`, `setCurrentById`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`.
+`createOne`, `createMany`, `setAll` (replace the whole collection, e.g. after an API load: clean entities, `active`/`current` kept only if still present), `updateOne`, `updateMany` (`updateOne` and `updateMany` are upserts: a missing id is created), `updateField`, `deleteOne`, `deleteMany`, `setCurrent`, `removeCurrent`, `setCurrentById`, `removeCurrentById`, `setActive`, `resetActive`, `setIsDirty`, `setIsNotDirty`.
 
 ## Getters
 
-`getAll`, `getAllArray`, `getAllIds`, `getIsEmpty`, `getIsNotEmpty`, `getCurrent`, `getCurrentById`, `getActive`, `getFirstActive`, `getOne`, `getMany`, `getWhere`, `getWhereArray` (with `orderBy` / `sortBy`), `getFirstWhere`, `isAlreadyInStore`, `isAlreadyActive`, `isDirty`, `getMissingIds`, `getMissingEntities`, `search`.
+`getAll`, `getAllArray`, `getAllIds`, `getIsEmpty`, `getIsNotEmpty`, `getCurrent`, `getCurrentById`, `getActive`, `getFirstActive`, `getOne`, `getMany`, `getWhere`, `getWhereArray` (with `orderBy` / `sortBy`), `getSortedArray` (memoized sort), `getByField` (memoized index lookup), `getFirstWhere`, `isAlreadyInStore`, `isAlreadyActive`, `isDirty`, `getMissingIds`, `getMissingEntities`, `search`.
+
+### Repeated reads: `getSortedArray` and `getByField`
+
+Both are memoized on the collection's references, so the work happens once per change, not once per read. Measured warm on the shared container, a repeated lookup runs at about 10 million ops/s whatever the collection size (1k to 100k), against 312 ops/s for an inline `getWhereArray` filter at 100k entities (the first call after a change pays the O(n) build):
+
+```ts
+getSortedArray(state, { orderBy: 'name' }) // sorted once per change, shared array
+getByField(state, 'authorId', 7) // first call builds an index (O(n)), then O(1)
+```
+
+- Give `orderBy` a field name (or one stable function reference). An inline arrow is a new key on every call and never hits. Up to 4 orderings are remembered per collection.
+- `getWhereArray(state, filter)` also remembers its last result when `filter` (and `orderBy`) are the same references as the previous call; an inline arrow function does not hit, which is no slower than before.
+- All results are shared and read-only (frozen outside production). `{ memoize: false }` / `uncachedGetters` return fresh arrays.
 
 ## Dirty tracking
 
@@ -131,6 +144,20 @@ The table above reads an unchanged state, the best case for memoization. This on
 
 - Right after a write with a single read, memoization buys nothing and can cost a little: about 40% slower at 1,000 entities (a few microseconds, the cache entry), about even at 10,000, slightly faster at 100,000. At 10 reads per write it wins by 7.5x to 11x, at 100 reads by 64x to 107x (k = 2 to 9 was not measured).
 - It also removes re-renders. In `tests/react-app/src/memoize.test.tsx`, a `React.memo` child fed with `getAllArray()` renders **0** extra times over 5 `setCurrentById` calls when memoized, against **5** with `{ memoize: false }`. The same holds for a Redux `useSelector(getAllArray)` component. In the zustand test, a real write (`createOne`) re-renders the child once in both modes.
+
+## Coming from Redux Toolkit's `createEntityAdapter`
+
+| RTK entity adapter                       | Entity Store                                                    |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| `addOne` / `addMany`                     | `createOne` / `createMany`                                      |
+| `setAll`                                 | `setAll`                                                        |
+| `upsertOne` / `upsertMany`               | `updateOne` / `updateMany` (they create missing ids)            |
+| `updateOne({ id, changes })`             | `updateOne(id, payload)`, `updateField(field, value, id)`       |
+| `removeOne` / `removeMany`               | `deleteOne` / `deleteMany`                                      |
+| `selectAll` / `selectById` / `selectIds` | `getAllArray` / `getOne` / `getAllIds`                          |
+| `sortComparer` option                    | `getSortedArray({ orderBy, sortBy })` (sorts on read, memoized) |
+
+Differences worth knowing: entities carry `$isDirty` and `$meta` (changed fields, timestamps); `current` and `active` selection live in the same state; there is no Immer, so every action returns a new state and shares the unchanged parts. With the redux adapter you keep using your store: `createEntitySlice('users')` gives you a slice whose `reducer` goes in `configureStore`, and `getSelectors(root => root.users)` replaces `adapter.getSelectors()`.
 
 ## Development
 

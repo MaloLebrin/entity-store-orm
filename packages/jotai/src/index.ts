@@ -50,6 +50,7 @@ export interface EntityAtoms<T extends WithId> {
 const ACTION_KEYS = [
   'createOne',
   'createMany',
+  'setAll',
   'updateOne',
   'updateMany',
   'updateField',
@@ -77,6 +78,8 @@ const GETTER_KEYS = [
   'getFirstActive',
   'getOne',
   'getMany',
+  'getSortedArray',
+  'getByField',
   'getWhere',
   'getWhereArray',
   'getFirstWhere',

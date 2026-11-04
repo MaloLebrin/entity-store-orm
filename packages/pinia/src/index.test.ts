@@ -136,3 +136,18 @@ describe('pinia memoize option', () => {
     expect(off.getAllArray()).not.toBe(off.getAllArray())
   })
 })
+
+describe('pinia setAll / getSortedArray / getByField', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  test('work through the store', () => {
+    const store = defineEntityStore<User>('sorted')()
+    store.createMany([ada])
+    store.setAll([bob, ada])
+    expect(store.getAllIds()).toEqual([2, 1])
+    expect(store.getSortedArray({ orderBy: 'age' }).map((u) => u.id)).toEqual([
+      2, 1,
+    ])
+    expect(store.getByField('name', 'Ada').map((u) => u.id)).toEqual([1])
+  })
+})
