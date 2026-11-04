@@ -1,6 +1,6 @@
 {
   "name": "@entity-store/pinia",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Pinia adapter for Entity Store: typed, immutable entity collections",
   "type": "module",
   "main": "./dist/index.cjs",

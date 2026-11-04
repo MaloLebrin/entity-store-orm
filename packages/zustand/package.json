@@ -1,6 +1,6 @@
 {
   "name": "@entity-store/zustand",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Zustand adapter for Entity Store",
   "type": "module",
   "main": "./dist/index.cjs",

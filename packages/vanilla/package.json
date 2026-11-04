@@ -1,6 +1,6 @@
 {
   "name": "@entity-store/vanilla",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework-free store with subscribe for Entity Store (works with useSyncExternalStore)",
   "type": "module",
   "main": "./dist/index.cjs",
