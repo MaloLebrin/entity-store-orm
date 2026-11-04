@@ -30,58 +30,58 @@ import type { WithId } from 'entity-store'
 #### For Pinia users:
 
 ```bash
-npm install @entity-store/pinia-adapter pinia
+npm install @entity-store/pinia pinia
 # or
-pnpm add @entity-store/pinia-adapter pinia
+pnpm add @entity-store/pinia pinia
 # or
-yarn add @entity-store/pinia-adapter pinia
+yarn add @entity-store/pinia pinia
 ```
 
 **Import:**
 ```typescript
-import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
-import type { WithId } from '@entity-store/types'
+import { createPiniaEntityStore } from '@entity-store/pinia'
+import type { WithId } from '@entity-store/core'
 ```
 
 #### For agnostic usage (any state manager):
 
 ```bash
-npm install @entity-store/core @entity-store/types
+npm install @entity-store/core @entity-store/core
 # or
-pnpm add @entity-store/core @entity-store/types
+pnpm add @entity-store/core @entity-store/core
 # or
-yarn add @entity-store/core @entity-store/types
+yarn add @entity-store/core @entity-store/core
 ```
 
 **Import:**
 ```typescript
 import { createState, createActions, createGetters } from '@entity-store/core'
-import type { WithId } from '@entity-store/types'
+import type { WithId } from '@entity-store/core'
 ```
 
 #### For types only:
 
 ```bash
-npm install @entity-store/types
+npm install @entity-store/core
 # or
-pnpm add @entity-store/types
+pnpm add @entity-store/core
 # or
-yarn add @entity-store/types
+yarn add @entity-store/core
 ```
 
 **Import:**
 ```typescript
-import type { WithId, State, FilterFn } from '@entity-store/types'
+import type { WithId, State, FilterFn } from '@entity-store/core'
 ```
 
 ## Bundle Size Comparison
 
-| Package                       | Size  | Use Case          |
-| ----------------------------- | ----- | ----------------- |
-| `@entity-store/types`         | ~2KB  | Types only        |
-| `@entity-store/core`          | ~15KB | Core logic        |
-| `@entity-store/pinia-adapter` | ~20KB | Pinia integration |
-| `entity-store` (all)          | ~40KB | Everything        |
+| Package               | Size  | Use Case          |
+| --------------------- | ----- | ----------------- |
+| `@entity-store/core`  | ~2KB  | Types only        |
+| `@entity-store/core`  | ~15KB | Core logic        |
+| `@entity-store/pinia` | ~20KB | Pinia integration |
+| `entity-store` (all)  | ~40KB | Everything        |
 
 ## Migration from v1.0.0
 
@@ -100,7 +100,7 @@ import { createPiniaEntityStore } from 'entity-store'
 import { createPiniaEntityStore } from 'entity-store'
 
 // Option 2: Use the specific adapter (recommended)
-import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
+import { createPiniaEntityStore } from '@entity-store/pinia'
 ```
 
 ## Framework-Specific Setup
@@ -108,12 +108,12 @@ import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
 ### Vue 3 + Pinia
 
 ```bash
-npm install @entity-store/pinia-adapter pinia
+npm install @entity-store/pinia pinia
 ```
 
 ```typescript
 import { createPinia } from 'pinia'
-import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
+import { createPiniaEntityStore } from '@entity-store/pinia'
 
 const pinia = createPinia()
 app.use(pinia)
@@ -136,7 +136,7 @@ const useUserStore = createZustandEntityStore<User>('users')
 ### Vanilla JavaScript
 
 ```bash
-npm install @entity-store/core @entity-store/types
+npm install @entity-store/core @entity-store/core
 ```
 
 ```typescript

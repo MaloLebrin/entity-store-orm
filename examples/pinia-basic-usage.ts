@@ -5,8 +5,8 @@
  * to create and manage a user store.
  */
 
-import { createPiniaEntityStore } from '@entity-store/pinia-adapter'
-import type { WithId } from '@entity-store/types'
+import type { WithId } from '@entity-store/core'
+import { createPiniaEntityStore } from '@entity-store/pinia'
 import { createPinia, setActivePinia, storeToRefs } from 'pinia'
 
 // User interface definition

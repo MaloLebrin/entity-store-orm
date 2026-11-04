@@ -11,7 +11,7 @@ entity-store/
 ├── packages/
 │   ├── core/           # Pure business logic, 0 dependencies
 │   ├── types/          # Shared types
-│   ├── pinia-adapter/  # Pinia adapter
+│   ├── pinia/  # Pinia adapter
 │   └── main/           # Main package with conditional exports
 ```
 
@@ -30,12 +30,12 @@ npm install @entity-store/core
 - `createActions()` : CRUD actions for entities
 - `createGetters()` : Getters for retrieving and filtering data
 
-### @entity-store/pinia-adapter
+### @entity-store/pinia
 
 Pinia adapter with all core functionality.
 
 ```bash
-npm install @entity-store/pinia-adapter pinia
+npm install @entity-store/pinia pinia
 ```
 
 **Features:**
@@ -57,7 +57,7 @@ npm install entity-store
 
 ```typescript
 import { createPinia } from 'pinia'
-import { entityStorePlugin } from '@entity-store/pinia-adapter'
+import { entityStorePlugin } from '@entity-store/pinia'
 
 const pinia = createPinia().use(entityStorePlugin)
 app.use(pinia)
@@ -71,7 +71,7 @@ userStore.createOne({ id: 1, name: 'John', email: 'john@example.com' })
 
 ```typescript
 import { createState, createActions, createGetters } from '@entity-store/core'
-import type { WithId } from '@entity-store/types'
+import type { WithId } from '@entity-store/core'
 
 interface User extends WithId {
   name: string
@@ -139,7 +139,7 @@ pnpm dev
 
 - [Core Documentation](./packages/core/README.md)
 - [Types Documentation](./packages/types/README.md)
-- [Pinia Adapter Documentation](./packages/pinia-adapter/README.md)
+- [Pinia Adapter Documentation](./packages/pinia/README.md)
 
 ## 🚧 Roadmap
 

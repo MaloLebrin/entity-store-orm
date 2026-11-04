@@ -14,11 +14,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@entity-store/core': resolve(__dirname, 'packages/core/src'),
-      '@entity-store/types': resolve(__dirname, 'packages/types/src'),
-      '@entity-store/pinia-adapter': resolve(
-        __dirname,
-        'packages/pinia-adapter/src',
-      ),
+      '@entity-store/pinia': resolve(__dirname, 'packages/pinia/src'),
     },
   },
 })

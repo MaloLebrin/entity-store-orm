@@ -6,7 +6,7 @@ This Pinia plugin automatically adds entity management to all your existing Pini
 
 ```typescript
 import { createPinia } from 'pinia'
-import { entityStorePlugin } from '@entity-store/pinia-adapter'
+import { entityStorePlugin } from '@entity-store/pinia'
 
 const pinia = createPinia().use(entityStorePlugin)
 app.use(pinia)
@@ -71,7 +71,7 @@ The plugin automatically adds to all your stores:
 
 ```typescript
 import { defineStore } from 'pinia'
-import type { WithId } from '@entity-store/types'
+import type { WithId } from '@entity-store/core'
 
 interface User extends WithId {
   name: string
