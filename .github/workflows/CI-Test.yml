@@ -43,6 +43,9 @@ jobs:
       - name: ✅ Tests
         run: pnpm test
 
+      - name: 📊 Core coverage threshold
+        run: pnpm --filter @entity-store/core exec vitest run --coverage
+
       - name: 📏 Bundle size budget (size-limit)
         run: pnpm size
 

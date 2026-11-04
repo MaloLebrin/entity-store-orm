@@ -35,6 +35,11 @@ export function createEntityApi<T extends WithId>({
     createOne: (p) => set(a.createOne(get(), p)),
     createMany: (p) => set(a.createMany(get(), p)),
     setAll: (p) => set(a.setAll(get(), p)),
+    addOne: (p) => set(a.addOne(get(), p)),
+    addMany: (p) => set(a.addMany(get(), p)),
+    upsertOne: (p) => set(a.upsertOne(get(), p)),
+    upsertMany: (p) => set(a.upsertMany(get(), p)),
+    removeAll: () => set(a.removeAll(get())),
     updateOne: (id, p) => set(a.updateOne(get(), id, p)),
     updateMany: (p) => set(a.updateMany(get(), p)),
     updateField: (field, value, id) =>

@@ -1,8 +1,11 @@
 import {
+  addMany,
+  addOne,
   createMany,
   createOne,
   deleteMany,
   deleteOne,
+  removeAll,
   removeCurrent,
   removeCurrentById,
   resetActive,
@@ -15,6 +18,8 @@ import {
   updateField,
   updateMany,
   updateOne,
+  upsertMany,
+  upsertOne,
 } from './actions.js'
 import {
   getActive,
@@ -48,10 +53,13 @@ import {
 } from './optimistic.js'
 
 export {
+  addMany,
+  addOne,
   createMany,
   createOne,
   deleteMany,
   deleteOne,
+  removeAll,
   removeCurrent,
   removeCurrentById,
   resetActive,
@@ -64,6 +72,8 @@ export {
   updateField,
   updateMany,
   updateOne,
+  upsertMany,
+  upsertOne,
 } from './actions.js'
 export type { GetterOptions } from './getters.js'
 export {
@@ -94,10 +104,13 @@ export {
 
 /** All actions as one object (convenient, but not tree-shakable: prefer named imports). */
 export const actions = {
+  addMany,
+  addOne,
   createMany,
   createOne,
   deleteMany,
   deleteOne,
+  removeAll,
   removeCurrent,
   removeCurrentById,
   resetActive,
@@ -110,6 +123,8 @@ export const actions = {
   updateField,
   updateMany,
   updateOne,
+  upsertMany,
+  upsertOne,
   optimisticUpdate,
   commitOptimistic,
   rollbackOptimistic,
