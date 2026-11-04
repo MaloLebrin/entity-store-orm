@@ -62,4 +62,12 @@ describe('zustand adapter', () => {
     store.getState().setActive(99)
     expect(store.getState().entities).toBe(before)
   })
+
+  test('can be seeded with initial entities', () => {
+    const seeded = createEntityStore<User>()
+    seeded.getState().createMany([ada, bob])
+    const store = createEntityStore<User>(seeded.getState().entities)
+    expect(store.getInitialState().getAllIds()).toEqual([1, 2])
+    expect(store.getState().getOne(2)?.name).toBe('Bob')
+  })
 })
