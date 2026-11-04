@@ -1,130 +1,109 @@
 import {
-  createActions,
-  createGetters,
+  createEntityApi,
   createState,
+  type EntityActions,
+  type EntityGetters,
+  type State,
   type WithId,
 } from '@entity-store/core'
 import { defineStore } from 'pinia'
+import { shallowRef } from 'vue'
 
-/**
- * Base store type with entity management capabilities
- */
-export type BaseEntityStore<T extends WithId> = {
-  entities: {
-    byId: Record<string, T & { $isDirty: boolean }>
-    allIds: string[]
-    current: (T & { $isDirty: boolean }) | null
-    currentById: string | null
-    active: string[]
-  }
-} & ReturnType<typeof createGetters<T>> &
-  ReturnType<typeof createActions<T>>
-
-/**
- * Options for extending the Pinia entity store
- */
-export interface PiniaEntityStoreOptions<T extends WithId> {
-  /**
-   * Additional state properties to add to the store
-   */
-  state?: Record<string, unknown>
-
-  /**
-   * Additional getters to add to the store
-   */
-  getters?: Record<
-    string,
-    (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown
-  >
-
-  /**
-   * Additional actions to add to the store
-   */
-  actions?: Record<
-    string,
-    (store: BaseEntityStore<T>) => (...args: unknown[]) => unknown
-  >
-
-  /**
-   * Custom store name (optional, defaults to the provided storeName)
-   */
-  storeName?: string
-}
-
-/**
- * Creates a Pinia store with entity management capabilities
- * @param storeName - The name of the Pinia store
- * @param options - Options for extending the store
- * @returns A Pinia store definition with entity management methods
- */
-export function createPiniaEntityStore<T extends WithId>(
-  storeName: string,
-  options: PiniaEntityStoreOptions<T> = {},
-): any {
-  return defineStore(options.storeName || storeName, () => {
-    // Create the base state using our core function
-    const baseState = createState<T>()
-
-    // Create state by merging base state with custom state
-    const entities = {
-      ...baseState.entities,
-      ...options.state,
-    }
-
-    // Create a state object that the core functions can work with
-    const state = {
-      entities,
-    }
-
-    // Create getters and actions with the state
-    const getters = createGetters<T>(state)
-    const actions = createActions<T>(state)
-
-    // Create the base store object
-    const baseStore: BaseEntityStore<T> = {
-      entities,
-      ...getters,
-      ...actions,
-    } as BaseEntityStore<T>
-
-    // Create custom getters as functions that receive the store context
-    const customGetters: Record<string, (...args: unknown[]) => unknown> = {}
-    if (options.getters) {
-      Object.entries(options.getters).forEach(([key, getterFn]) => {
-        customGetters[key] = (...args: unknown[]) =>
-          getterFn(baseStore)(...args)
-      })
-    }
-
-    // Create custom actions as functions that receive the store context
-    const customActions: Record<string, (...args: unknown[]) => unknown> = {}
-    if (options.actions) {
-      Object.entries(options.actions).forEach(([key, actionFn]) => {
-        customActions[key] = (...args: unknown[]) =>
-          actionFn(baseStore)(...args)
-      })
-    }
-
-    // Return the store with all functionality
-    return {
-      ...baseStore,
-      ...customGetters,
-      ...customActions,
-    }
-  })
-}
-
-/**
- * Type for the Pinia entity store instance
- */
-export type PiniaEntityStore<T extends WithId> = ReturnType<
-  ReturnType<typeof createPiniaEntityStore<T>>
->
-
-// Export des types du plugin
 export type {
-  EntityPluginOptions,
-  EntityStorePlugin,
-} from './plugin'
-// Export du plugin Pinia
-export { entityStorePlugin, installEntityStorePlugin } from './plugin'
+  EntityActions,
+  EntityGetters,
+  EntityWithMeta,
+  Id,
+  SortOptions,
+  State,
+  WithId,
+} from '@entity-store/core'
+
+/** What `defineEntityStore` hands to the `extend` callback. */
+export interface EntityStoreBase<T extends WithId>
+  extends EntityActions<T>,
+    EntityGetters<T> {
+  /** Normalized state: `byId`, `allIds`, `current`, `currentById`, `active`. */
+  entities: State<T>['entities']
+}
+
+export interface DefineEntityStoreOptions<
+  T extends WithId,
+  X extends object = object,
+> {
+  /**
+   * Add your own state, getters and actions, setup-store style. Whatever you
+   * return is merged into the store (refs become state, computeds become
+   * getters, functions become actions) and fully typed.
+   */
+  extend?: (base: EntityStoreBase<T>) => X
+}
+
+function setupEntityStore<T extends WithId, X extends object>(
+  options: DefineEntityStoreOptions<T, X>,
+) {
+  const entities = shallowRef<State<T>['entities']>(createState<T>().entities)
+
+  const { actions, getters } = createEntityApi<T>({
+    get: () => ({ entities: entities.value }),
+    set: (next: State<T>) => {
+      entities.value = next.entities
+    },
+  })
+
+  const base: EntityStoreBase<T> = {
+    entities: entities as unknown as State<T>['entities'],
+    ...actions,
+    ...getters,
+  }
+  // The Pinia setup store must expose the ref itself (that is what makes it state).
+  const exposed = { ...base, entities }
+  const extra = options.extend?.(base) ?? ({} as X)
+  return { ...exposed, ...extra }
+}
+
+/**
+ * Define a Pinia store that manages a normalized collection of entities.
+ *
+ * ```ts
+ * const useUsers = defineEntityStore<User>('users')
+ * useUsers().createOne({ id: 1, name: 'Ada' })
+ * ```
+ *
+ * Call it without arguments to get a builder that also accepts `extend`
+ * (TypeScript cannot infer the extension type when `T` is given explicitly):
+ *
+ * ```ts
+ * const useUsers = defineEntityStore<User>()('users', {
+ *   extend: (base) => ({ adults: computed(() => base.getWhereArray((u) => u.age >= 18)) }),
+ * })
+ * ```
+ *
+ * The state is replaced (never mutated) on every action, so it is held in a
+ * `shallowRef`: Vue tracks the replacement, not deep property writes.
+ */
+export function defineEntityStore<T extends WithId>(
+  id: string,
+): ReturnType<typeof defineEntityStoreWith<T, object>>
+export function defineEntityStore<T extends WithId>(): <
+  X extends object = object,
+>(
+  id: string,
+  options?: DefineEntityStoreOptions<T, X>,
+) => ReturnType<typeof defineEntityStoreWith<T, X>>
+export function defineEntityStore<T extends WithId>(id?: string) {
+  if (id === undefined) {
+    return <X extends object = object>(
+      storeId: string,
+      options: DefineEntityStoreOptions<T, X> = {},
+    ) => defineEntityStoreWith<T, X>(storeId, options)
+  }
+  return defineEntityStoreWith<T, object>(id, {})
+}
+
+function defineEntityStoreWith<T extends WithId, X extends object>(
+  id: string,
+  options: DefineEntityStoreOptions<T, X>,
+) {
+  return defineStore(id, () => setupEntityStore<T, X>(options))
+}

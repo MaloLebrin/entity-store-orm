@@ -1,0 +1,174 @@
+import { patchEntity, withMeta } from './entity.js'
+import type { State } from './types/State.js'
+import type { Id, WithId } from './types/WithId.js'
+
+/**
+ * Pure actions: each one takes a state and returns the next state.
+ * The input state is never mutated; unchanged parts are shared structurally,
+ * and the very same state reference is returned when nothing changed.
+ */
+
+function setEntities<T extends WithId>(
+  state: State<T>,
+  entities: Partial<State<T>['entities']>,
+): State<T> {
+  return { ...state, entities: { ...state.entities, ...entities } }
+}
+
+/** Create an entity (replaces it, resetting its metadata, if the id exists). */
+export function createOne<T extends WithId>(
+  state: State<T>,
+  payload: T,
+  now?: number,
+): State<T> {
+  const { byId, allIds } = state.entities
+  return setEntities(state, {
+    byId: { ...byId, [payload.id]: withMeta(payload, now) },
+    allIds: allIds.includes(payload.id) ? allIds : [...allIds, payload.id],
+  })
+}
+
+export function createMany<T extends WithId>(
+  state: State<T>,
+  payload: T[],
+  now?: number,
+): State<T> {
+  return payload.reduce((acc, entity) => createOne(acc, entity, now), state)
+}
+
+/** Patch an existing entity (marks it dirty), or create it when missing. */
+export function updateOne<T extends WithId>(
+  state: State<T>,
+  id: Id,
+  payload: T,
+  now?: number,
+): State<T> {
+  const existing = state.entities.byId[id]
+  if (!existing) return createOne(state, payload, now)
+  const next = patchEntity(existing, payload, now)
+  if (next === existing) return state
+  return setEntities(state, {
+    byId: { ...state.entities.byId, [id]: next },
+  })
+}
+
+export function updateMany<T extends WithId>(
+  state: State<T>,
+  payload: T[],
+  now?: number,
+): State<T> {
+  return payload.reduce(
+    (acc, entity) => updateOne(acc, entity.id, entity, now),
+    state,
+  )
+}
+
+export function updateField<T extends WithId, K extends keyof T>(
+  state: State<T>,
+  field: K,
+  value: T[K],
+  id: Id,
+  now?: number,
+): State<T> {
+  const existing = state.entities.byId[id]
+  if (!existing) return state
+  const next = patchEntity(
+    existing,
+    { [field]: value } as unknown as Partial<T>,
+    now,
+  )
+  if (next === existing) return state
+  return setEntities(state, {
+    byId: { ...state.entities.byId, [id]: next },
+  })
+}
+
+export function deleteOne<T extends WithId>(state: State<T>, id: Id): State<T> {
+  const { byId, allIds, active } = state.entities
+  if (!(id in byId) && !allIds.includes(id) && !active.includes(id))
+    return state
+  const { [id]: _removed, ...rest } = byId
+  return setEntities(state, {
+    byId: rest,
+    allIds: allIds.filter((entityId) => entityId !== id),
+    active: active.filter((entityId) => entityId !== id),
+  })
+}
+
+export function deleteMany<T extends WithId>(
+  state: State<T>,
+  ids: Id[],
+): State<T> {
+  return ids.reduce((acc, id) => deleteOne(acc, id), state)
+}
+
+export function setCurrent<T extends WithId>(
+  state: State<T>,
+  payload: T,
+  now?: number,
+): State<T> {
+  return setEntities(state, { current: withMeta(payload, now) })
+}
+
+export function removeCurrent<T extends WithId>(state: State<T>): State<T> {
+  return state.entities.current === null
+    ? state
+    : setEntities(state, { current: null })
+}
+
+export function setCurrentById<T extends WithId>(
+  state: State<T>,
+  id: Id,
+): State<T> {
+  if (!state.entities.byId[id] || state.entities.currentById === id)
+    return state
+  return setEntities(state, { currentById: id })
+}
+
+export function removeCurrentById<T extends WithId>(state: State<T>): State<T> {
+  return state.entities.currentById === null
+    ? state
+    : setEntities(state, { currentById: null })
+}
+
+export function setActive<T extends WithId>(state: State<T>, id: Id): State<T> {
+  const { active, byId } = state.entities
+  if (active.includes(id) || !byId[id]) return state
+  return setEntities(state, { active: [...active, id] })
+}
+
+export function resetActive<T extends WithId>(state: State<T>): State<T> {
+  return state.entities.active.length === 0
+    ? state
+    : setEntities(state, { active: [] })
+}
+
+export function setIsDirty<T extends WithId>(
+  state: State<T>,
+  id: Id,
+): State<T> {
+  const existing = state.entities.byId[id]
+  if (!existing || existing.$isDirty) return state
+  return setEntities(state, {
+    byId: { ...state.entities.byId, [id]: { ...existing, $isDirty: true } },
+  })
+}
+
+/** Mark an entity clean and forget its changed fields. */
+export function setIsNotDirty<T extends WithId>(
+  state: State<T>,
+  id: Id,
+): State<T> {
+  const existing = state.entities.byId[id]
+  if (!existing) return state
+  return setEntities(state, {
+    byId: {
+      ...state.entities.byId,
+      [id]: {
+        ...existing,
+        $isDirty: false,
+        $meta: { ...existing.$meta, changedFields: [] },
+      },
+    },
+  })
+}

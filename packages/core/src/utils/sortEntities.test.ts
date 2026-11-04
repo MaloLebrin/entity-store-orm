@@ -26,7 +26,7 @@ describe('sortEntities', () => {
     createdAt,
     $isDirty: false,
     $meta: {
-      changedFields: new Set(),
+      changedFields: [],
       createdAt: createdAt.getTime(),
       updatedAt: null,
     },
@@ -115,7 +115,10 @@ describe('sortEntities', () => {
     ]
 
     // Add a user with null age
-    usersWithNulls[1] = { ...usersWithNulls[1], age: null as any }
+    usersWithNulls[1] = {
+      ...usersWithNulls[1]!,
+      age: null as unknown as number,
+    }
 
     const result = sortEntities(usersWithNulls, {
       orderBy: 'age',

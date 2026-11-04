@@ -1,314 +1,124 @@
 import type { WithId } from '@entity-store/core'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, test } from 'vitest'
-import { createPiniaEntityStore } from './index.js'
+import { beforeEach, describe, expect, expectTypeOf, test } from 'vitest'
+import { computed, ref } from 'vue'
+import { defineEntityStore } from './index.js'
 
-// Test entity interface
 interface User extends WithId {
   name: string
-  email: string
   age: number
 }
 
-describe('Pinia Adapter', () => {
-  let pinia: ReturnType<typeof createPinia>
-  let useUserStore: ReturnType<typeof createPiniaEntityStore<User>>
+const ada: User = { id: 1, name: 'Ada', age: 36 }
+const bob: User = { id: 2, name: 'Bob', age: 25 }
 
-  beforeEach(() => {
-    pinia = createPinia()
-    setActivePinia(pinia)
-    useUserStore = createPiniaEntityStore<User>('users')
+describe('defineEntityStore', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  test('initial state has the normalized shape', () => {
+    const store = defineEntityStore<User>('users')()
+    expect(store.entities).toEqual({
+      byId: {},
+      allIds: [],
+      current: null,
+      currentById: null,
+      active: [],
+    })
+    expect(store.getIsEmpty()).toBe(true)
   })
 
-  describe('Store Creation', () => {
-    test('should create a Pinia store with correct structure', () => {
-      const store = useUserStore()
-
-      expect(store).toBeDefined()
-      expect(store.entities).toBeDefined()
-      expect(store.entities.byId).toBeDefined()
-      expect(store.entities.allIds).toBeDefined()
-      expect(store.entities.current).toBeNull()
-      expect(store.entities.currentById).toBeNull()
-      expect(store.entities.active).toEqual([])
-    })
-
-    test('should have all getter methods', () => {
-      const store = useUserStore()
-
-      expect(typeof store.getAll).toBe('function')
-      expect(typeof store.getAllArray).toBe('function')
-      expect(typeof store.getAllIds).toBe('function')
-      expect(typeof store.getOne).toBe('function')
-      expect(typeof store.getMany).toBe('function')
-      expect(typeof store.getCurrent).toBe('function')
-      expect(typeof store.getCurrentById).toBe('function')
-      expect(typeof store.getActive).toBe('function')
-      expect(typeof store.getFirstActive).toBe('function')
-      expect(typeof store.getWhere).toBe('function')
-      expect(typeof store.getWhereArray).toBe('function')
-      expect(typeof store.getMissingIds).toBe('function')
-      expect(typeof store.getMissingEntities).toBe('function')
-      expect(typeof store.getIsEmpty).toBe('function')
-      expect(typeof store.getIsNotEmpty).toBe('function')
-    })
-
-    test('should have all action methods', () => {
-      const store = useUserStore()
-
-      expect(typeof store.createOne).toBe('function')
-      expect(typeof store.createMany).toBe('function')
-      expect(typeof store.updateOne).toBe('function')
-      expect(typeof store.updateMany).toBe('function')
-      expect(typeof store.deleteOne).toBe('function')
-      expect(typeof store.deleteMany).toBe('function')
-      expect(typeof store.setCurrent).toBe('function')
-      expect(typeof store.removeCurrent).toBe('function')
-      expect(typeof store.setCurrentById).toBe('function')
-      expect(typeof store.removeCurrentById).toBe('function')
-      expect(typeof store.setActive).toBe('function')
-      expect(typeof store.resetActive).toBe('function')
-      expect(typeof store.setIsDirty).toBe('function')
-      expect(typeof store.setIsNotDirty).toBe('function')
-      expect(typeof store.updateField).toBe('function')
-    })
+  test('stores are isolated per id', () => {
+    const a = defineEntityStore<User>('a')()
+    const b = defineEntityStore<User>('b')()
+    a.createOne(ada)
+    expect(b.getIsEmpty()).toBe(true)
   })
 
-  describe('Entity Management', () => {
-    test('should create and retrieve entities', () => {
-      const store = useUserStore()
+  test('create, read, update, delete', () => {
+    const store = defineEntityStore<User>('users')()
+    store.createMany([ada, bob])
+    expect(store.getAllIds()).toEqual([1, 2])
+    expect(store.getOne(1)?.name).toBe('Ada')
 
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
+    store.updateField('name', 'Ada L.', 1)
+    expect(store.getOne(1)?.name).toBe('Ada L.')
+    expect(store.isDirty(1)).toBe(true)
+    expect(store.getOne(1)?.$meta.changedFields).toEqual(['name'])
 
-      expect(store.entities.allIds).toContain(1)
-      expect(store.entities.byId[1]).toBeDefined()
-      expect(store.entities.byId[1]?.name).toBe('John')
-      expect(store.entities.byId[1]?.$isDirty).toBe(false)
-    })
+    store.setIsNotDirty(1)
+    expect(store.isDirty(1)).toBe(false)
 
-    test('should update existing entities', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-
-      const updatedUser: User = {
-        id: 1,
-        name: 'John Updated',
-        email: 'john@example.com',
-        age: 31,
-      }
-      store.updateOne(1, updatedUser)
-
-      expect(store.entities.byId[1]?.name).toBe('John Updated')
-      expect(store.entities.byId[1]?.age).toBe(31)
-      expect(store.entities.byId[1]?.$isDirty).toBe(true)
-    })
-
-    test('should delete entities', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-
-      expect(store.entities.allIds).toContain(1)
-
-      store.deleteOne(1)
-
-      expect(store.entities.allIds).not.toContain(1)
-      expect(store.entities.byId[1]).toBeUndefined()
-    })
+    store.deleteOne(1)
+    expect(store.getAllIds()).toEqual([2])
   })
 
-  describe('Current Entity Management', () => {
-    test('should set and retrieve current entity', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-      store.setCurrent(user)
-
-      expect(store.entities.current).toBeDefined()
-      expect(store.entities.current?.id).toBe(1)
-      expect(store.entities.current?.name).toBe('John')
-    })
-
-    test('should set and retrieve current entity by ID', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-      store.setCurrentById(1)
-
-      expect(store.entities.currentById).toBe(1)
-      expect(store.getCurrentById()?.id).toBe(1)
-    })
+  test('current, currentById and active', () => {
+    const store = defineEntityStore<User>('users')()
+    store.createMany([ada, bob])
+    store.setCurrent(ada)
+    store.setCurrentById(2)
+    store.setActive(1)
+    store.setActive(99)
+    expect(store.getCurrent()?.name).toBe('Ada')
+    expect(store.getCurrentById()?.name).toBe('Bob')
+    expect(store.getActive()).toEqual([1])
+    store.resetActive()
+    expect(store.getActive()).toEqual([])
   })
 
-  describe('Active Entities Management', () => {
-    test('should set entities as active', () => {
-      const store = useUserStore()
-
-      const user1: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      const user2: User = {
-        id: 2,
-        name: 'Jane',
-        email: 'jane@example.com',
-        age: 25,
-      }
-
-      store.createOne(user1)
-      store.createOne(user2)
-      store.setActive(1)
-      store.setActive(2)
-
-      expect(store.entities.active).toContain(1)
-      expect(store.entities.active).toContain(2)
-      expect(store.entities.active).toHaveLength(2)
-    })
-
-    test('should not set non-existent entities as active', () => {
-      const store = useUserStore()
-
-      store.setActive(999)
-
-      expect(store.entities.active).not.toContain(999)
-      expect(store.entities.active).toHaveLength(0)
-    })
-
-    test('should reset active entities', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-      store.setActive(1)
-
-      expect(store.entities.active).toHaveLength(1)
-
-      store.resetActive()
-
-      expect(store.entities.active).toHaveLength(0)
-    })
+  test('filtering and sorting', () => {
+    const store = defineEntityStore<User>('users')()
+    store.createMany([ada, bob])
+    expect(store.getWhereArray((u) => u.age > 30).map((u) => u.id)).toEqual([1])
+    expect(
+      store.getWhereArray(null, { orderBy: 'age' }).map((u) => u.id),
+    ).toEqual([1, 2])
+    expect(store.search('bo')).toHaveLength(1)
   })
 
-  describe('Dirty State Management', () => {
-    test('should mark entities as dirty', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-
-      expect(store.entities.byId[1]?.$isDirty).toBe(false)
-
-      store.setIsDirty(1)
-
-      expect(store.entities.byId[1]?.$isDirty).toBe(true)
-    })
-
-    test('should mark entities as not dirty', () => {
-      const store = useUserStore()
-
-      const user: User = {
-        id: 1,
-        name: 'John',
-        email: 'john@example.com',
-        age: 30,
-      }
-      store.createOne(user)
-      store.setIsDirty(1)
-
-      expect(store.entities.byId[1]?.$isDirty).toBe(true)
-
-      store.setIsNotDirty(1)
-
-      expect(store.entities.byId[1]?.$isDirty).toBe(false)
-    })
+  test('the entities object is replaced, never mutated', () => {
+    const store = defineEntityStore<User>('users')()
+    const before = store.entities
+    store.createOne(ada)
+    expect(store.entities).not.toBe(before)
+    expect(before.allIds).toEqual([])
   })
 
-  describe('Integration', () => {
-    test('should handle complex workflow', () => {
-      const store = useUserStore()
+  test('getters are reactive', () => {
+    const store = defineEntityStore<User>('users')()
+    const count = computed(() => store.getAllIds().length)
+    expect(count.value).toBe(0)
+    store.createOne(ada)
+    expect(count.value).toBe(1)
+  })
+})
 
-      // Create multiple users
-      const users: User[] = [
-        { id: 1, name: 'John', email: 'john@example.com', age: 30 },
-        { id: 2, name: 'Jane', email: 'jane@example.com', age: 25 },
-        { id: 3, name: 'Bob', email: 'bob@example.com', age: 35 },
-      ]
+describe('extend', () => {
+  beforeEach(() => setActivePinia(createPinia()))
 
-      store.createMany(users)
-
-      // Set current user
-      store.setCurrent(users[0])
-      store.setCurrentById(1)
-
-      // Set active users
-      store.setActive(1)
-      store.setActive(2)
-
-      // Update a user
-      store.updateOne(1, { ...users[0], name: 'John Updated' })
-
-      // Update current entity to match the updated entity
-      store.setCurrent(store.entities.byId[1]!)
-
-      // Verify state
-      expect(store.entities.allIds).toHaveLength(3)
-      expect(store.entities.current?.name).toBe('John Updated')
-      expect(store.entities.currentById).toBe(1)
-      expect(store.entities.active).toHaveLength(2)
-      expect(store.entities.byId[1]?.$isDirty).toBe(true)
-
-      // Test getters
-      expect(store.getIsEmpty()).toBe(false)
-      expect(store.getAllIds()).toHaveLength(3)
-      expect(store.getOne(1)?.name).toBe('John Updated')
-
-      // Test filtering
-      const getWhere = store.getWhere()
-      const adults = getWhere((user) => user.age >= 30)
-      expect(Object.keys(adults)).toHaveLength(2)
+  test('adds typed state, getters and actions', () => {
+    const useStore = defineEntityStore<User>()('users', {
+      extend: (base) => {
+        const isLoading = ref(false)
+        const oldest = computed(
+          () => [...base.getAllArray()].sort((x, y) => y.age - x.age)[0],
+        )
+        function load(users: User[]) {
+          isLoading.value = true
+          base.createMany(users)
+          isLoading.value = false
+        }
+        return { isLoading, oldest, load }
+      },
     })
+
+    const store = useStore()
+    store.load([ada, bob])
+    expect(store.oldest?.name).toBe('Ada')
+    expect(store.isLoading).toBe(false)
+    expect(store.getAllIds()).toEqual([1, 2])
+    expectTypeOf(store.isLoading).toEqualTypeOf<boolean>()
+    expectTypeOf(store.load).parameters.toEqualTypeOf<[User[]]>()
+    expectTypeOf(store.createOne).parameter(0).toEqualTypeOf<User>()
   })
 })

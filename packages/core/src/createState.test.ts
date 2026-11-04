@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import type { WithId } from '../types/WithId.js'
 import createState from './createState.js'
+import type { WithId } from './types/WithId.js'
 
 // Test entity interface
 interface User extends WithId {
