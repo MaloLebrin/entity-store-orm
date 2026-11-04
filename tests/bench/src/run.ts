@@ -26,6 +26,7 @@ const adapter = createEntityAdapter<User>()
 const selectors = adapter.getSelectors()
 const SIZES = [1_000, 10_000, 100_000]
 const rows: string[] = []
+const mixedRows: string[] = []
 
 const fmt = (ops: number) =>
   ops >= 1000 ? `${Math.round(ops).toLocaleString('en')}` : ops.toFixed(1)
@@ -89,6 +90,41 @@ for (const n of SIZES) {
       `| ${n.toLocaleString('en')} | ${label} | ${fmt(c)} | ${fmt(r)} | ${(c / r).toFixed(2)}x |`,
     )
   }
+
+  // Mixed workload: one write, then k reads of the whole collection. Every
+  // iteration starts from the same state, so the write always produces new
+  // `byId`/`allIds` references: the first read after it is a cache miss.
+  const mixed = new Bench({ time: 500, warmupTime: 200 })
+  const KS = [1, 10, 100]
+  for (const k of KS) {
+    mixed
+      .add(`core memoized, ${k}`, () => {
+        const next = updateOne(coreState, mid, { id: mid, name: 'x', age: 1 })
+        for (let i = 0; i < k; i++) getAllArray(next)
+      })
+      .add(`core not memoized, ${k}`, () => {
+        const next = updateOne(coreState, mid, { id: mid, name: 'x', age: 1 })
+        for (let i = 0; i < k; i++) getAllArray(next, { memoize: false })
+      })
+      .add(`rtk, ${k}`, () => {
+        const next = adapter.updateOne(rtkState, {
+          id: mid,
+          changes: { name: 'x' },
+        })
+        for (let i = 0; i < k; i++) selectors.selectAll(next)
+      })
+  }
+  await mixed.run()
+  const mops = (name: string) =>
+    mixed.getTask(name)?.result?.throughput.mean ?? 0
+  for (const k of KS) {
+    const m = mops(`core memoized, ${k}`)
+    const u = mops(`core not memoized, ${k}`)
+    const r = mops(`rtk, ${k}`)
+    mixedRows.push(
+      `| ${n.toLocaleString('en')} | 1 write + ${k} read${k > 1 ? 's' : ''} | ${fmt(m)} | ${fmt(u)} | ${fmt(r)} | ${(m / u).toFixed(2)}x |`,
+    )
+  }
 }
 
 console.log(`node ${process.version}`)
@@ -97,3 +133,12 @@ console.log(
 )
 console.log('| --- | --- | --- | --- | --- |')
 console.log(rows.join('\n'))
+
+console.log(
+  '\nMixed workload (one write, then k reads of the whole collection)',
+)
+console.log(
+  '| entities | workload | core memoized (ops/s) | core not memoized (ops/s) | RTK (ops/s) | memoized / not memoized |',
+)
+console.log('| --- | --- | --- | --- | --- | --- |')
+console.log(mixedRows.join('\n'))
