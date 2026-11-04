@@ -1,6 +1,6 @@
 {
   "name": "@entity-store/valtio",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Valtio adapter for Entity Store",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -36,7 +36,7 @@
     "entity-management",
     "state-management"
   ],
-  "author": "",
+  "author": "Malo Lebrin",
   "license": "MIT",
   "peerDependencies": {
     "valtio": "^2.0.0"
@@ -52,5 +52,20 @@
     "valtio": "catalog:"
   },
   "module": "./dist/index.js",
-  "sideEffects": false
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaloLebrin/entity-store-orm.git",
+    "directory": "packages/valtio"
+  },
+  "homepage": "https://github.com/MaloLebrin/entity-store-orm#readme",
+  "bugs": {
+    "url": "https://github.com/MaloLebrin/entity-store-orm/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

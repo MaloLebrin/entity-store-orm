@@ -1,7 +1,7 @@
 {
   "name": "entity-store",
-  "version": "1.0.0",
-  "description": "Agnostic ORM with adapters for different state managers",
+  "version": "0.0.0",
+  "description": "Immutable normalized entity store with adapters for Pinia, Zustand, Redux Toolkit, Jotai and Valtio",
   "type": "module",
   "private": true,
   "scripts": {
@@ -15,7 +15,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "changeset": "changeset",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "check:package": "pnpm -r check:package"
   },
   "keywords": [
     "orm",
@@ -28,7 +29,7 @@
     "jotai",
     "valtio"
   ],
-  "author": "",
+  "author": "Malo Lebrin",
   "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {

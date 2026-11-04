@@ -1,6 +1,6 @@
 {
   "name": "@entity-store/pinia",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Pinia adapter for Entity Store: typed, immutable entity collections",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -37,7 +37,7 @@
     "state-management",
     "vue"
   ],
-  "author": "",
+  "author": "Malo Lebrin",
   "license": "MIT",
   "peerDependencies": {
     "pinia": "^3.0.0 || ^4.0.0"
@@ -54,5 +54,20 @@
     "vitest": "catalog:"
   },
   "module": "./dist/index.js",
-  "sideEffects": false
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaloLebrin/entity-store-orm.git",
+    "directory": "packages/pinia"
+  },
+  "homepage": "https://github.com/MaloLebrin/entity-store-orm#readme",
+  "bugs": {
+    "url": "https://github.com/MaloLebrin/entity-store-orm/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }
