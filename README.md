@@ -87,25 +87,24 @@ In `@entity-store/core`, every action and getter is also a named export (`import
 
 | entities | operation                                | core (ops/s) | RTK (ops/s) | core / RTK |
 | -------- | ---------------------------------------- | ------------ | ----------- | ---------- |
-| ---      | ---                                      | ---          | ---         | ---        |
-| 1,000    | create                                   | 6,300        | 335         | 18.80x     |
-| 1,000    | update one                               | 1,232,016    | 4,793       | 257.03x    |
-| 1,000    | delete one                               | 8,267        | 3,522       | 2.35x      |
-| 1,000    | get one                                  | 17,578,289   | 12,538,139  | 1.40x      |
-| 1,000    | get all (not memoized vs RTK recomputed) | 175,002      | 25,275      | 6.92x      |
-| 1,000    | get all (memoized vs RTK cached)         | 15,205,162   | 13,605,876  | 1.12x      |
-| 10,000   | create                                   | 509          | 29.4        | 17.32x     |
-| 10,000   | update one                               | 241,491      | 341         | 708.30x    |
-| 10,000   | delete one                               | 615          | 304         | 2.02x      |
-| 10,000   | get one                                  | 15,818,505   | 11,205,494  | 1.41x      |
-| 10,000   | get all (not memoized vs RTK recomputed) | 17,380       | 2,192       | 7.93x      |
-| 10,000   | get all (memoized vs RTK cached)         | 15,282,147   | 12,661,530  | 1.21x      |
-| 100,000  | create                                   | 20.5         | 2.1         | 9.64x      |
-| 100,000  | update one                               | 1,629        | 24.6        | 66.17x     |
-| 100,000  | delete one                               | 50.2         | 24.4        | 2.06x      |
-| 100,000  | get one                                  | 16,760,084   | 12,324,667  | 1.36x      |
-| 100,000  | get all (not memoized vs RTK recomputed) | 378          | 140         | 2.70x      |
-| 100,000  | get all (memoized vs RTK cached)         | 14,924,842   | 13,902,988  | 1.07x      |
+| 1,000    | create                                   | 7,126        | 289         | 24.65x     |
+| 1,000    | update one                               | 1,151,398    | 3,986       | 288.88x    |
+| 1,000    | delete one                               | 8,393        | 3,511       | 2.39x      |
+| 1,000    | get one                                  | 18,583,903   | 12,865,344  | 1.44x      |
+| 1,000    | get all (not memoized vs RTK recomputed) | 186,677      | 25,716      | 7.26x      |
+| 1,000    | get all (memoized vs RTK cached)         | 15,164,427   | 14,432,751  | 1.05x      |
+| 10,000   | create                                   | 486          | 29.9        | 16.27x     |
+| 10,000   | update one                               | 205,788      | 290         | 708.99x    |
+| 10,000   | delete one                               | 590          | 313         | 1.88x      |
+| 10,000   | get one                                  | 16,501,898   | 12,323,242  | 1.34x      |
+| 10,000   | get all (not memoized vs RTK recomputed) | 18,897       | 2,288       | 8.26x      |
+| 10,000   | get all (memoized vs RTK cached)         | 13,172,516   | 12,827,707  | 1.03x      |
+| 100,000  | create                                   | 22.1         | 2.1         | 10.29x     |
+| 100,000  | update one                               | 1,977        | 25.5        | 77.50x     |
+| 100,000  | delete one                               | 47.4         | 23.9        | 1.98x      |
+| 100,000  | get one                                  | 16,427,545   | 12,138,880  | 1.35x      |
+| 100,000  | get all (not memoized vs RTK recomputed) | 462          | 123         | 3.75x      |
+| 100,000  | get all (memoized vs RTK cached)         | 14,645,216   | 13,126,707  | 1.12x      |
 
 What to take from it:
 
@@ -113,6 +112,25 @@ What to take from it:
 - `getAllArray` is **memoized** (and so is `getWhereArray` without a filter): while `byId` and `allIds` keep the same references you get the very same array back, so it is safe as a React/Vue dependency or a Zustand/Redux selector. Changing `current` or `active` does not invalidate it. The array is shared: treat it as read-only and copy before sorting.
 - To rebuild the array on every call, pass `{ memoize: false }`: `getAllArray(state, { memoize: false })`, `createEntityStore({ memoize: false })`, `createEntityAtoms({ memoize: false })`, `defineEntityStore<User>()('users', { memoize: false })`, `createEntitySlice('users', { memoize: false })`.
 - Beyond tens of thousands of entities, prefer paging or `createMany` batches over single updates in a loop.
+
+### Mixed workload and re-renders
+
+The table above reads an unchanged state, the best case for memoization. This one does one write, then reads the whole collection `k` times (each write invalidates the cache, so the first read is always a miss):
+
+| entities | workload            | core memoized (ops/s) | core not memoized (ops/s) | RTK (ops/s) | memoized / not memoized |
+| -------- | ------------------- | --------------------- | ------------------------- | ----------- | ----------------------- |
+| 1,000    | 1 write + 1 read    | 90,853                | 148,873                   | 4,230       | 0.61x                   |
+| 1,000    | 1 write + 10 reads  | 132,231               | 17,533                    | 4,552       | 7.54x                   |
+| 1,000    | 1 write + 100 reads | 126,229               | 1,610                     | 4,531       | 78.42x                  |
+| 10,000   | 1 write + 1 read    | 16,113                | 17,091                    | 302         | 0.94x                   |
+| 10,000   | 1 write + 10 reads  | 16,434                | 1,521                     | 317         | 10.80x                  |
+| 10,000   | 1 write + 100 reads | 15,345                | 144                       | 325         | 106.60x                 |
+| 100,000  | 1 write + 1 read    | 392                   | 353                       | 20.2        | 1.11x                   |
+| 100,000  | 1 write + 10 reads  | 404                   | 45.1                      | 23.9        | 8.94x                   |
+| 100,000  | 1 write + 100 reads | 300                   | 4.7                       | 23.8        | 64.41x                  |
+
+- Right after a write with a single read, memoization buys nothing and can cost a little: about 40% slower at 1,000 entities (a few microseconds, the cache entry), about even at 10,000, slightly faster at 100,000. At 10 reads per write it wins by 7.5x to 11x, at 100 reads by 64x to 107x (k = 2 to 9 was not measured).
+- It also removes re-renders. In `tests/react-app/src/memoize.test.tsx`, a `React.memo` child fed with `getAllArray()` renders **0** extra times over 5 `setCurrentById` calls when memoized, against **5** with `{ memoize: false }`. The same holds for a Redux `useSelector(getAllArray)` component. In the zustand test, a real write (`createOne`) re-renders the child once in both modes.
 
 ## Development
 
