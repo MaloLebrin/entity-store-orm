@@ -1,5 +1,6 @@
 import * as a from './actions.js'
 import * as g from './getters.js'
+import * as o from './optimistic.js'
 import type {
   EntityActions,
   EntityApi,
@@ -48,6 +49,11 @@ export function createEntityApi<T extends WithId>({
     resetActive: () => set(a.resetActive(get())),
     setIsDirty: (id) => set(a.setIsDirty(get(), id)),
     setIsNotDirty: (id) => set(a.setIsNotDirty(get(), id)),
+    optimisticUpdate: (id, patch, txId) =>
+      set(o.optimisticUpdate(get(), id, patch, txId)),
+    commitOptimistic: (id, txId) => set(o.commitOptimistic(get(), id, txId)),
+    rollbackOptimistic: (id, txId) =>
+      set(o.rollbackOptimistic(get(), id, txId)),
   }
 
   const getters: EntityGetters<T> = {
@@ -70,6 +76,7 @@ export function createEntityApi<T extends WithId>({
     isAlreadyInStore: (id) => g.isAlreadyInStore(get(), id),
     isAlreadyActive: (id) => g.isAlreadyActive(get(), id),
     isDirty: (id) => g.isDirty(get(), id),
+    isPending: (id) => o.isPending(get(), id),
     getMissingIds: (ids, dup) => g.getMissingIds(get(), ids, dup),
     getMissingEntities: (e) => g.getMissingEntities(get(), e),
     search: (q) => g.search(get(), q),

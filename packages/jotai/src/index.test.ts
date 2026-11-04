@@ -56,6 +56,16 @@ describe('jotai adapter', () => {
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
+  test('optimistic update atoms', () => {
+    const users = createEntityAtoms<User>()
+    const store = createStore()
+    store.set(users.actions.createOne, ada)
+    store.set(users.actions.optimisticUpdate, 1, { name: 'X' }, 't')
+    expect(store.get(users.getters.isPending)(1)).toBe(true)
+    store.set(users.actions.rollbackOptimistic, 1, 't')
+    expect(store.get(users.getters.getOne)(1)?.name).toBe('Ada')
+  })
+
   test('each store gets isolated state', () => {
     const users = createEntityAtoms<User>()
     const s1 = createStore()

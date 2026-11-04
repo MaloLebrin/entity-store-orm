@@ -31,6 +31,26 @@ describe('redux adapter', () => {
     })
   })
 
+  test('optimistic update: commit and rollback', () => {
+    const { store, select, a } = setup()
+    store.dispatch(a.createOne(ada))
+    store.dispatch(
+      a.optimisticUpdate({ id: 1, patch: { name: 'X' }, txId: 't1' }),
+    )
+    expect(select.isPending(store.getState(), 1)).toBe(true)
+    store.dispatch(a.rollbackOptimistic({ id: 1, txId: 't1' }))
+    expect(select.getOne(store.getState(), 1)).toMatchObject({
+      name: 'Ada',
+      $isDirty: false,
+    })
+    store.dispatch(
+      a.optimisticUpdate({ id: 1, patch: { name: 'Y' }, txId: 't2' }),
+    )
+    store.dispatch(a.commitOptimistic({ id: 1, txId: 't2' }))
+    expect(select.getOne(store.getState(), 1)?.name).toBe('Y')
+    expect(select.isPending(store.getState(), 1)).toBe(false)
+  })
+
   test('actions and selectors', () => {
     const { store, select, a } = setup()
     store.dispatch(a.createMany([ada, bob]))
