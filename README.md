@@ -40,6 +40,10 @@ pnpm add @entity-store/pinia pinia vue          # or zustand / redux / jotai / v
 
 ESM and CommonJS, full TypeScript types, `sideEffects: false`, Node >= 18. No runtime dependency besides the state manager you already use.
 
+## Documentation
+
+Guides, concepts and a per-adapter walkthrough live in the [documentation site](https://malolebrin.github.io/entity-store-orm/), with the generated [API reference](https://malolebrin.github.io/entity-store-orm/api/index.html). Build it locally with `pnpm run docs` (output in `docs/.vitepress/dist`) or preview with `pnpm docs:dev`.
+
 ## Packages
 
 | Package                                       | For                          | Entry point                             |

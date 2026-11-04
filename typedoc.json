@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Entity Store API",
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "packages/core",
+    "packages/pinia",
+    "packages/zustand",
+    "packages/redux",
+    "packages/jotai",
+    "packages/valtio"
+  ],
+  "out": "docs/public/api",
+  "readme": "none",
+  "skipErrorChecking": false,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "treatValidationWarningsAsErrors": true
+}

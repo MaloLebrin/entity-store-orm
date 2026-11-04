@@ -16,7 +16,13 @@ function setEntities<T extends WithId>(
   return { ...state, entities: { ...state.entities, ...entities } }
 }
 
-/** Create an entity (replaces it, resetting its metadata, if the id exists). */
+/**
+ * Create an entity (replaces it, resetting its metadata, if the id exists).
+ *
+ * @param state - Current state.
+ * @param payload - The entity to add.
+ * @param now - Timestamp used for `$meta.createdAt` (defaults to `Date.now()`).
+ */
 export function createOne<T extends WithId>(
   state: State<T>,
   payload: T,
@@ -29,6 +35,14 @@ export function createOne<T extends WithId>(
   })
 }
 
+/**
+ * Create several entities in one pass (existing ids are replaced, metadata reset).
+ * Returns the same state when `payload` is empty.
+ *
+ * @param state - Current state.
+ * @param payload - Entities to add.
+ * @param now - Timestamp used for `$meta.createdAt` (defaults to `Date.now()`).
+ */
 export function createMany<T extends WithId>(
   state: State<T>,
   payload: T[],
@@ -99,6 +113,15 @@ export function updateOne<T extends WithId>(
   })
 }
 
+/**
+ * Patch or create several entities in one pass. Entities that already exist are
+ * patched (and marked dirty); unknown ones are created. Returns the same state
+ * when nothing changed.
+ *
+ * @param state - Current state.
+ * @param payload - Entities (or partial-looking full objects) carrying their `id`.
+ * @param now - Timestamp used for `$meta.updatedAt` / `createdAt`.
+ */
 export function updateMany<T extends WithId>(
   state: State<T>,
   payload: T[],
@@ -129,6 +152,17 @@ export function updateMany<T extends WithId>(
   return setEntities(state, { byId: nextById, allIds: nextIds })
 }
 
+/**
+ * Set one field of an entity (marks it dirty and records the field in
+ * `$meta.changedFields`). Returns the same state when the entity is unknown or the
+ * value is identical (`Object.is`).
+ *
+ * @param state - Current state.
+ * @param field - Key to change.
+ * @param value - New value.
+ * @param id - Id of the entity to change.
+ * @param now - Timestamp used for `$meta.updatedAt`.
+ */
 export function updateField<T extends WithId, K extends keyof T>(
   state: State<T>,
   field: K,
@@ -160,6 +194,13 @@ function clearRemovedPointers<T extends WithId>(
   return patch
 }
 
+/**
+ * Delete an entity, also removing it from `allIds` and `active`. Returns the same
+ * state when the id is unknown. `current` and `currentById` are left untouched.
+ *
+ * @param state - Current state.
+ * @param id - Id to delete.
+ */
 export function deleteOne<T extends WithId>(state: State<T>, id: Id): State<T> {
   const { byId, allIds, active } = state.entities
   if (!Object.hasOwn(byId, id) && !allIds.includes(id) && !active.includes(id))
@@ -173,6 +214,13 @@ export function deleteOne<T extends WithId>(state: State<T>, id: Id): State<T> {
   })
 }
 
+/**
+ * Delete several entities in one pass (see {@link deleteOne}). Returns the same
+ * state when nothing was removed.
+ *
+ * @param state - Current state.
+ * @param ids - Ids to delete.
+ */
 export function deleteMany<T extends WithId>(
   state: State<T>,
   ids: Id[],
@@ -203,6 +251,14 @@ export function deleteMany<T extends WithId>(
   })
 }
 
+/**
+ * Set `current` to a clean copy of `payload`. It is independent from `byId`: use
+ * {@link setCurrentById} to point at a stored entity instead.
+ *
+ * @param state - Current state.
+ * @param payload - The entity being edited or displayed.
+ * @param now - Timestamp used for `$meta.createdAt`.
+ */
 export function setCurrent<T extends WithId>(
   state: State<T>,
   payload: T,
@@ -211,12 +267,22 @@ export function setCurrent<T extends WithId>(
   return setEntities(state, { current: withMeta(payload, now) })
 }
 
+/**
+ * Clear `current`. Returns the same state when it is already `null`.
+ */
 export function removeCurrent<T extends WithId>(state: State<T>): State<T> {
   return state.entities.current === null
     ? state
     : setEntities(state, { current: null })
 }
 
+/**
+ * Point `currentById` to a stored entity. Ignored (same state returned) when the id
+ * is unknown or already current.
+ *
+ * @param state - Current state.
+ * @param id - Id of a stored entity.
+ */
 export function setCurrentById<T extends WithId>(
   state: State<T>,
   id: Id,
@@ -226,24 +292,44 @@ export function setCurrentById<T extends WithId>(
   return setEntities(state, { currentById: id })
 }
 
+/**
+ * Clear `currentById`. Returns the same state when it is already `null`.
+ */
 export function removeCurrentById<T extends WithId>(state: State<T>): State<T> {
   return state.entities.currentById === null
     ? state
     : setEntities(state, { currentById: null })
 }
 
+/**
+ * Add an id to `active` (e.g. a selected row). Ignored when the id is unknown or
+ * already active.
+ *
+ * @param state - Current state.
+ * @param id - Id of a stored entity.
+ */
 export function setActive<T extends WithId>(state: State<T>, id: Id): State<T> {
   const { active, byId } = state.entities
   if (active.includes(id) || !getOwn(byId, id)) return state
   return setEntities(state, { active: [...active, id] })
 }
 
+/**
+ * Empty `active`. Returns the same state when it is already empty.
+ */
 export function resetActive<T extends WithId>(state: State<T>): State<T> {
   return state.entities.active.length === 0
     ? state
     : setEntities(state, { active: [] })
 }
 
+/**
+ * Mark a stored entity as dirty without changing its fields. Returns the same
+ * state when the id is unknown or the entity is already dirty.
+ *
+ * @param state - Current state.
+ * @param id - Id of the entity.
+ */
 export function setIsDirty<T extends WithId>(
   state: State<T>,
   id: Id,

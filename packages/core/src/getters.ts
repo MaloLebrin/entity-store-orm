@@ -11,8 +11,14 @@ import { sortEntities } from './utils/sortEntities.js'
  * Results are derived from `allIds` order, so ordering is deterministic.
  */
 
+/**
+ * The `byId` dictionary (same reference as in the state).
+ */
 export const getAll = <T extends WithId>(state: State<T>) => state.entities.byId
 
+/**
+ * Ids in insertion order (same reference as `state.entities.allIds`).
+ */
 export const getAllIds = <T extends WithId>(state: State<T>) =>
   state.entities.allIds
 
@@ -75,29 +81,54 @@ export function getAllArray<T extends WithId>(
   return readAll(state, options?.memoize !== false)
 }
 
+/**
+ * `true` when the collection has no entity.
+ */
 export const getIsEmpty = <T extends WithId>(state: State<T>) =>
   state.entities.allIds.length === 0
 
+/**
+ * `true` when the collection has at least one entity.
+ */
 export const getIsNotEmpty = <T extends WithId>(state: State<T>) =>
   state.entities.allIds.length > 0
 
+/**
+ * The entity set with `setCurrent`, or `null`.
+ */
 export const getCurrent = <T extends WithId>(state: State<T>) =>
   state.entities.current
 
+/**
+ * The stored entity pointed to by `currentById`, or `null` (also `null` when the
+ * entity was deleted since).
+ */
 export const getCurrentById = <T extends WithId>(state: State<T>) =>
   state.entities.currentById === null
     ? null
     : (getOwn(state.entities.byId, state.entities.currentById) ?? null)
 
+/**
+ * Active ids (e.g. selected rows), in activation order.
+ */
 export const getActive = <T extends WithId>(state: State<T>) =>
   state.entities.active
 
+/**
+ * The first active id, or `undefined`.
+ */
 export const getFirstActive = <T extends WithId>(state: State<T>) =>
   state.entities.active[0]
 
+/**
+ * The entity with this id, or `undefined`.
+ */
 export const getOne = <T extends WithId>(state: State<T>, id: Id) =>
   getOwn(state.entities.byId, id)
 
+/**
+ * The stored entities for `ids`, in the given order; unknown ids are skipped.
+ */
 export function getMany<T extends WithId>(
   state: State<T>,
   ids: Id[],
@@ -368,12 +399,21 @@ export function getFirstWhere<T extends WithId>(
   return firstWhere(true, state, filter)
 }
 
+/**
+ * `true` when an entity with this id is stored.
+ */
 export const isAlreadyInStore = <T extends WithId>(state: State<T>, id: Id) =>
   state.entities.allIds.includes(id)
 
+/**
+ * `true` when this id is in `active`.
+ */
 export const isAlreadyActive = <T extends WithId>(state: State<T>, id: Id) =>
   state.entities.active.includes(id)
 
+/**
+ * `true` when the entity exists and is dirty; `false` otherwise.
+ */
 export const isDirty = <T extends WithId>(state: State<T>, id: Id) =>
   getOwn(state.entities.byId, id)?.$isDirty ?? false
 
@@ -388,6 +428,9 @@ export function getMissingIds<T extends WithId>(
   return canHaveDuplicates ? missing : [...new Set(missing)]
 }
 
+/**
+ * The entities of the list whose id is not stored yet.
+ */
 export function getMissingEntities<T extends WithId>(
   state: State<T>,
   entities: T[],

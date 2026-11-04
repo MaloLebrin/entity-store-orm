@@ -37,6 +37,7 @@ export interface EntityMeta<T extends WithId> {
   pending?: readonly PendingChange<T>[] | undefined
 }
 
+/** A stored entity: your fields plus `$isDirty` and `$meta`. */
 export type EntityWithMeta<T extends WithId> = T & {
   $isDirty: boolean
   $meta: EntityMeta<T>
