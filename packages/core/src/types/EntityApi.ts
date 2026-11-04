@@ -1,9 +1,8 @@
 import type { EntityWithMeta } from './EntityMeta.js'
+import type { EntityFilter } from './Filter.js'
 import type { SortOptions } from './SortOptions.js'
 import type { State } from './State.js'
 import type { Id, WithId } from './WithId.js'
-
-type Predicate<T extends WithId> = (item: EntityWithMeta<T>) => boolean | null
 
 /** State-bound actions: they update the store and return nothing. */
 export interface EntityActions<T extends WithId> {
@@ -45,9 +44,9 @@ export interface EntityGetters<T extends WithId> {
   getFirstActive(): Id | undefined
   getOne(id: Id): EntityWithMeta<T> | undefined
   getMany(ids: Id[]): EntityWithMeta<T>[]
-  getWhere(filter?: Predicate<T> | null): Record<Id, EntityWithMeta<T>>
+  getWhere(filter?: EntityFilter<T> | null): Record<Id, EntityWithMeta<T>>
   getWhereArray(
-    filter?: Predicate<T> | null,
+    filter?: EntityFilter<T> | null,
     options?: SortOptions<T>,
   ): EntityWithMeta<T>[]
   getSortedArray(options: SortOptions<T>): EntityWithMeta<T>[]
@@ -55,7 +54,7 @@ export interface EntityGetters<T extends WithId> {
     field: K,
     value: EntityWithMeta<T>[K],
   ): EntityWithMeta<T>[]
-  getFirstWhere(filter?: Predicate<T> | null): EntityWithMeta<T> | undefined
+  getFirstWhere(filter?: EntityFilter<T> | null): EntityWithMeta<T> | undefined
   isAlreadyInStore(id: Id): boolean
   isAlreadyActive(id: Id): boolean
   isDirty(id: Id): boolean

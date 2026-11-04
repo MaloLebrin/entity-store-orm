@@ -121,3 +121,18 @@ describe('zustand setAll / getSortedArray / getByField', () => {
     ).toEqual([1])
   })
 })
+
+describe('zustand object filters', () => {
+  test('memoized by value through the store', () => {
+    const s = createEntityStore<User>().getState
+    s().createMany([ada, bob, { id: 3, name: 'Cy', age: 25 }])
+    expect(
+      s()
+        .getWhereArray({ age: 25 })
+        .map((u) => u.id),
+    ).toEqual([2, 3])
+    expect(s().getWhereArray({ age: 25 })).toBe(s().getWhereArray({ age: 25 }))
+    expect(s().getFirstWhere({ name: 'Cy', age: 25 })?.id).toBe(3)
+    expect(Object.keys(s().getWhere({ age: 36 }))).toEqual(['1'])
+  })
+})

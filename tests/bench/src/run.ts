@@ -4,6 +4,7 @@ import {
   deleteOne,
   getAllArray,
   getOne,
+  getWhereArray,
   updateOne,
 } from '@entity-store/core'
 import { createEntityAdapter } from '@reduxjs/toolkit'
@@ -27,6 +28,7 @@ const selectors = adapter.getSelectors()
 const SIZES = [1_000, 10_000, 100_000]
 const rows: string[] = []
 const mixedRows: string[] = []
+const filterRows: string[] = []
 
 const fmt = (ops: number) =>
   ops >= 1000 ? `${Math.round(ops).toLocaleString('en')}` : ops.toFixed(1)
@@ -115,6 +117,24 @@ for (const n of SIZES) {
       })
   }
   await mixed.run()
+
+  // Inline filters on an unchanged collection: an object filter is keyed by
+  // value so it hits the cache; an inline arrow is a new key every call.
+  const filters = new Bench({ time: 500, warmupTime: 200 })
+  filters
+    .add('inline arrow', () => getWhereArray(coreState, (u) => u.age === 30))
+    .add('inline object', () => getWhereArray(coreState, { age: 30 }))
+    .add('inline object, 2 fields', () =>
+      getWhereArray(coreState, { age: 30, name: 'user-30' }),
+    )
+  await filters.run()
+  const fops = (name: string) =>
+    filters.getTask(name)?.result?.throughput.mean ?? 0
+  const arrow = fops('inline arrow')
+  for (const name of ['inline object', 'inline object, 2 fields'])
+    filterRows.push(
+      `| ${n.toLocaleString('en')} | ${name} | ${fmt(fops(name))} | ${fmt(arrow)} | ${(fops(name) / arrow).toFixed(2)}x |`,
+    )
   const mops = (name: string) =>
     mixed.getTask(name)?.result?.throughput.mean ?? 0
   for (const k of KS) {
@@ -142,3 +162,10 @@ console.log(
 )
 console.log('| --- | --- | --- | --- | --- | --- |')
 console.log(mixedRows.join('\n'))
+
+console.log('\nInline filters (unchanged collection)')
+console.log(
+  '| entities | filter | object (ops/s) | inline arrow (ops/s) | ratio |',
+)
+console.log('| --- | --- | --- | --- | --- |')
+console.log(filterRows.join('\n'))

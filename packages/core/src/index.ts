@@ -165,7 +165,12 @@ export type {
   PendingChange,
   PendingField,
 } from './types/EntityMeta.js'
-export type { FilterFn, OptionalFilterFn } from './types/Filter.js'
+export type {
+  EntityFilter,
+  FilterFn,
+  OptionalFilterFn,
+  WhereObject,
+} from './types/Filter.js'
 export type { SortOptions } from './types/SortOptions.js'
 export type { State } from './types/State.js'
 export type { Id, WithId } from './types/WithId.js'
