@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   createMany,
   setActive,
@@ -159,5 +159,30 @@ describe('getAllArray memoization', () => {
     expect(g.uncachedGetters.getWhereArray(state)).not.toBe(
       g.getAllArray(state),
     )
+  })
+
+  test('the shared array is frozen outside production', () => {
+    const all = g.getAllArray(state)
+    expect(Object.isFrozen(all)).toBe(true)
+    expect(() => all.sort()).toThrow(TypeError)
+    expect(() => all.push(all[0] as never)).toThrow(TypeError)
+    // opting out yields a plain, mutable array
+    expect(Object.isFrozen(g.getAllArray(state, { memoize: false }))).toBe(
+      false,
+    )
+    // copying then sorting is the supported way
+    expect([...all].sort(() => 0)).toHaveLength(3)
+  })
+
+  test('the array is not frozen in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.resetModules()
+    try {
+      const prod = await import('./getters.js')
+      expect(Object.isFrozen(prod.getAllArray(state))).toBe(false)
+    } finally {
+      vi.unstubAllEnvs()
+      vi.resetModules()
+    }
   })
 })

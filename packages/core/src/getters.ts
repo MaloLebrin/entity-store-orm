@@ -25,6 +25,16 @@ export interface GetterOptions {
   memoize?: boolean
 }
 
+declare const process: { env?: { NODE_ENV?: string } } | undefined
+
+/**
+ * Outside production the memoized array is frozen, so an in-place `sort()` or
+ * `push()` throws instead of silently corrupting the shared cache. Bundlers
+ * replace `process.env.NODE_ENV`; with no bundler and no `process`, no freeze.
+ */
+const freezeInDev =
+  typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
+
 const allArrayCache = new WeakMap<
   object,
   { allIds: Id[]; result: EntityWithMeta<never>[] }
@@ -40,6 +50,7 @@ function readAll<T extends WithId>(
   if (hit && hit.allIds === allIds)
     return hit.result as unknown as EntityWithMeta<T>[]
   const result = getMany(state, allIds)
+  if (freezeInDev) Object.freeze(result)
   allArrayCache.set(byId, {
     allIds,
     result: result as unknown as EntityWithMeta<never>[],
@@ -53,7 +64,8 @@ function readAll<T extends WithId>(
  * Memoized by default: while `byId` and `allIds` keep the same references the
  * very same array is returned, so it is safe as a React/Vue dependency. Changing
  * `current`, `active` or `currentById` does not invalidate it. The array is
- * shared: treat it as read-only (copy before sorting). Pass
+ * shared: treat it as read-only (copy before sorting); outside production it is
+ * frozen so a mutation throws. Pass
  * `{ memoize: false }` to get a fresh array every time.
  */
 export function getAllArray<T extends WithId>(
