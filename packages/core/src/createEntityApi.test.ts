@@ -28,3 +28,35 @@ describe('createEntityApi', () => {
     expect(getters.search('b')).toHaveLength(1)
   })
 })
+
+describe('createEntityApi memoize option', () => {
+  const make = (memoize?: boolean) => {
+    let state: State<User> = createState<User>()
+    const api = createEntityApi<User>({
+      get: () => state,
+      set: (next) => {
+        state = next
+      },
+      memoize,
+    })
+    api.actions.createMany([
+      { id: 1, name: 'A' },
+      { id: 2, name: 'B' },
+    ])
+    return api
+  }
+
+  test('memoized by default', () => {
+    const { getters } = make()
+    expect(getters.getAllArray()).toBe(getters.getAllArray())
+    expect(getters.getWhereArray()).toBe(getters.getAllArray())
+  })
+
+  test('memoize: false rebuilds the arrays but returns equal data', () => {
+    const { getters } = make(false)
+    expect(getters.getAllArray()).not.toBe(getters.getAllArray())
+    expect(getters.getAllArray()).toEqual(getters.getAllArray())
+    expect(getters.getWhereArray()).not.toBe(getters.getAllArray())
+    expect(getters.getWhereArray((u) => u.name === 'B')).toHaveLength(1)
+  })
+})

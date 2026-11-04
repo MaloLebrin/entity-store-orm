@@ -16,7 +16,13 @@ import type { WithId } from './types/WithId.js'
 export function createEntityApi<T extends WithId>({
   get,
   set,
+  memoize = true,
 }: EntityStateAccess<T>): EntityApi<T> {
+  // Pick the two memoizable getters explicitly: spreading the `g` namespace
+  // would force bundlers to keep every getter.
+  const read = memoize
+    ? { getAllArray: g.getAllArray, getWhereArray: g.getWhereArray }
+    : g.uncachedGetters
   const actions: EntityActions<T> = {
     createOne: (p) => set(a.createOne(get(), p)),
     createMany: (p) => set(a.createMany(get(), p)),
@@ -38,7 +44,7 @@ export function createEntityApi<T extends WithId>({
 
   const getters: EntityGetters<T> = {
     getAll: () => g.getAll(get()),
-    getAllArray: () => g.getAllArray(get()),
+    getAllArray: () => read.getAllArray(get()),
     getAllIds: () => g.getAllIds(get()),
     getIsEmpty: () => g.getIsEmpty(get()),
     getIsNotEmpty: () => g.getIsNotEmpty(get()),
@@ -49,7 +55,7 @@ export function createEntityApi<T extends WithId>({
     getOne: (id) => g.getOne(get(), id),
     getMany: (ids) => g.getMany(get(), ids),
     getWhere: (f) => g.getWhere(get(), f),
-    getWhereArray: (f, o) => g.getWhereArray(get(), f, o),
+    getWhereArray: (f, o) => read.getWhereArray(get(), f, o),
     getFirstWhere: (f) => g.getFirstWhere(get(), f),
     isAlreadyInStore: (id) => g.isAlreadyInStore(get(), id),
     isAlreadyActive: (id) => g.isAlreadyActive(get(), id),

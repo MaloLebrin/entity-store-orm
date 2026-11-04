@@ -64,3 +64,20 @@ describe('jotai adapter', () => {
     expect(s2.get(users.getters.getIsEmpty)()).toBe(true)
   })
 })
+
+describe('jotai memoize option', () => {
+  test('getAllArray is memoized by default and can be disabled', () => {
+    for (const [memoize, same] of [
+      [undefined, true],
+      [false, false],
+    ] as const) {
+      const users = createEntityAtoms<User>({ memoize })
+      const store = createStore()
+      store.set(users.actions.createMany, [ada, bob])
+      const getAll = store.get(users.getters.getAllArray)
+      const first = getAll()
+      const second = getAll()
+      expect(Object.is(first, second)).toBe(same)
+    }
+  })
+})

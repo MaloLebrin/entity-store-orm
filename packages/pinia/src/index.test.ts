@@ -122,3 +122,17 @@ describe('extend', () => {
     expectTypeOf(store.createOne).parameter(0).toEqualTypeOf<User>()
   })
 })
+
+describe('pinia memoize option', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  test('getAllArray is memoized by default and can be disabled', () => {
+    const on = defineEntityStore<User>('memo-on')()
+    on.createMany([ada, bob])
+    expect(on.getAllArray()).toBe(on.getAllArray())
+
+    const off = defineEntityStore<User>()('memo-off', { memoize: false })()
+    off.createMany([ada, bob])
+    expect(off.getAllArray()).not.toBe(off.getAllArray())
+  })
+})

@@ -55,6 +55,7 @@ export {
   updateMany,
   updateOne,
 } from './actions.js'
+export type { GetterOptions } from './getters.js'
 export {
   getActive,
   getAll,
@@ -76,6 +77,7 @@ export {
   isAlreadyInStore,
   isDirty,
   search,
+  uncachedGetters,
 } from './getters.js'
 
 /** All actions as one object (convenient, but not tree-shakable: prefer named imports). */
