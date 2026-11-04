@@ -30,6 +30,9 @@ export default defineConfig({
           { text: 'Concepts', link: '/guide/concepts' },
           { text: 'Filtering', link: '/guide/filters' },
           { text: 'Optimistic updates', link: '/guide/optimistic-updates' },
+          { text: 'Comparison', link: '/guide/comparison' },
+          { text: 'Migrating from RTK', link: '/guide/migrating-from-rtk' },
+          { text: 'Recipes', link: '/guide/recipes' },
         ],
       },
       {
@@ -40,6 +43,7 @@ export default defineConfig({
           { text: 'Redux Toolkit', link: '/guide/adapters/redux' },
           { text: 'Jotai', link: '/guide/adapters/jotai' },
           { text: 'Valtio', link: '/guide/adapters/valtio' },
+          { text: 'Vanilla / React', link: '/guide/adapters/vanilla' },
         ],
       },
     ],

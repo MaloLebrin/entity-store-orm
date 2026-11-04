@@ -361,3 +361,104 @@ export function setIsNotDirty<T extends WithId>(
     },
   })
 }
+
+/**
+ * Add several entities, skipping the ones whose id is already stored (the
+ * stored copy and its metadata are kept). Returns the same state when nothing
+ * was added.
+ */
+export function addMany<T extends WithId>(
+  state: State<T>,
+  payload: T[],
+  now?: number,
+): State<T> {
+  const { byId, allIds } = state.entities
+  let nextById = byId
+  let nextIds = allIds
+  for (const entity of payload) {
+    if (getOwn(nextById, entity.id) !== undefined) continue
+    if (nextById === byId) {
+      nextById = { ...byId }
+      nextIds = [...allIds]
+    }
+    putOwn(nextById, entity.id, withMeta(entity, now))
+    nextIds.push(entity.id)
+  }
+  if (nextById === byId) return state
+  return setEntities(state, { byId: nextById, allIds: nextIds })
+}
+
+/** Add one entity unless its id is already stored. See {@link addMany}. */
+export function addOne<T extends WithId>(
+  state: State<T>,
+  payload: T,
+  now?: number,
+): State<T> {
+  return addMany(state, [payload], now)
+}
+
+/**
+ * Merge server data into the store: existing entities are shallow-merged
+ * (their dirty flag and changed fields are left untouched, `createdAt` is
+ * kept), unknown ones are created clean. Unlike `updateMany`, this is not a user
+ * edit. Returns the same state when nothing changed.
+ */
+export function upsertMany<T extends WithId>(
+  state: State<T>,
+  payload: T[],
+  now?: number,
+): State<T> {
+  const { byId, allIds } = state.entities
+  let nextById = byId
+  let nextIds = allIds
+  for (const entity of payload) {
+    const existing = getOwn(nextById, entity.id)
+    let next: EntityWithMeta<T>
+    if (existing === undefined) {
+      next = withMeta(entity, now)
+    } else {
+      const keys = Object.keys(entity) as (keyof T)[]
+      if (keys.every((k) => Object.is(existing[k], entity[k]))) continue
+      next = { ...existing, ...entity }
+    }
+    if (nextById === byId) {
+      nextById = { ...byId }
+      nextIds = [...allIds]
+    }
+    putOwn(nextById, entity.id, next)
+    if (existing === undefined) nextIds.push(entity.id)
+  }
+  if (nextById === byId) return state
+  return setEntities(state, { byId: nextById, allIds: nextIds })
+}
+
+/** Merge one entity from the server. See {@link upsertMany}. */
+export function upsertOne<T extends WithId>(
+  state: State<T>,
+  payload: T,
+  now?: number,
+): State<T> {
+  return upsertMany(state, [payload], now)
+}
+
+/**
+ * Empty the collection and clear `active`, `current` and `currentById`.
+ * Returns the same state when it is already empty.
+ */
+export function removeAll<T extends WithId>(state: State<T>): State<T> {
+  const e = state.entities
+  if (
+    e.allIds.length === 0 &&
+    e.active.length === 0 &&
+    e.current === null &&
+    e.currentById === null
+  )
+    return state
+  return setEntities(state, {
+    byId: {},
+    allIds: [],
+    active: [],
+    current: null,
+    currentById: null,
+  })
+}

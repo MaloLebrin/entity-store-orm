@@ -1,0 +1,68 @@
+{
+  "name": "@entity-store/vanilla",
+  "version": "0.0.0",
+  "description": "Framework-free store with subscribe for Entity Store (works with useSyncExternalStore)",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm clean && pnpm build",
+    "type-check": "tsc --noEmit",
+    "check:package": "publint && attw --pack . --profile node16"
+  },
+  "keywords": [
+    "entity-management",
+    "state-management",
+    "store",
+    "useSyncExternalStore"
+  ],
+  "author": "Malo Lebrin",
+  "license": "MIT",
+  "dependencies": {
+    "@entity-store/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "module": "./dist/index.js",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaloLebrin/entity-store-orm.git",
+    "directory": "packages/vanilla"
+  },
+  "homepage": "https://github.com/MaloLebrin/entity-store-orm#readme",
+  "bugs": {
+    "url": "https://github.com/MaloLebrin/entity-store-orm/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

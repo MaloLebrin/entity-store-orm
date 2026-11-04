@@ -379,3 +379,58 @@ describe('setAll', () => {
     expect(() => a.setAll(frozen, [john])).not.toThrow()
   })
 })
+
+describe('addOne / addMany / upsert / removeAll', () => {
+  interface U {
+    id: number
+    name: string
+    age?: number
+  }
+  const base = () => a.createMany(createState<U>(), [{ id: 1, name: 'Ada' }], 1)
+
+  test('addMany skips stored ids and keeps their copy', () => {
+    const s = a.addMany(
+      base(),
+      [
+        { id: 1, name: 'X' },
+        { id: 2, name: 'Bob' },
+      ],
+      2,
+    )
+    expect(s.entities.allIds).toEqual([1, 2])
+    expect(s.entities.byId[1]?.name).toBe('Ada')
+    expect(s.entities.byId[2]?.name).toBe('Bob')
+  })
+
+  test('addOne returns the same state for a known id', () => {
+    const s = base()
+    expect(a.addOne(s, { id: 1, name: 'X' })).toBe(s)
+  })
+
+  test('upsertOne merges without marking dirty and keeps createdAt', () => {
+    const s = a.upsertOne(base(), { id: 1, name: 'Ada L.', age: 36 }, 9)
+    const e = s.entities.byId[1]
+    expect(e?.name).toBe('Ada L.')
+    expect(e?.age).toBe(36)
+    expect(e?.$isDirty).toBe(false)
+    expect(e?.$meta.createdAt).toBe(1)
+    expect(s.entities.allIds).toEqual([1])
+  })
+
+  test('upsertMany creates unknown ids and returns the same state when unchanged', () => {
+    const s = a.upsertMany(base(), [{ id: 2, name: 'Bob' }], 3)
+    expect(s.entities.allIds).toEqual([1, 2])
+    expect(a.upsertMany(s, [{ id: 2, name: 'Bob' }])).toBe(s)
+  })
+
+  test('removeAll empties everything and is idempotent', () => {
+    let s = a.setActive(base(), 1)
+    s = a.setCurrentById(s, 1)
+    const empty = a.removeAll(s)
+    expect(empty.entities.byId).toEqual({})
+    expect(empty.entities.allIds).toEqual([])
+    expect(empty.entities.active).toEqual([])
+    expect(empty.entities.currentById).toBeNull()
+    expect(a.removeAll(empty)).toBe(empty)
+  })
+})

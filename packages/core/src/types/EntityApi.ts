@@ -12,6 +12,16 @@ export interface EntityActions<T extends WithId> {
   createMany(payload: T[]): void
   /** Replace the whole collection (clean entities); see `setAll`. */
   setAll(payload: T[]): void
+  /** Add an entity unless its id is already stored; see `addOne`. */
+  addOne(payload: T): void
+  /** Add the entities whose id is not stored yet; see `addMany`. */
+  addMany(payload: T[]): void
+  /** Merge server data into an entity without marking it dirty (creates it when missing); see `upsertOne`. */
+  upsertOne(payload: T): void
+  /** Merge several entities from the server; see `upsertMany`. */
+  upsertMany(payload: T[]): void
+  /** Empty the collection and clear `active`, `current` and `currentById`. */
+  removeAll(): void
   /** Patch an entity and mark it dirty; creates it when missing. */
   updateOne(id: Id, payload: T): void
   /** Patch or create several entities in one pass. */

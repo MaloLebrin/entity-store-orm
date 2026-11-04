@@ -69,6 +69,11 @@ export function createEntitySlice<T extends WithId>(
       createOne: reduce<T>(a.createOne),
       createMany: reduce<T[]>(a.createMany),
       setAll: reduce<T[]>(a.setAll),
+      addOne: reduce<T>(a.addOne),
+      addMany: reduce<T[]>(a.addMany),
+      upsertOne: reduce<T>(a.upsertOne),
+      upsertMany: reduce<T[]>(a.upsertMany),
+      removeAll: reduce<void>((s) => a.removeAll(s)),
       updateOne: reduce<{ id: Id; payload: T }>((s, p) =>
         a.updateOne(s, p.id, p.payload),
       ),
