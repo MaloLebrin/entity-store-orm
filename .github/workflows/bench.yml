@@ -1,7 +1,11 @@
 name: 📊 Benchmark
 
-# Informational only: shared runners are noisy, so absolute numbers vary a lot
-# between runs. Read the ratios (core vs RTK, memoized vs not) in the job summary.
+# Two jobs:
+# - `bench-check` GATES the PR: it only compares ratios between scenarios run
+#   back to back (median of several rounds, wide floors), so it fails on a clear
+#   regression but not on shared-runner noise. See tests/bench/src/check.ts.
+# - `bench` is informational (continue-on-error): absolute numbers vary a lot
+#   between runs. Read the ratios (core vs RTK, memoized vs not) in the summary.
 on:
   workflow_dispatch:
   pull_request:
@@ -11,6 +15,26 @@ on:
       - ".github/workflows/bench.yml"
 
 jobs:
+  bench-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @entity-store/core build
+      - name: Check for performance regressions
+        shell: bash # enables pipefail, so a failing check is not hidden by `tee`
+        run: |
+          pnpm bench:check | tee bench-check.txt
+          {
+            echo '## Benchmark regression gate (ratios, median of 3 rounds)'
+            cat bench-check.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+
   bench:
     runs-on: ubuntu-latest
     continue-on-error: true

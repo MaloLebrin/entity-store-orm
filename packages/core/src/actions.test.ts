@@ -163,6 +163,59 @@ describe('dirty flags', () => {
     expect(a.setIsDirty(s, 99)).toBe(s)
     expect(a.setIsNotDirty(s, 99)).toBe(s)
   })
+
+  test('setIsNotDirty on a clean entity returns the same state', () => {
+    const s = seeded()
+    expect(a.setIsNotDirty(s, 1)).toBe(s)
+  })
+})
+
+describe('delete clears dangling pointers', () => {
+  test('deleteOne resets currentById and current of the removed entity', () => {
+    let s = a.setCurrentById(a.setCurrent(seeded(), john), 1)
+    s = a.deleteOne(s, 1)
+    expect(s.entities.currentById).toBeNull()
+    expect(s.entities.current).toBeNull()
+  })
+
+  test('deleteOne keeps pointers to other entities', () => {
+    const s = a.deleteOne(a.setCurrentById(seeded(), 2), 1)
+    expect(s.entities.currentById).toBe(2)
+  })
+
+  test('deleteMany resets currentById and current of removed entities', () => {
+    let s = a.setCurrentById(a.setCurrent(seeded(), john), 1)
+    s = a.deleteMany(s, [1, 42])
+    expect(s.entities.currentById).toBeNull()
+    expect(s.entities.current).toBeNull()
+  })
+})
+
+describe('ids that look like Object.prototype members', () => {
+  test('are not mistaken for stored entities', () => {
+    const s = empty()
+    for (const id of ['constructor', 'toString', '__proto__']) {
+      expect(a.setActive(s, id)).toBe(s)
+      expect(a.setCurrentById(s, id)).toBe(s)
+      expect(a.setIsDirty(s, id)).toBe(s)
+      expect(a.setIsNotDirty(s, id)).toBe(s)
+      expect(a.updateField(s, 'name', 'x', id)).toBe(s)
+    }
+  })
+
+  test('createMany / setAll / updateMany store "__proto__" as a regular id', () => {
+    const item = { id: '__proto__', name: 'P', age: 1 }
+    for (const s of [
+      a.createMany(empty(), [item]),
+      a.setAll(empty(), [item]),
+      a.updateMany(empty(), [item]),
+    ]) {
+      expect(s.entities.allIds).toEqual(['__proto__'])
+      expect(Object.keys(s.entities.byId)).toEqual(['__proto__'])
+      expect(Object.getPrototypeOf(s.entities.byId)).toBe(Object.prototype)
+      expect(a.deleteMany(s, ['__proto__']).entities.allIds).toEqual([])
+    }
+  })
 })
 
 describe('immutability', () => {
@@ -179,7 +232,7 @@ describe('immutability', () => {
       a.setCurrent(before, john),
       a.setCurrentById(before, 1),
       a.setIsDirty(before, 1),
-      a.setIsNotDirty(before, 1),
+      a.setIsNotDirty(a.setIsDirty(before, 1), 1),
     ]
 
     expect(before).toEqual(snapshot)

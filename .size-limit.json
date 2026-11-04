@@ -1,0 +1,55 @@
+[
+  {
+    "name": "core: one action (tree-shaking)",
+    "path": "packages/core/dist/index.js",
+    "import": "{ createOne }",
+    "limit": "250 B"
+  },
+  {
+    "name": "core: one getter (tree-shaking)",
+    "path": "packages/core/dist/index.js",
+    "import": "{ getOne }",
+    "limit": "150 B"
+  },
+  {
+    "name": "core: all actions",
+    "path": "packages/core/dist/index.js",
+    "import": "{ actions }",
+    "limit": "1.3 kB"
+  },
+  {
+    "name": "core: whole package",
+    "path": "packages/core/dist/index.js",
+    "limit": "3.2 kB"
+  },
+  {
+    "name": "pinia adapter (+ core)",
+    "path": "packages/pinia/dist/index.js",
+    "ignore": ["pinia", "vue"],
+    "limit": "2.95 kB"
+  },
+  {
+    "name": "zustand adapter (+ core)",
+    "path": "packages/zustand/dist/index.js",
+    "ignore": ["zustand"],
+    "limit": "2.9 kB"
+  },
+  {
+    "name": "redux adapter (+ core)",
+    "path": "packages/redux/dist/index.js",
+    "ignore": ["@reduxjs/toolkit"],
+    "limit": "3.1 kB"
+  },
+  {
+    "name": "jotai adapter (+ core)",
+    "path": "packages/jotai/dist/index.js",
+    "ignore": ["jotai"],
+    "limit": "3.1 kB"
+  },
+  {
+    "name": "valtio adapter (+ core)",
+    "path": "packages/valtio/dist/index.js",
+    "ignore": ["valtio"],
+    "limit": "2.95 kB"
+  }
+]

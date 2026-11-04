@@ -1,3 +1,4 @@
+import { getOwn } from './entity.js'
 import type { EntityWithMeta } from './types/EntityMeta.js'
 import type { SortOptions } from './types/SortOptions.js'
 import type { State } from './types/State.js'
@@ -87,7 +88,7 @@ export const getCurrent = <T extends WithId>(state: State<T>) =>
 export const getCurrentById = <T extends WithId>(state: State<T>) =>
   state.entities.currentById === null
     ? null
-    : (state.entities.byId[state.entities.currentById] ?? null)
+    : (getOwn(state.entities.byId, state.entities.currentById) ?? null)
 
 export const getActive = <T extends WithId>(state: State<T>) =>
   state.entities.active
@@ -96,7 +97,7 @@ export const getFirstActive = <T extends WithId>(state: State<T>) =>
   state.entities.active[0]
 
 export const getOne = <T extends WithId>(state: State<T>, id: Id) =>
-  state.entities.byId[id]
+  getOwn(state.entities.byId, id)
 
 export function getMany<T extends WithId>(
   state: State<T>,
@@ -105,7 +106,7 @@ export function getMany<T extends WithId>(
   if (!Array.isArray(ids)) return []
   const out: EntityWithMeta<T>[] = []
   for (const id of ids) {
-    const item = state.entities.byId[id]
+    const item = getOwn(state.entities.byId, id)
     if (item) out.push(item)
   }
   return out
@@ -195,7 +196,7 @@ export const isAlreadyActive = <T extends WithId>(state: State<T>, id: Id) =>
   state.entities.active.includes(id)
 
 export const isDirty = <T extends WithId>(state: State<T>, id: Id) =>
-  state.entities.byId[id]?.$isDirty ?? false
+  getOwn(state.entities.byId, id)?.$isDirty ?? false
 
 /** Ids from the list that are not in the store. Deduplicated unless asked. */
 export function getMissingIds<T extends WithId>(
