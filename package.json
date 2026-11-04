@@ -17,7 +17,8 @@
     "changeset": "changeset",
     "release": "pnpm build && changeset publish",
     "check:package": "pnpm -r check:package",
-    "test:consumer": "bash tests/consumer/run.sh"
+    "test:consumer": "bash tests/consumer/run.sh",
+    "bench": "pnpm --filter @entity-store/test-bench bench"
   },
   "keywords": [
     "orm",
