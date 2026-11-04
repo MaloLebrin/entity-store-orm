@@ -11,7 +11,7 @@
   "dependencies": {
     "@entity-store/core": "workspace:*",
     "@reduxjs/toolkit": "catalog:",
-    "tinybench": "^5.0.0"
+    "tinybench": "^6.2.2"
   },
   "devDependencies": {
     "@types/node": "catalog:",
