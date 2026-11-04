@@ -45,3 +45,6 @@ jobs:
 
       - name: 📦 Validate packages (publint + attw)
         run: pnpm -r check:package
+
+      - name: 🧪 Consumer test (packed tarballs, ESM/CJS/types)
+        run: pnpm test:consumer
