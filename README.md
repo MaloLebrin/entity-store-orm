@@ -55,13 +55,13 @@ All adapters expose the same action and getter names; they only differ in how yo
 
 ## Compatibility
 
-| Adapter   | Peer dependency            | Verified with                                   |
-| --------- | -------------------------- | ----------------------------------------------- |
-| `pinia`   | `pinia` ^3 \|\| ^4          | Vue app, SSR, Nuxt 4 (`@pinia/nuxt`)            |
-| `zustand` | `zustand` ^5               | React app, SSR, non-DOM React renderer          |
-| `redux`   | `@reduxjs/toolkit` ^2      | React app, SSR                                  |
-| `jotai`   | `jotai` ^2 \|\| ^3          | React app, SSR                                  |
-| `valtio`  | `valtio` ^2                | React app, SSR                                  |
+| Adapter   | Peer dependency       | Verified with                          |
+| --------- | --------------------- | -------------------------------------- |
+| `pinia`   | `pinia` ^3 \|\| ^4    | Vue app, SSR, Nuxt 4 (`@pinia/nuxt`)   |
+| `zustand` | `zustand` ^5          | React app, SSR, non-DOM React renderer |
+| `redux`   | `@reduxjs/toolkit` ^2 | React app, SSR                         |
+| `jotai`   | `jotai` ^2 \|\| ^3    | React app, SSR                         |
+| `valtio`  | `valtio` ^2           | React app, SSR                         |
 
 The state is plain JSON, so it serializes for SSR and hydrates as is. The repository's `tests/` folder holds the consumer checks: ESM/CJS packaging, Vue and React apps, SSR, esbuild/webpack bundling with tree-shaking, a non-DOM renderer and a Nuxt app.
 
