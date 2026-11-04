@@ -3,9 +3,6 @@ packages:
   - "examples/*"
   - "tests/*"
 
-onlyBuiltDependencies:
-  - esbuild
-
 catalog:
   "typescript": "^5.9.3"
   "vitest": "^5.1.0"
@@ -17,3 +14,13 @@ catalog:
   "@reduxjs/toolkit": "^2.14.0"
   "jotai": "^3.0.1"
   "valtio": "^2.3.2"
+
+minimumReleaseAgeExclude:
+  - is-core-module
+  - node-forge
+  - resolve
+  - "@reduxjs/toolkit"
+  - electron-to-chromium
+
+allowBuilds:
+  esbuild: true
