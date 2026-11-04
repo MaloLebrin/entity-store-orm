@@ -6,7 +6,7 @@ import {
   type State,
   type WithId,
 } from '@entity-store/core'
-import { proxy, ref } from 'valtio/vanilla'
+import { proxy, ref, type Snapshot } from 'valtio/vanilla'
 
 export type {
   EntityActions,
@@ -49,4 +49,29 @@ export function createEntityStore<T extends WithId>(): EntityStore<T> {
   })
 
   return Object.assign(store, actions, getters) as EntityStore<T>
+}
+
+/**
+ * Getters bound to a `useSnapshot` snapshot, so reading them subscribes the
+ * component to `entities`.
+ *
+ * Calling `snap.getOne(1)` directly does NOT subscribe: the functions on the
+ * proxy read the live store, and `useSnapshot` only tracks the properties you
+ * read from the snapshot. Use this instead:
+ *
+ * ```ts
+ * const snap = useSnapshot(users)
+ * const { getOne, getAllArray } = snapshotGetters<User>(snap)
+ * ```
+ */
+export function snapshotGetters<T extends WithId>(snap: {
+  readonly entities: Snapshot<State<T>['entities']>
+}): EntityGetters<T> {
+  // Reading `snap.entities` here is what registers the subscription. The
+  // snapshot is deeply readonly; the getters never write to it.
+  const entities = snap.entities as unknown as State<T>['entities']
+  return createEntityApi<T>({
+    get: () => ({ entities }),
+    set: () => {},
+  }).getters
 }
