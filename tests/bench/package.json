@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "bench": "node --experimental-strip-types src/run.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "bench:check": "node --experimental-strip-types src/check.ts"
   },
   "dependencies": {
     "@entity-store/core": "workspace:*",

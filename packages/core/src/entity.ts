@@ -1,5 +1,5 @@
 import type { EntityWithMeta } from './types/EntityMeta.js'
-import type { WithId } from './types/WithId.js'
+import type { Id, WithId } from './types/WithId.js'
 
 /** Wrap a plain entity with fresh (clean) metadata. */
 export function withMeta<T extends WithId>(
@@ -39,4 +39,27 @@ export function patchEntity<T extends WithId>(
     $isDirty: true,
     $meta: { ...entity.$meta, changedFields: fields, updatedAt: now },
   }
+}
+
+/**
+ * Own-property lookup in `byId`: ids such as "constructor" or "toString" must
+ * not resolve to `Object.prototype` members.
+ */
+export function getOwn<V>(byId: Record<Id, V>, id: Id): V | undefined {
+  return Object.hasOwn(byId, id) ? byId[id] : undefined
+}
+
+/**
+ * Own-property write into a (fresh, mutable) `byId`: a plain assignment of
+ * "__proto__" would change the prototype instead of storing the entity.
+ */
+export function putOwn<V>(byId: Record<Id, V>, id: Id, value: V): void {
+  if (id === '__proto__')
+    Object.defineProperty(byId, id, {
+      value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    })
+  else byId[id] = value
 }

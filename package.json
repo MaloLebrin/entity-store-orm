@@ -18,7 +18,9 @@
     "release": "pnpm build && changeset publish",
     "check:package": "pnpm -r check:package",
     "test:consumer": "bash tests/consumer/run.sh",
-    "bench": "pnpm --filter @entity-store/test-bench bench"
+    "size": "size-limit",
+    "bench": "pnpm --filter @entity-store/test-bench bench",
+    "bench:check": "pnpm --filter @entity-store/test-bench bench:check"
   },
   "keywords": [
     "orm",
@@ -38,10 +40,12 @@
     "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.6.4",
     "@changesets/cli": "^3.0.3",
+    "@size-limit/preset-small-lib": "^14.3.0",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "pinia": "catalog:",
     "publint": "^0.3.25",
+    "size-limit": "^14.3.0",
     "tsup": "^9.0.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
