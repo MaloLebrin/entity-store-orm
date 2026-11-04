@@ -26,6 +26,7 @@ getters.getWhereArray(state, (u) => u.name.startsWith('Ada'), {
 })
 ```
 
+- For tree-shaking, import actions and getters by name: `import { createOne, getOne } from '@entity-store/core'`. The `actions` / `getters` objects bundle them all.
 - Actions take the state first and return the next state. The input is never mutated; unchanged entities keep their reference; if nothing changes, **the same state object is returned** (cheap to compare, no useless re-renders).
 - Getters take the state first and return a value.
 - Each stored entity is `T & { $isDirty, $meta: { changedFields, createdAt, updatedAt } }`. Metadata is plain data (arrays, numbers), so the whole state is JSON-serializable.
@@ -52,4 +53,6 @@ getters.getAllIds() // [1]
 
 ## Exports
 
-`actions`, `getters`, `createState`, `createEntityApi`, `withMeta`, `patchEntity`, and the types `State`, `WithId`, `Id`, `EntityWithMeta`, `EntityMeta`, `SortOptions`, `FilterFn`, `EntityActions`, `EntityGetters`, `EntityApi`.
+Every action and getter by name, `actions`, `getters`, `createState`, `createEntityApi`, `withMeta`, `patchEntity`, and the types `State`, `WithId`, `Id`, `EntityWithMeta`, `EntityMeta`, `SortOptions`, `FilterFn`, `EntityActions`, `EntityGetters`, `EntityApi`.
+
+ESM and CommonJS builds, Node >= 18, `sideEffects: false`.
