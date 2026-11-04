@@ -73,3 +73,22 @@ describe('redux adapter', () => {
     expect(JSON.parse(JSON.stringify(after))).toEqual(after)
   })
 })
+
+describe('redux memoize option', () => {
+  test('getAllArray selector is memoized by default and can be disabled', () => {
+    for (const [memoize, same] of [
+      [undefined, true],
+      [false, false],
+    ] as const) {
+      const users = createEntitySlice<User>('users', { memoize })
+      const store = configureStore({ reducer: { users: users.reducer } })
+      store.dispatch(users.actions.createMany([ada, bob]))
+      type Root = ReturnType<typeof store.getState>
+      const select = users.getSelectors((r: Root) => r.users)
+      const s = store.getState()
+      const first = select.getAllArray(s)
+      const second = select.getAllArray(s)
+      expect(Object.is(first, second)).toBe(same)
+    }
+  })
+})

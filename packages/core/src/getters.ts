@@ -16,10 +16,51 @@ export const getAll = <T extends WithId>(state: State<T>) => state.entities.byId
 export const getAllIds = <T extends WithId>(state: State<T>) =>
   state.entities.allIds
 
+/** Options accepted by the getters that build a derived array. */
+export interface GetterOptions {
+  /**
+   * Reuse the previous array while `byId` and `allIds` are unchanged (default
+   * `true`). Pass `false` to rebuild it on every call.
+   */
+  memoize?: boolean
+}
+
+const allArrayCache = new WeakMap<
+  object,
+  { allIds: Id[]; result: EntityWithMeta<never>[] }
+>()
+
+function readAll<T extends WithId>(
+  state: State<T>,
+  memoize: boolean,
+): EntityWithMeta<T>[] {
+  const { byId, allIds } = state.entities
+  if (!memoize) return getMany(state, allIds)
+  const hit = allArrayCache.get(byId)
+  if (hit && hit.allIds === allIds)
+    return hit.result as unknown as EntityWithMeta<T>[]
+  const result = getMany(state, allIds)
+  allArrayCache.set(byId, {
+    allIds,
+    result: result as unknown as EntityWithMeta<never>[],
+  })
+  return result
+}
+
+/**
+ * Every entity, in `allIds` order.
+ *
+ * Memoized by default: while `byId` and `allIds` keep the same references the
+ * very same array is returned, so it is safe as a React/Vue dependency. Changing
+ * `current`, `active` or `currentById` does not invalidate it. The array is
+ * shared: treat it as read-only (copy before sorting). Pass
+ * `{ memoize: false }` to get a fresh array every time.
+ */
 export function getAllArray<T extends WithId>(
   state: State<T>,
+  options?: GetterOptions,
 ): EntityWithMeta<T>[] {
-  return getMany(state, state.entities.allIds)
+  return readAll(state, options?.memoize !== false)
 }
 
 export const getIsEmpty = <T extends WithId>(state: State<T>) =>
@@ -58,15 +99,24 @@ export function getMany<T extends WithId>(
   return out
 }
 
+function whereArray<T extends WithId>(
+  memoize: boolean,
+  state: State<T>,
+  filter?: Predicate<T> | null,
+  options?: SortOptions<T>,
+): EntityWithMeta<T>[] {
+  const all = readAll(state, memoize)
+  if (typeof filter !== 'function') return all
+  const filtered = all.filter((item) => filter(item))
+  return options?.orderBy ? sortEntities(filtered, options) : filtered
+}
+
 export function getWhereArray<T extends WithId>(
   state: State<T>,
   filter?: Predicate<T> | null,
   options?: SortOptions<T>,
 ): EntityWithMeta<T>[] {
-  const all = getAllArray(state)
-  if (typeof filter !== 'function') return all
-  const filtered = all.filter((item) => filter(item))
-  return options?.orderBy ? sortEntities(filtered, options) : filtered
+  return whereArray(true, state, filter, options)
 }
 
 /** Dictionary of the entities passing the filter (sorting is not applicable). */
@@ -125,4 +175,18 @@ export function search<T extends WithId>(
   return getAllArray(state).filter((item) =>
     Object.values(item).some((v) => typeof v === 'string' && regex.test(v)),
   )
+}
+
+/**
+ * The same getters without memoization: `getAllArray` and `getWhereArray`
+ * (with no filter) build a fresh array on every call. Used by the adapters when
+ * created with `{ memoize: false }`.
+ */
+export const uncachedGetters = {
+  getAllArray: <T extends WithId>(state: State<T>) => readAll(state, false),
+  getWhereArray: <T extends WithId>(
+    state: State<T>,
+    filter?: Predicate<T> | null,
+    options?: SortOptions<T>,
+  ) => whereArray(false, state, filter, options),
 }

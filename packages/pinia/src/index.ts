@@ -31,6 +31,8 @@ export interface DefineEntityStoreOptions<
   T extends WithId,
   X extends object = object,
 > {
+  /** Memoize `getAllArray` (default `true`); `false` rebuilds it on each call. */
+  memoize?: boolean | undefined
   /**
    * Add your own state, getters and actions, setup-store style. Whatever you
    * return is merged into the store (refs become state, computeds become
@@ -49,6 +51,7 @@ function setupEntityStore<T extends WithId, X extends object>(
     set: (next: State<T>) => {
       entities.value = next.entities
     },
+    memoize: options.memoize,
   })
 
   const base: EntityStoreBase<T> = {

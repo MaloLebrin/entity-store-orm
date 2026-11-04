@@ -62,3 +62,15 @@ describe('valtio adapter', () => {
     expect(s.getOne(2)).toBe(bobBefore)
   })
 })
+
+describe('valtio memoize option', () => {
+  test('getAllArray is memoized by default and can be disabled', () => {
+    const on = createEntityStore<User>()
+    on.createMany([ada, bob])
+    expect(on.getAllArray()).toBe(on.getAllArray())
+
+    const off = createEntityStore<User>({ memoize: false })
+    off.createMany([ada, bob])
+    expect(off.getAllArray()).not.toBe(off.getAllArray())
+  })
+})
