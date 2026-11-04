@@ -282,3 +282,26 @@ describe('getWhereArray with a stable filter', () => {
     )
   })
 })
+
+describe('getWhereArray without a filter', () => {
+  test('honours orderBy / sortBy (memoized like getSortedArray)', () => {
+    const asc = g.getWhereArray(state, undefined, { orderBy: 'age' })
+    expect(asc.map((u) => u.id)).toEqual([2, 1, 3])
+    expect(g.getWhereArray(state, null, { orderBy: 'age' })).toBe(asc)
+    expect(asc).toBe(g.getSortedArray(state, { orderBy: 'age' }))
+    expect(
+      g
+        .getWhereArray(state, null, { orderBy: 'age', sortBy: 'desc' })
+        .map((u) => u.id),
+    ).toEqual([3, 1, 2])
+    expect(g.getWhereArray(state, null, {})).toBe(g.getAllArray(state))
+  })
+
+  test('uncached version sorts into a fresh array', () => {
+    const a = g.uncachedGetters.getWhereArray(state, null, { orderBy: 'age' })
+    expect(a.map((u) => u.id)).toEqual([2, 1, 3])
+    expect(a).not.toBe(
+      g.uncachedGetters.getWhereArray(state, null, { orderBy: 'age' }),
+    )
+  })
+})

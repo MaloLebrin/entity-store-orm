@@ -72,7 +72,7 @@ describe('defineEntityStore', () => {
     expect(store.getWhereArray((u) => u.age > 30).map((u) => u.id)).toEqual([1])
     expect(
       store.getWhereArray(null, { orderBy: 'age' }).map((u) => u.id),
-    ).toEqual([1, 2])
+    ).toEqual([2, 1])
     expect(store.search('bo')).toHaveLength(1)
   })
 

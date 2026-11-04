@@ -129,8 +129,11 @@ function whereArray<T extends WithId>(
   filter?: Predicate<T> | null,
   options?: SortOptions<T>,
 ): EntityWithMeta<T>[] {
+  if (typeof filter !== 'function')
+    return options?.orderBy
+      ? sortedArray(memoize, state, options)
+      : readAll(state, memoize)
   const all = readAll(state, memoize)
-  if (typeof filter !== 'function') return all
   const { byId, allIds } = state.entities
   if (memoize) {
     const hit = whereCache.get(byId)
