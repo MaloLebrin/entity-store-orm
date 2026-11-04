@@ -64,6 +64,9 @@ const ACTION_KEYS = [
   'resetActive',
   'setIsDirty',
   'setIsNotDirty',
+  'optimisticUpdate',
+  'commitOptimistic',
+  'rollbackOptimistic',
 ] as const satisfies readonly (keyof EntityActions<WithId>)[]
 
 const GETTER_KEYS = [
@@ -86,6 +89,7 @@ const GETTER_KEYS = [
   'isAlreadyInStore',
   'isAlreadyActive',
   'isDirty',
+  'isPending',
   'getMissingIds',
   'getMissingEntities',
   'search',

@@ -24,6 +24,12 @@ export interface EntityActions<T extends WithId> {
   resetActive(): void
   setIsDirty(id: Id): void
   setIsNotDirty(id: Id): void
+  /** Apply a patch now and remember how to undo it, under `txId`; see `optimisticUpdate`. */
+  optimisticUpdate(id: Id, patch: Partial<T>, txId: Id): void
+  /** The server accepted update `txId`: keep the values. */
+  commitOptimistic(id: Id, txId: Id): void
+  /** The server refused update `txId`: restore the previous values. */
+  rollbackOptimistic(id: Id, txId: Id): void
 }
 
 /** State-bound getters. */
@@ -53,6 +59,8 @@ export interface EntityGetters<T extends WithId> {
   isAlreadyInStore(id: Id): boolean
   isAlreadyActive(id: Id): boolean
   isDirty(id: Id): boolean
+  /** Whether the entity has optimistic updates not yet committed or rolled back. */
+  isPending(id: Id): boolean
   getMissingIds(ids: Id[], canHaveDuplicates?: boolean): Id[]
   getMissingEntities(entities: T[]): T[]
   search(query: string): EntityWithMeta<T>[]

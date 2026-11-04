@@ -32,6 +32,10 @@ getters.getWhereArray(state, (u) => u.name.startsWith('Ada'), {
 - Each stored entity is `T & { $isDirty, $meta: { changedFields, createdAt, updatedAt } }`. Metadata is plain data (arrays, numbers), so the whole state is JSON-serializable.
 - Time-dependent actions accept an optional trailing `now` timestamp for deterministic tests.
 
+## Optimistic updates
+
+`optimisticUpdate(state, id, patch, txId)` applies a patch and records how to undo it in `$meta.pending`; `commitOptimistic(state, id, txId)` keeps it; `rollbackOptimistic(state, id, txId)` restores the previous values, `$isDirty`, `changedFields` and `updatedAt`. `isPending(state, id)` tells whether updates are waiting. `withOptimisticUpdate(actions, id, patch, request)` wraps the apply / await / commit-or-rollback sequence for adapters with plain-function actions. See the root README for details.
+
 ## Binding to a state container
 
 `createEntityApi` is what adapters use. Give it a `get` and a `set` and you get state-less actions and getters:
@@ -53,6 +57,6 @@ getters.getAllIds() // [1]
 
 ## Exports
 
-Every action and getter by name, `actions`, `getters`, `createState`, `createEntityApi`, `withMeta`, `patchEntity`, and the types `State`, `WithId`, `Id`, `EntityWithMeta`, `EntityMeta`, `SortOptions`, `FilterFn`, `EntityActions`, `EntityGetters`, `EntityApi`.
+Every action and getter by name, `actions`, `getters`, `createState`, `createEntityApi`, `withMeta`, `patchEntity`, `withOptimisticUpdate`, and the types `State`, `WithId`, `Id`, `EntityWithMeta`, `EntityMeta`, `PendingChange`, `PendingField`, `SortOptions`, `FilterFn`, `EntityActions`, `EntityGetters`, `EntityApi`.
 
 ESM and CommonJS builds, Node >= 18, `sideEffects: false`.

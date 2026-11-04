@@ -86,6 +86,15 @@ export function createEntitySlice<T extends WithId>(
       resetActive: reduce<void>((s) => a.resetActive(s)),
       setIsDirty: reduce<Id>(a.setIsDirty),
       setIsNotDirty: reduce<Id>(a.setIsNotDirty),
+      optimisticUpdate: reduce<{ id: Id; patch: Partial<T>; txId: Id }>(
+        (s, p) => a.optimisticUpdate(s, p.id, p.patch, p.txId),
+      ),
+      commitOptimistic: reduce<{ id: Id; txId: Id }>((s, p) =>
+        a.commitOptimistic(s, p.id, p.txId),
+      ),
+      rollbackOptimistic: reduce<{ id: Id; txId: Id }>((s, p) =>
+        a.rollbackOptimistic(s, p.id, p.txId),
+      ),
     },
   })
 
@@ -112,6 +121,7 @@ export function createEntitySlice<T extends WithId>(
       isAlreadyInStore: (r, id) => g.isAlreadyInStore(select(r), id),
       isAlreadyActive: (r, id) => g.isAlreadyActive(select(r), id),
       isDirty: (r, id) => g.isDirty(select(r), id),
+      isPending: (r, id) => g.isPending(select(r), id),
       getMissingIds: (r, ids, d) => g.getMissingIds(select(r), ids, d),
       getMissingEntities: (r, e) => g.getMissingEntities(select(r), e),
       search: (r, q) => g.search(select(r), q),

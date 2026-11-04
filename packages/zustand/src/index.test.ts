@@ -1,4 +1,4 @@
-import type { WithId } from '@entity-store/core'
+import { type WithId, withOptimisticUpdate } from '@entity-store/core'
 import { describe, expect, test, vi } from 'vitest'
 import { createEntityStore } from './index.js'
 
@@ -40,6 +40,25 @@ describe('zustand adapter', () => {
 
     s().deleteOne(1)
     expect(s().getAllIds()).toEqual([2])
+  })
+
+  test('optimistic update: rollback and withOptimisticUpdate', async () => {
+    const store = createEntityStore<User>()
+    const s = () => store.getState()
+    s().createOne(ada)
+    s().optimisticUpdate(1, { name: 'Ada L.' }, 'tx')
+    expect(s().isPending(1)).toBe(true)
+    s().rollbackOptimistic(1, 'tx')
+    expect(s().getOne(1)).toMatchObject({ name: 'Ada', $isDirty: false })
+
+    await expect(
+      withOptimisticUpdate(s(), 1, { name: 'x' }, () =>
+        Promise.reject(new Error('no')),
+      ),
+    ).rejects.toThrow('no')
+    expect(s().getOne(1)?.name).toBe('Ada')
+    await withOptimisticUpdate(s(), 1, { name: 'y' }, async () => {})
+    expect(s().getOne(1)?.name).toBe('y')
   })
 
   test('notifies subscribers with immutable updates', () => {
