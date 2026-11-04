@@ -126,3 +126,8 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Nuxt
+.nuxt/
+.output/
+.nitro/
