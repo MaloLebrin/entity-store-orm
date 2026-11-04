@@ -4,22 +4,24 @@ import { describe, expect, test } from 'vitest'
 import { useStore } from 'zustand'
 import { type Todo, todo } from './shared.js'
 
+const store = createEntityStore<Todo>()
+
+function List() {
+  const ids = useStore(store, (s) => s.entities.allIds)
+  const first = useStore(store, (s) => s.getOne(1))
+  return (
+    <div>
+      <p data-testid="count">{ids.length}</p>
+      <p data-testid="first">
+        {first?.title}
+        {first?.$isDirty ? ' dirty' : ''}
+      </p>
+    </div>
+  )
+}
+
 describe('React + @entity-store/zustand', () => {
   test('component re-renders on create/update/delete', () => {
-    const store = createEntityStore<Todo>()
-    function List() {
-      const ids = useStore(store, (s) => s.entities.allIds)
-      const first = useStore(store, (s) => s.getOne(1))
-      return (
-        <div>
-          <p data-testid="count">{ids.length}</p>
-          <p data-testid="first">
-            {first?.title}
-            {first?.$isDirty ? ' dirty' : ''}
-          </p>
-        </div>
-      )
-    }
     render(<List />)
     expect(screen.getByTestId('count').textContent).toBe('0')
 

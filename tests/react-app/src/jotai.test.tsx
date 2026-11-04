@@ -4,24 +4,26 @@ import { Provider, useAtomValue, useSetAtom } from 'jotai'
 import { describe, expect, test } from 'vitest'
 import { type Todo, todo } from './shared.js'
 
+const todos = createEntityAtoms<Todo>()
+
+function List({ id }: { id: string }) {
+  const getAllIds = useAtomValue(todos.getters.getAllIds)
+  const create = useSetAtom(todos.actions.createOne)
+  return (
+    <div>
+      <p data-testid={`count-${id}`}>{getAllIds().length}</p>
+      <button
+        type="button"
+        onClick={() => create(todo(getAllIds().length + 1))}
+      >
+        add-{id}
+      </button>
+    </div>
+  )
+}
+
 describe('React + @entity-store/jotai', () => {
   test('atoms re-render consumers and stay isolated per Provider', () => {
-    const todos = createEntityAtoms<Todo>()
-    function List({ id }: { id: string }) {
-      const getAllIds = useAtomValue(todos.getters.getAllIds)
-      const create = useSetAtom(todos.actions.createOne)
-      return (
-        <div>
-          <p data-testid={`count-${id}`}>{getAllIds().length}</p>
-          <button
-            type="button"
-            onClick={() => create(todo(getAllIds().length + 1))}
-          >
-            add-{id}
-          </button>
-        </div>
-      )
-    }
     render(
       <>
         <Provider>
