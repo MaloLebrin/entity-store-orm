@@ -1,5 +1,11 @@
 # Entity Store
 
+[![npm](https://img.shields.io/npm/v/@entity-store/core?label=%40entity-store%2Fcore)](https://www.npmjs.com/package/@entity-store/core)
+[![CI](https://github.com/malolebrin/entity-store-orm/actions/workflows/CI-Test.yml/badge.svg)](https://github.com/malolebrin/entity-store-orm/actions/workflows/CI-Test.yml)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@entity-store/core)](https://bundlephobia.com/package/@entity-store/core)
+[![license](https://img.shields.io/npm/l/@entity-store/core)](./LICENSE)
+
+
 A tiny, framework-agnostic way to keep **normalized collections of entities** in your state manager, with the same actions and getters everywhere.
 
 ```ts
