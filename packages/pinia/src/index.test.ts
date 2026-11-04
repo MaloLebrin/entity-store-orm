@@ -72,7 +72,7 @@ describe('defineEntityStore', () => {
     expect(store.getWhereArray((u) => u.age > 30).map((u) => u.id)).toEqual([1])
     expect(
       store.getWhereArray(null, { orderBy: 'age' }).map((u) => u.id),
-    ).toEqual([1, 2])
+    ).toEqual([2, 1])
     expect(store.search('bo')).toHaveLength(1)
   })
 
@@ -134,5 +134,20 @@ describe('pinia memoize option', () => {
     const off = defineEntityStore<User>()('memo-off', { memoize: false })()
     off.createMany([ada, bob])
     expect(off.getAllArray()).not.toBe(off.getAllArray())
+  })
+})
+
+describe('pinia setAll / getSortedArray / getByField', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  test('work through the store', () => {
+    const store = defineEntityStore<User>('sorted')()
+    store.createMany([ada])
+    store.setAll([bob, ada])
+    expect(store.getAllIds()).toEqual([2, 1])
+    expect(store.getSortedArray({ orderBy: 'age' }).map((u) => u.id)).toEqual([
+      2, 1,
+    ])
+    expect(store.getByField('name', 'Ada').map((u) => u.id)).toEqual([1])
   })
 })

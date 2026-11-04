@@ -1,4 +1,5 @@
 import { patchEntity, withMeta } from './entity.js'
+import type { EntityWithMeta } from './types/EntityMeta.js'
 import type { State } from './types/State.js'
 import type { Id, WithId } from './types/WithId.js'
 
@@ -49,7 +50,40 @@ export function createMany<T extends WithId>(
   return setEntities(state, { byId: nextById, allIds: nextIds })
 }
 
-/** Patch an existing entity (marks it dirty), or create it when missing. */
+/**
+ * Replace the whole collection with `payload` (every entity clean, metadata
+ * reset), e.g. after loading a list from an API. `active`, `current` and
+ * `currentById` are kept only when they still point to an entity of the new
+ * list; `current` is refreshed to the new copy.
+ */
+export function setAll<T extends WithId>(
+  state: State<T>,
+  payload: T[],
+  now?: number,
+): State<T> {
+  const byId: Record<Id, EntityWithMeta<T>> = {}
+  const allIds: Id[] = []
+  for (const entity of payload) {
+    if (byId[entity.id] === undefined) allIds.push(entity.id)
+    byId[entity.id] = withMeta(entity, now)
+  }
+  const { active, current, currentById } = state.entities
+  return setEntities(state, {
+    byId,
+    allIds,
+    active: active.filter((id) => byId[id] !== undefined),
+    current: current ? (byId[current.id] ?? null) : null,
+    currentById:
+      currentById !== null && byId[currentById] !== undefined
+        ? currentById
+        : null,
+  })
+}
+
+/**
+ * Patch an existing entity (marks it dirty), or create it when missing.
+ * (`updateOne` / `updateMany` are already upserts.)
+ */
 export function updateOne<T extends WithId>(
   state: State<T>,
   id: Id,

@@ -25,6 +25,16 @@ export interface GetterOptions {
   memoize?: boolean
 }
 
+declare const process: { env?: { NODE_ENV?: string } } | undefined
+
+/**
+ * Outside production the memoized array is frozen, so an in-place `sort()` or
+ * `push()` throws instead of silently corrupting the shared cache. Bundlers
+ * replace `process.env.NODE_ENV`; with no bundler and no `process`, no freeze.
+ */
+const freezeInDev =
+  typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
+
 const allArrayCache = new WeakMap<
   object,
   { allIds: Id[]; result: EntityWithMeta<never>[] }
@@ -40,6 +50,7 @@ function readAll<T extends WithId>(
   if (hit && hit.allIds === allIds)
     return hit.result as unknown as EntityWithMeta<T>[]
   const result = getMany(state, allIds)
+  if (freezeInDev) Object.freeze(result)
   allArrayCache.set(byId, {
     allIds,
     result: result as unknown as EntityWithMeta<never>[],
@@ -53,7 +64,8 @@ function readAll<T extends WithId>(
  * Memoized by default: while `byId` and `allIds` keep the same references the
  * very same array is returned, so it is safe as a React/Vue dependency. Changing
  * `current`, `active` or `currentById` does not invalidate it. The array is
- * shared: treat it as read-only (copy before sorting). Pass
+ * shared: treat it as read-only (copy before sorting); outside production it is
+ * frozen so a mutation throws. Pass
  * `{ memoize: false }` to get a fresh array every time.
  */
 export function getAllArray<T extends WithId>(
@@ -99,16 +111,54 @@ export function getMany<T extends WithId>(
   return out
 }
 
+interface WhereEntry {
+  allIds: Id[]
+  filter: unknown
+  orderBy: unknown
+  sortBy: unknown
+  result: EntityWithMeta<never>[]
+}
+
+/** One remembered filtered result per `byId`: pays off when the filter (and
+ * `orderBy`) are stable references, never worse than recomputing. */
+const whereCache = new WeakMap<object, WhereEntry>()
+
 function whereArray<T extends WithId>(
   memoize: boolean,
   state: State<T>,
   filter?: Predicate<T> | null,
   options?: SortOptions<T>,
 ): EntityWithMeta<T>[] {
+  if (typeof filter !== 'function')
+    return options?.orderBy
+      ? sortedArray(memoize, state, options)
+      : readAll(state, memoize)
   const all = readAll(state, memoize)
-  if (typeof filter !== 'function') return all
+  const { byId, allIds } = state.entities
+  if (memoize) {
+    const hit = whereCache.get(byId)
+    if (
+      hit &&
+      hit.allIds === allIds &&
+      hit.filter === filter &&
+      hit.orderBy === options?.orderBy &&
+      hit.sortBy === options?.sortBy
+    )
+      return hit.result as unknown as EntityWithMeta<T>[]
+  }
   const filtered = all.filter((item) => filter(item))
-  return options?.orderBy ? sortEntities(filtered, options) : filtered
+  const result = options?.orderBy ? sortEntities(filtered, options) : filtered
+  if (memoize) {
+    if (freezeInDev) Object.freeze(result)
+    whereCache.set(byId, {
+      allIds,
+      filter,
+      orderBy: options?.orderBy,
+      sortBy: options?.sortBy,
+      result: result as unknown as EntityWithMeta<never>[],
+    })
+  }
+  return result
 }
 
 export function getWhereArray<T extends WithId>(
@@ -177,9 +227,120 @@ export function search<T extends WithId>(
   )
 }
 
+interface SortedEntry {
+  orderBy: unknown
+  sortBy: unknown
+  result: EntityWithMeta<never>[]
+}
+
+const MAX_SORTED_PER_COLLECTION = 4
+const sortedCache = new WeakMap<
+  object,
+  { allIds: Id[]; entries: SortedEntry[] }
+>()
+
+function sortedArray<T extends WithId>(
+  memoize: boolean,
+  state: State<T>,
+  options: SortOptions<T>,
+): EntityWithMeta<T>[] {
+  if (!options.orderBy) return readAll(state, memoize)
+  if (!memoize) return sortEntities(readAll(state, false), options)
+  const { byId, allIds } = state.entities
+  let slot = sortedCache.get(byId)
+  if (!slot || slot.allIds !== allIds) {
+    slot = { allIds, entries: [] }
+    sortedCache.set(byId, slot)
+  }
+  const found = slot.entries.find(
+    (e) => e.orderBy === options.orderBy && e.sortBy === options.sortBy,
+  )
+  if (found) return found.result as unknown as EntityWithMeta<T>[]
+  const result = sortEntities(readAll(state, true), options)
+  if (freezeInDev) Object.freeze(result)
+  slot.entries.push({
+    orderBy: options.orderBy,
+    sortBy: options.sortBy,
+    result: result as unknown as EntityWithMeta<never>[],
+  })
+  if (slot.entries.length > MAX_SORTED_PER_COLLECTION) slot.entries.shift()
+  return result
+}
+
 /**
- * The same getters without memoization: `getAllArray` and `getWhereArray`
- * (with no filter) build a fresh array on every call. Used by the adapters when
+ * Every entity sorted by `options.orderBy` / `options.sortBy`. Memoized per
+ * `(byId, allIds, orderBy, sortBy)`, so the sort runs once per change instead of
+ * once per read. Use a field name (or a stable function reference) for
+ * `orderBy`: an inline arrow function is a new key on every call and never hits.
+ * Up to 4 distinct orderings are remembered per collection. Without `orderBy`
+ * it is `getAllArray`. The result is shared and read-only (frozen outside
+ * production).
+ */
+export function getSortedArray<T extends WithId>(
+  state: State<T>,
+  options: SortOptions<T>,
+): EntityWithMeta<T>[] {
+  return sortedArray(true, state, options)
+}
+
+const NONE = Object.freeze([]) as unknown as EntityWithMeta<never>[]
+const indexCache = new WeakMap<
+  object,
+  Map<
+    PropertyKey,
+    { allIds: Id[]; index: Map<unknown, EntityWithMeta<never>[]> }
+  >
+>()
+
+function byField<T extends WithId, K extends keyof EntityWithMeta<T>>(
+  memoize: boolean,
+  state: State<T>,
+  field: K,
+  value: EntityWithMeta<T>[K],
+): EntityWithMeta<T>[] {
+  if (!memoize)
+    return readAll(state, false).filter((item) => Object.is(item[field], value))
+  const { byId, allIds } = state.entities
+  let perField = indexCache.get(byId)
+  if (!perField) {
+    perField = new Map()
+    indexCache.set(byId, perField)
+  }
+  let entry = perField.get(field)
+  if (!entry || entry.allIds !== allIds) {
+    const index = new Map<unknown, EntityWithMeta<never>[]>()
+    for (const item of readAll(state, true)) {
+      const key = (item as EntityWithMeta<T>)[field]
+      const bucket = index.get(key)
+      if (bucket) bucket.push(item as unknown as EntityWithMeta<never>)
+      else index.set(key, [item as unknown as EntityWithMeta<never>])
+    }
+    if (freezeInDev) for (const bucket of index.values()) Object.freeze(bucket)
+    entry = { allIds, index }
+    perField.set(field, entry)
+  }
+  return (entry.index.get(value) ?? NONE) as unknown as EntityWithMeta<T>[]
+}
+
+/**
+ * The entities whose `field` equals `value` (SameValueZero, like `Map`), in
+ * `allIds` order. The first call per `(collection, field)` builds an index in
+ * O(n); every later lookup is O(1) until the collection changes. Prefer it over
+ * `getWhereArray((e) => e.field === value)` for repeated lookups on large
+ * collections (foreign keys, status, ...). The result is shared and read-only
+ * (frozen outside production); a miss returns one shared empty array.
+ */
+export function getByField<T extends WithId, K extends keyof EntityWithMeta<T>>(
+  state: State<T>,
+  field: K,
+  value: EntityWithMeta<T>[K],
+): EntityWithMeta<T>[] {
+  return byField(true, state, field, value)
+}
+
+/**
+ * The same getters without memoization: `getAllArray`, `getWhereArray`,
+ * `getSortedArray` and `getByField` build a fresh array on every call. Used by the adapters when
  * created with `{ memoize: false }`.
  */
 export const uncachedGetters = {
@@ -189,4 +350,13 @@ export const uncachedGetters = {
     filter?: Predicate<T> | null,
     options?: SortOptions<T>,
   ) => whereArray(false, state, filter, options),
+  getSortedArray: <T extends WithId>(
+    state: State<T>,
+    options: SortOptions<T>,
+  ) => sortedArray(false, state, options),
+  getByField: <T extends WithId, K extends keyof EntityWithMeta<T>>(
+    state: State<T>,
+    field: K,
+    value: EntityWithMeta<T>[K],
+  ) => byField(false, state, field, value),
 }

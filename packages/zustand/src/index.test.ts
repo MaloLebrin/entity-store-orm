@@ -83,3 +83,22 @@ describe('zustand memoize option', () => {
     expect(off.getState().getAllArray()).not.toBe(off.getState().getAllArray())
   })
 })
+
+describe('zustand setAll / getSortedArray / getByField', () => {
+  test('work through the store', () => {
+    const s = createEntityStore<User>().getState
+    s().createMany([ada])
+    s().setAll([bob, ada])
+    expect(s().getAllIds()).toEqual([2, 1])
+    expect(
+      s()
+        .getSortedArray({ orderBy: 'age' })
+        .map((u) => u.id),
+    ).toEqual([2, 1])
+    expect(
+      s()
+        .getByField('name', 'Ada')
+        .map((u) => u.id),
+    ).toEqual([1])
+  })
+})

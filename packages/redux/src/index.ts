@@ -68,6 +68,7 @@ export function createEntitySlice<T extends WithId>(
     reducers: {
       createOne: reduce<T>(a.createOne),
       createMany: reduce<T[]>(a.createMany),
+      setAll: reduce<T[]>(a.setAll),
       updateOne: reduce<{ id: Id; payload: T }>((s, p) =>
         a.updateOne(s, p.id, p.payload),
       ),
@@ -105,6 +106,8 @@ export function createEntitySlice<T extends WithId>(
       getMany: (r, ids) => g.getMany(select(r), ids),
       getWhere: (r, f) => g.getWhere(select(r), f),
       getWhereArray: (r, f, o) => g.getWhereArray(select(r), f, o),
+      getSortedArray: (r, o) => g.getSortedArray(select(r), o),
+      getByField: (r, field, value) => g.getByField(select(r), field, value),
       getFirstWhere: (r, f) => g.getFirstWhere(select(r), f),
       isAlreadyInStore: (r, id) => g.isAlreadyInStore(select(r), id),
       isAlreadyActive: (r, id) => g.isAlreadyActive(select(r), id),
