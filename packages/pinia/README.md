@@ -50,4 +50,5 @@ export const useUsers = defineEntityStore<User>()('users', {
 ## Notes
 
 - Actions replace `entities` rather than mutating it; it is held in a `shallowRef`. Don't write into `store.entities` directly, use the actions.
-- Peer dependency: `pinia` ^3 or ^4.
+- Peer dependency: `pinia` ^3 or ^4 (and `vue`).
+- SSR / Nuxt: the state is plain JSON, so Pinia serializes it into the payload and hydrates it on the client. With `@pinia/nuxt`, put the store in `app/stores/` and it is auto-imported; this is covered by a Nuxt 4 test in the repository.

@@ -32,3 +32,5 @@ select.getWhereArray(store.getState(), (u) => u.name.startsWith('A'))
 
 - Action payloads: single-argument actions take the value directly (`createOne(user)`, `deleteOne(id)`); multi-argument ones take an object: `updateOne({ id, payload })`, `updateField({ field, value, id })`.
 - Reducers run the pure core on the base state, so no Immer drafts leak into your data and untouched entities keep their reference. Selectors with arguments return new arrays/objects on each call; wrap them with `createSelector` if you need memoization.
+
+Peer dependency: `@reduxjs/toolkit` ^2. The slice state is plain JSON, so it serializes for SSR (`preloadedState`) without extra work.

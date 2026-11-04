@@ -31,3 +31,5 @@ getOne(1)
 > **Don't call `snap.getOne(1)` directly.** The functions on the proxy read the live store, and `useSnapshot` only re-renders for the properties you read from the snapshot, so the component would not update. Use `snapshotGetters(snap)` (or read `snap.entities`).
 
 The `entities` object is stored with Valtio's `ref()` and replaced on every action, so entities are never deeply proxied: change detection comes from the replacement, which matches the immutable core. Call actions on the proxy (not on a snapshot) and read through `useSnapshot`.
+
+Peer dependency: `valtio` ^2. For SSR, create the store per request rather than sharing a module-level one between requests.
